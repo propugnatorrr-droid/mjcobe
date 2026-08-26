@@ -30,6 +30,7 @@ export const admin = {
     sponsors: 'SPONSORS',
     topSong: 'TOP RECORD',
     pendingReview: 'AWAITING REVIEW',
+    trend: 'CONTRIBUTIONS — LAST 14 DAYS',
     recent: 'RECENT TRANSACTIONS',
     none: 'Nothing yet.',
   },

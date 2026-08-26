@@ -1,6 +1,7 @@
 # MJ COBE — Engineering Constitution
 
-Read `docs/PRD.md` for product scope and `docs/DESIGN.md` for visual law.
+Read `INSTRUCTIONS - WHAT IS THE WEBSITE.md` to understand the project.
+Read `docs/PRD.md` for product scope and `docs/DESIGN.md` for visual law and `C\Users\Osman\mj cobe site mockups\` for visual mockups.
 Those two documents are authoritative. This file is how we build.
 
 ## What this is

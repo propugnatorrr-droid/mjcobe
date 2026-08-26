@@ -29,7 +29,7 @@ export async function SongHero({
       <div className="mb-10 flex items-baseline justify-between gap-6">
         <Eyebrow>{await text(statusKey)}</Eyebrow>
         {campaign?.name ? (
-          <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+          <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
             {campaign.name}
           </span>
         ) : null}

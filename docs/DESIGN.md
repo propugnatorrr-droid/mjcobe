@@ -1,91 +1,128 @@
 # MJ COBE — Visual Law
 
-Reference points: OVO lookbooks, Fenty product pages, SSENSE grid discipline,
-A24 typography, Boiler Room / NTS editorial. Print-design confidence applied
-to a music platform.
+Reference: the client-approved mockups in `mj cobe site mockups` (12 desktop
++ 12 mobile concepts, covering every page in the PRD). This document is the
+checkable record of that direction — build against this file, not against
+the mockup images directly.
 
 The site sells PROXIMITY TO THE BEGINNING. Every choice serves the sentence:
 "486 people were here before the world caught on."
 
+## Revision note
+This replaces an earlier, stricter editorial-minimalist direction (hairlines
+only, champagne restricted to #1, no icons, no rounded corners). That
+direction is gone — the client confirmed the mockups are the real target.
+What survives: the dark ink surface, tabular numerals, the signature easing
+curve, film grain, and the core psychology. What's reversed: gold is now the
+primary brand accent (not a restricted signal), corners are rounded, icons
+are a real UI language, the funding meter is a pill, and leaderboard ranks
+1–3 get real medal badges.
+
 ## BANNED — treat any of these as a build failure
 - Purple/blue/indigo gradients. Any gradient text.
-- Glassmorphism, backdrop-blur cards, neon glow, box-shadow glow on hover.
-- Floating blobs, orbs, mesh gradients, aurora backgrounds.
-- Rounded cards (`rounded-lg`+) with drop shadows. Card-grid layouts.
-- Three-column icon+heading+paragraph "features" sections.
-- Emoji as interface. Medal emoji in leaderboards.
+- Backdrop-blur glassmorphism cards, floating blobs/orbs, mesh gradients,
+  aurora backgrounds.
 - Bouncy/spring easing. Confetti. Tilt-on-hover. Scale-on-hover above 1.02.
 - Centered-everything hero with a dark overlay on a stock photo.
-- Pill-shaped progress bars.
 - Pure #000 or pure #FFF.
+- Literal emoji characters as interface (🥇🏆 etc.) — the medal/trophy/star
+  glyphs are real SVG icons (lucide-react), never emoji, so rendering is
+  consistent across OS/browser instead of depending on the system emoji font.
 
-## Color — exact values, no additions
---ink:        #0A0A0B   /* primary surface */
+## Color — exact values
+--ink:        #0A0A0B   /* primary surface, every page */
 --ink-2:      #121214   /* raised surface */
---paper:      #F2EEE7   /* inverted surface (used on /partners) */
+--paper:      #F2EEE7   /* reserved; not currently used by any page */
 --paper-2:    #E5E0D7
---line:       rgba(255,255,255,0.10)   /* the layout language */
+--line:       rgba(255,255,255,0.10)   /* hairlines still separate rows */
 --line-strong:rgba(255,255,255,0.22)
 --text:       #EDEAE4
 --text-dim:   #8B8983
 --text-faint: #56544F
---ember:      #8E1D22   /* LIVE / funding / active. Signal only. */
---champagne:  #C9A227   /* #1 RANK ONLY. Under 5% of any viewport. */
+--ember:      #8E1D22   /* LIVE / funding-in-progress signal only */
+--champagne:  #C9A227   /* PRIMARY BRAND ACCENT — see below */
 
-Rules: `--ember` never decorates — it only indicates money moving or a live
-state. `--champagne` touches nothing except the #1 position and won-crown
-states. Sponsor logos are force-normalized to monochrome knockout white; SVG
-required at upload.
+`--champagne` is now the primary gold accent used throughout: CTAs, active
+nav state, labels, chart lines, borders, badge fills, the #1 rank. Measured
+8.18:1 against `--ink` — safe at any text size, not just large/decorative
+use. `--ember` still means "money is moving right now" specifically (a
+settling transaction, a live campaign state) and never decorates. Sponsor
+logos are force-normalized to monochrome knockout white; SVG required at
+upload.
+
+No paper-surface inversion is currently used anywhere — every page in the
+mockups, including partners/sponsor pages, stays on the ink surface. The
+`.surface-paper` CSS mechanism stays defined in `globals.css` in case a
+future page needs it, but nothing currently switches to it.
 
 ## Type
-One family, every role: **Switzer** (Fontshare / Indian Type Foundry, ITF
-Free Font License — self-hosted via `next/font/local`, never a CDN link).
-Switzer carries display, UI, and numerals/labels — the role a separate mono
-family used to own. It is not monospace, but its `tnum` OpenType feature
-gives genuinely equal-width tabular figures (verified empirically: all ten
-digits render at identical width under `font-variant-numeric: tabular-nums`
-at any size) — this is a deliberate choice, not a compromise. No component
-ever names "Switzer" directly; everything goes through `--font-display`,
-`--font-ui`, `--font-mono` (see `app/globals.css`).
+Two families:
+- **Display** — **Tanker** (Fontshare / Indian Type Foundry, ITF Free Font
+  License, self-hosted via `next/font/local`), a condensed poster-style
+  face for headlines and the wordmark. Single weight, no italic.
+- **UI, numerals, labels** — **Switzer** (same license terms), carrying
+  everything mono used to before: body text, buttons, and every number.
+  Not monospace, but its `tnum` feature gives genuinely equal-width tabular
+  figures (verified empirically).
 
-- Display: `clamp(3rem, 12vw, 11rem)`, tracking `-0.04em` at Black weight,
-  line-height 0.92. Italic (Switzer's real Variable Italic, never a
-  synthetic slant) allowed only at huge sizes, sparingly, for emotional beats.
-- Labels/eyebrows: UPPERCASE, 11px, tracking `0.18em`, `--text-dim`.
+No component ever names either typeface — everything goes through
+`--font-display`, `--font-ui`, `--font-mono` (see `app/globals.css`).
+
+- Display: `clamp(3rem, 12vw, 11rem)`, tracking tight, line-height ~0.92.
+- Labels/eyebrows: UPPERCASE, 11px, tracking `0.18em`.
 - Body: 16–18px, line-height 1.55, max-width 62ch.
 - EVERY NUMBER IS TABULAR. Counters must never reflow width.
 
 ## Structure
-- Hairlines, not cards. `1px solid var(--line)` separating full-bleed rows IS
-  the layout system.
-- Border-radius: `2px` max, `0` preferred.
-- 12-col grid, wide margins, deliberately asymmetric. Example: song cover
-  bleeds off the left edge cols 1–6; leaderboard sits cols 8–12.
-- Section padding: 96px mobile / 200px desktop. Be generous. Empty space is
-  the luxury signal.
+- Rounded corners are the norm now: **8px** for cards/inputs/panels, **full
+  pill** (9999px) for buttons, tags, and the funding meter. This is a real
+  reversal of the earlier "2px max" rule.
+- Hairlines (`1px solid var(--line)`) still separate rows inside a panel
+  (leaderboard rows, transaction tables) — panels themselves are now
+  rounded-8px containers with a `var(--line)` border, not just bare hairline
+  dividers on the page background.
+- 12-col grid, wide margins, deliberately asymmetric hero compositions.
+- Section padding: 96px mobile / 200px desktop. Still generous.
+- Icons are a real UI language now (lucide-react — plain MIT-licensed stroke
+  glyphs, not a themed component library): star, crown, trophy, lock,
+  shield, dollar-circle, headphones, people, chart, camera. Used at label
+  scale (16–20px) beside text, never as full decorative illustration.
 
-## The progress bar (highest-stakes component)
-NOT a pill. A 2px rule with tick marks like a film timecode or console meter.
-Percentage set in mono ABOVE the rule, right-aligned to the fill head.
-Fill is `--ember`. Track is `--line`. Ticks at 10% intervals in `--text-faint`.
-On mount it animates left-to-right once over 900ms, then holds. Never pulses.
+## The progress bar
+A pill: rounded-full track in `var(--line)`, rounded-full fill in
+`var(--champagne)`. Percentage set beside or above the bar, tabular. No tick
+marks. On mount it animates left-to-right once over 900ms, then holds.
+Never pulses.
 
 ## The leaderboard
-Film end-credits crossed with a chart.
-`01 / 02 / 03` in mono `--text-faint`. Name left, amount right-aligned tabular.
-Hairline between rows. Row height ~64px desktop.
-#1 gets ONE champagne hairline above it and its rank number in champagne.
-Nothing else. No avatars unless a real uploaded image exists. No badges as
-stickers — badges render as mono uppercase text tags with a hairline border.
+Real leaderboard, real stakes. Rank badges: **1st/2nd/3rd get an actual
+medal-ribbon SVG icon** (gold/silver/bronze), rank 4+ gets a plain tabular
+number in `--text-dim` (content, not decoration — `--text-faint` stays
+reserved for genuinely decorative marks only). Avatar circle before the
+name — a real uploaded photo if one exists, otherwise a monogram (first
+letter of the display name) on an `--ink-2` circle. Amount right-aligned,
+tabular. Hairline between rows inside the panel. Row height ~64px desktop.
+
+Badges elsewhere (supporter profile, tier grid) render as a small
+icon-in-circle medallion with a label underneath — not a hairline text tag.
+
+## Glow — capped, not banned
+A soft `box-shadow` glow is now sanctioned, but only in two places: the
+primary hero CTA ("BACK A RECORD" / "SUPPORT THIS SONG") and the #1
+slot/crown moment. One definition, reused: `--glow-champagne` in
+`globals.css`. Never on hover-only states, never on more than one element
+per view.
 
 ## Texture (the actual anti-AI-flatness measure)
 - Global film grain: SVG `feTurbulence` overlay, 3–5% opacity, `mix-blend-mode:
-  overlay`, animated at 8fps. Static if `prefers-reduced-motion`.
+  overlay`, animated at 8fps (stepped `background-position` over a static
+  tile — never re-running `feTurbulence` itself every frame). Static if
+  `prefers-reduced-motion`.
 - Hero imagery: subtle chromatic vignette, corners ~12% darker.
 - Secondary photography: duotone (ink → paper) at 85% for editorial cohesion.
-- The banned-gradient rule above targets decorative UI/background/text
-  gradients. A photographic vignette or duotone applied as a treatment layer
-  over real imagery is the sanctioned exception — it's grading, not decoration.
+- The banned-gradient rule targets decorative UI/background/text gradients.
+  A photographic vignette or duotone applied as a treatment layer over real
+  imagery is the sanctioned exception — it's grading, not decoration.
 
 ## Motion
 - Duration 300–500ms. Easing `cubic-bezier(0.16, 1, 0.3, 1)`. Only that.
@@ -99,16 +136,15 @@ stickers — badges render as mono uppercase text tags with a hairline border.
 ## Audio
 Persistent docked mini-player that survives navigation: one global `<audio>`
 element in a Context provider, never remounted. Waveform scrub from
-`peaks.json`. One editorial flourish only — hero grain intensity responds
-subtly to playback amplitude. One flourish executed perfectly beats five.
-
-## Inversion
-`/partners` is paper-white with black type, set like a printed media kit.
-The tonal flip is what makes it read as a deck rather than a donation page.
+`peaks.json`. Hero grain intensity responds subtly to playback amplitude.
 
 ## Accessibility (non-negotiable, and it does not conflict with the above)
 - Body text ≥ 4.5:1. Large display text ≥ 3:1. `--text-faint` is for
-  decorative numerals only, never for content.
+  decorative marks only (e.g. a divider glyph), never for content — rank
+  numbers and any other reader-facing figure use `--text-dim` (5.66:1 on
+  ink) or better.
 - Visible focus ring: 2px `--champagne` offset 2px. Never `outline: none`.
 - Grain and duotone layers are `pointer-events: none` and `aria-hidden`.
 - Every interactive element reachable and operable by keyboard.
+- Icons that carry meaning (not purely decorative) get an accessible name;
+  purely decorative icons are `aria-hidden`.

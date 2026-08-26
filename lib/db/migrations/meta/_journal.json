@@ -8,6 +8,13 @@
       "when": 1787773656580,
       "tag": "0000_wise_squadron_supreme",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787777168494,
+      "tag": "0001_wooden_silk_fever",
+      "breakpoints": true
     }
   ]
 }

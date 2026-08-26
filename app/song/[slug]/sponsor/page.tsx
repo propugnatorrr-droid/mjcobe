@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { SimulationRibbon } from '@/components/SimulationRibbon';
+import { SiteNav } from '@/components/SiteNav';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { Display } from '@/components/primitives/Display';
 import { Rule } from '@/components/primitives/Rule';
@@ -44,8 +45,9 @@ export default async function SponsorPage({ params }: Props) {
   return (
     <main className="surface-ink min-h-screen pb-40">
       <SimulationRibbon />
+      <SiteNav />
 
-      <div className="mx-auto max-w-3xl px-6 pt-24 md:px-12 md:pt-40">
+      <div className="mx-auto max-w-3xl px-6 pt-16 md:px-12 md:pt-24">
         <Eyebrow>{await text('checkout.business.heading')}</Eyebrow>
         <div className="mt-8">
           <Display>{data.song.title}</Display>

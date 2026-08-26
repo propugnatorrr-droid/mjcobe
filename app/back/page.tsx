@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { SimulationRibbon } from '@/components/SimulationRibbon';
+import { SiteNav } from '@/components/SiteNav';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { Display } from '@/components/primitives/Display';
 import { Rule } from '@/components/primitives/Rule';
@@ -22,9 +23,12 @@ export default async function BackPage({ searchParams }: Props) {
 
   if (payable.length === 0) {
     return (
-      <main className="surface-ink flex min-h-screen items-center px-6 md:px-12">
-        <div className="mx-auto w-full max-w-5xl">
-          <Display>{await text('checkout.no_open_campaigns')}</Display>
+      <main className="surface-ink min-h-screen">
+        <SiteNav />
+        <div className="flex min-h-[70vh] items-center px-6 md:px-12">
+          <div className="mx-auto w-full max-w-5xl">
+            <Display>{await text('checkout.no_open_campaigns')}</Display>
+          </div>
         </div>
       </main>
     );
@@ -56,8 +60,9 @@ export default async function BackPage({ searchParams }: Props) {
   return (
     <main className="surface-ink min-h-screen pb-40">
       <SimulationRibbon />
+      <SiteNav />
 
-      <div className="mx-auto max-w-3xl px-6 pt-24 md:px-12 md:pt-40">
+      <div className="mx-auto max-w-3xl px-6 pt-16 md:px-12 md:pt-24">
         <Eyebrow>{await text('checkout.fan.heading')}</Eyebrow>
         <div className="mt-8">
           <Display>{selected.songTitle}</Display>
@@ -65,7 +70,7 @@ export default async function BackPage({ searchParams }: Props) {
 
         {payable.length > 1 ? (
           <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3">
-            <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+            <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
               {await text('checkout.choose_song')}
             </span>
             {payable.map((c) => (

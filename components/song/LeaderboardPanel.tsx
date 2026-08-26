@@ -29,9 +29,12 @@ export async function LeaderboardPanel({
     <section className="py-16 md:py-24">
       <Eyebrow>{await text(headingKey)}</Eyebrow>
 
-      <div className="mt-8">
+      <div
+        className="mt-8 overflow-hidden rounded-[var(--radius-panel)] border"
+        style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
+      >
         {rows.length === 0 ? (
-          <p className="max-w-[62ch] text-body text-[var(--text-dim)]">
+          <p className="max-w-[62ch] p-6 text-body text-[var(--text-dim)]">
             {await text(emptyKey)}
           </p>
         ) : (
@@ -45,6 +48,7 @@ export async function LeaderboardPanel({
               hideAmount={row.hideAmount}
               hiddenLabel={hidden}
               href={linkPrefix && row.slug ? `${linkPrefix}/${row.slug}` : null}
+              avatarUrl={row.logoPath}
             />
           ))
         )}

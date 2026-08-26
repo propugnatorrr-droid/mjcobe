@@ -1,3 +1,4 @@
+import { Trophy } from 'lucide-react';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { ButtonLink } from '@/components/primitives/Button';
 import { AmountFigure } from '@/components/primitives/AmountFigure';
@@ -32,7 +33,7 @@ export async function CrownPanel({
     : crown.floorCents;
 
   return (
-    <section className="border-y border-[var(--line)] py-16 md:py-24">
+    <section className="py-16 md:py-24">
       <Eyebrow>{await text('song.section.crown')}</Eyebrow>
 
       <p className="mt-8 max-w-[62ch] text-body text-[var(--text)]">
@@ -48,15 +49,19 @@ export async function CrownPanel({
           : await text('song.crown.open')}
       </p>
 
-      <div className="mt-12 flex flex-wrap items-end justify-between gap-8">
+      <div
+        className="mt-8 flex flex-wrap items-end justify-between gap-8 rounded-[var(--radius-panel)] border p-6 md:p-8"
+        style={{ borderColor: 'var(--champagne)', background: 'var(--ink-2)' }}
+      >
         <div className="flex flex-col gap-2">
-          <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
+          <span className="flex items-center gap-2 font-mono text-eyebrow uppercase text-[var(--champagne)]">
+            <Trophy aria-hidden size={16} />
             {await text('song.crown.cost')}
           </span>
           <span className="font-mono text-4xl text-[var(--text)] md:text-5xl">
             <AmountFigure cents={cents(priceCents)} />
           </span>
-          <span className="font-mono text-eyebrow text-[var(--text-faint)]">
+          <span className="font-mono text-eyebrow text-[var(--text-dim)]">
             {await text('song.crown.increment', {
               amount: formatCents(cents(crown.incrementCents)),
             })}

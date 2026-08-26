@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import * as s from '@/lib/db/schema';
 import { SimulationRibbon } from '@/components/SimulationRibbon';
+import { SiteNav } from '@/components/SiteNav';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { Display } from '@/components/primitives/Display';
 import { Rule } from '@/components/primitives/Rule';
@@ -58,9 +59,10 @@ export default async function ThanksPage({ params }: Props) {
 
   if (!ledger) {
     return (
-      <main className="surface-ink flex min-h-screen items-center px-6 md:px-12">
-        <div className="mx-auto w-full max-w-5xl">
-          <SimulationRibbon />
+      <main className="surface-ink min-h-screen">
+        <SimulationRibbon />
+        <SiteNav />
+        <div className="mx-auto w-full max-w-5xl px-6 pt-16 md:px-12 md:pt-24">
           <Eyebrow>{await text('checkout.business.heading')}</Eyebrow>
           <div className="mt-8">
             <Display>{await text('thanks.pending.heading')}</Display>
@@ -108,8 +110,9 @@ export default async function ThanksPage({ params }: Props) {
   return (
     <main className="surface-ink min-h-screen pb-40">
       <SimulationRibbon />
+      <SiteNav />
 
-      <div className="mx-auto max-w-3xl px-6 pt-24 md:px-12 md:pt-40">
+      <div className="mx-auto max-w-3xl px-6 pt-16 md:px-12 md:pt-24">
         <Display>{await text('thanks.heading')}</Display>
 
         <p className="mt-8 max-w-[62ch] text-body text-[var(--text-dim)]">

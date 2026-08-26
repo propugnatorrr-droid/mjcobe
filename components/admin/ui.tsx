@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, ComponentType } from 'react';
+
+type IconType = ComponentType<{ size?: number; color?: string; 'aria-hidden'?: boolean }>;
 
 export function AdminHeading({ children }: { children: ReactNode }) {
   return (
@@ -16,29 +18,53 @@ export function AdminHint({ children }: { children: ReactNode }) {
   );
 }
 
+function MetricShell({
+  label,
+  icon: Icon,
+  accent,
+  children,
+}: {
+  label: string;
+  icon?: IconType;
+  accent?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className="rounded-[var(--radius-panel)] border p-5"
+      style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
+    >
+      <span className="flex items-center gap-2 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
+        {Icon ? <Icon aria-hidden size={16} color={accent ? 'var(--champagne)' : undefined} /> : null}
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
 export function MetricCard({
   label,
   value,
   note,
+  icon,
 }: {
   label: string;
   value: string;
   note?: string;
+  icon?: IconType;
 }) {
   return (
-    <div className="border-t border-[var(--line-strong)] pt-4">
-      <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
-        {label}
-      </span>
+    <MetricShell label={label} icon={icon}>
       <p className="mt-3 font-mono text-2xl tabular-nums text-[var(--text)]">
         {value}
       </p>
       {note ? (
-        <p className="mt-2 font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+        <p className="mt-2 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
           {note}
         </p>
       ) : null}
-    </div>
+    </MetricShell>
   );
 }
 
@@ -46,23 +72,22 @@ export function Metric({
   label,
   value,
   accent = false,
+  icon,
 }: {
   label: string;
   value: string;
   accent?: boolean;
+  icon?: IconType;
 }) {
   return (
-    <div className="flex flex-col gap-2 border-t border-[var(--line-strong)] pt-4">
-      <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
-        {label}
-      </span>
+    <MetricShell label={label} icon={icon} accent={accent}>
       <span
         className="font-mono text-2xl tabular-nums md:text-3xl"
         style={{ color: accent ? 'var(--champagne)' : 'var(--text)' }}
       >
         {value}
       </span>
-    </div>
+    </MetricShell>
   );
 }
 
@@ -74,15 +99,19 @@ export function Table({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-x-auto border-t border-[var(--line-strong)]">
-      <table className="w-full border-collapse text-left">
+    <div
+      className="overflow-x-auto rounded-[var(--radius-panel)] border"
+      style={{ borderColor: 'var(--line)' }}
+    >
+      <table className="w-full min-w-[40rem] border-collapse text-left">
         <thead>
           <tr>
             {head.map((h) => (
               <th
                 key={h}
                 scope="col"
-                className="whitespace-nowrap border-b border-[var(--line)] py-3 pr-8 font-mono text-eyebrow font-normal uppercase text-[var(--text-faint)]"
+                className="whitespace-nowrap border-b px-5 py-3 font-mono text-eyebrow font-normal uppercase text-[var(--text-dim)]"
+                style={{ borderColor: 'var(--line)' }}
               >
                 {h}
               </th>
@@ -109,11 +138,12 @@ export function Td({
   return (
     <td
       className={[
-        'border-b border-[var(--line)] py-4 pr-8 align-top',
+        'border-b px-5 py-4 align-top',
         mono ? 'font-mono text-sm tabular-nums' : 'text-body',
         dim ? 'text-[var(--text-dim)]' : 'text-[var(--text)]',
         nowrap ? 'whitespace-nowrap' : '',
       ].join(' ')}
+      style={{ borderColor: 'var(--line)' }}
     >
       {children}
     </td>
@@ -157,7 +187,7 @@ export function AdminInput({
       type={type}
       placeholder={placeholder}
       defaultValue={defaultValue}
-      className={`${wide ? 'w-full' : 'w-40'} border-b border-[var(--line)] bg-transparent pb-1 font-mono text-sm text-[var(--text)] transition-colors [transition-duration:var(--duration-signature)] placeholder:text-[var(--text-faint)] focus:border-[var(--text)] focus:outline-none`}
+      className={`${wide ? 'w-full' : 'w-40'} border-b border-[var(--line)] bg-transparent pb-1 font-mono text-sm text-[var(--text)] transition-colors [transition-duration:var(--duration-signature)] placeholder:text-[var(--text-dim)] focus:border-[var(--text)] focus:outline-none`}
     />
   );
 }

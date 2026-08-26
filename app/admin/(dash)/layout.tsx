@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import {
+  LayoutGrid, Receipt, Landmark, Wallet, Settings, FileText, ShieldCheck, LogOut,
+} from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { signOut } from '@/lib/admin/actions';
 import { admin } from '@/lib/copy/admin';
@@ -8,49 +11,56 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const me = await requireAdmin();
 
   const links = [
-    { href: '/admin', label: admin.nav.overview },
-    { href: '/admin/contributions', label: admin.nav.contributions },
-    { href: '/admin/sponsors', label: admin.nav.sponsors },
-    { href: '/admin/offline', label: admin.nav.offline },
-    { href: '/admin/settings', label: admin.nav.settings },
-    { href: '/admin/copy', label: admin.nav.copy },
-    { href: '/admin/audit', label: admin.nav.audit },
+    { href: '/admin', label: admin.nav.overview, icon: LayoutGrid },
+    { href: '/admin/contributions', label: admin.nav.contributions, icon: Receipt },
+    { href: '/admin/sponsors', label: admin.nav.sponsors, icon: Landmark },
+    { href: '/admin/offline', label: admin.nav.offline, icon: Wallet },
+    { href: '/admin/settings', label: admin.nav.settings, icon: Settings },
+    { href: '/admin/copy', label: admin.nav.copy, icon: FileText },
+    { href: '/admin/audit', label: admin.nav.audit, icon: ShieldCheck },
   ];
 
   return (
-    <div className="surface-ink min-h-screen">
-      <header className="border-b border-[var(--line)] px-6 py-5 md:px-10">
-        <div className="flex flex-wrap items-center justify-between gap-6">
-          <span className="font-mono text-eyebrow uppercase tracking-[0.18em] text-[var(--text)]">
-            {admin.brand}
-          </span>
-          <form action={signOut} className="flex items-center gap-6">
-            <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
-              {me.email}
-            </span>
-            <button
-              type="submit"
-              className="font-mono text-eyebrow uppercase text-[var(--text-dim)] transition-opacity [transition-duration:var(--duration-signature)] hover:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
-            >
-              {admin.signOut}
-            </button>
-          </form>
-        </div>
+    <div className="surface-ink flex min-h-screen">
+      <aside
+        className="flex w-64 shrink-0 flex-col border-r px-5 py-8"
+        style={{ borderColor: 'var(--line)' }}
+      >
+        <span className="mb-10 px-2 font-mono text-eyebrow uppercase tracking-[0.18em] text-[var(--champagne)]">
+          {admin.brand}
+        </span>
 
-        <nav className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="font-mono text-eyebrow uppercase text-[var(--text-dim)] transition-colors [transition-duration:var(--duration-signature)] hover:text-[var(--text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
-            >
-              {l.label}
-            </Link>
-          ))}
+        <nav className="flex flex-1 flex-col gap-1">
+          {links.map((l) => {
+            const Icon = l.icon;
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="flex items-center gap-3 rounded-[var(--radius-panel)] px-3 py-2.5 font-ui text-sm text-[var(--text-dim)] transition-colors [transition-duration:var(--duration-signature)] hover:bg-[var(--ink-2)] hover:text-[var(--text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
+              >
+                <Icon aria-hidden size={18} />
+                {l.label}
+              </Link>
+            );
+          })}
         </nav>
-      </header>
 
-      <div className="px-6 py-12 md:px-10 md:py-16">{children}</div>
+        <form action={signOut} className="mt-auto flex flex-col gap-3 border-t px-3 pt-6" style={{ borderColor: 'var(--line)' }}>
+          <span className="truncate font-mono text-eyebrow text-[var(--text-dim)]">
+            {me.email}
+          </span>
+          <button
+            type="submit"
+            className="flex items-center gap-2 font-ui text-sm text-[var(--text-dim)] transition-colors [transition-duration:var(--duration-signature)] hover:text-[var(--text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
+          >
+            <LogOut aria-hidden size={16} />
+            {admin.signOut}
+          </button>
+        </form>
+      </aside>
+
+      <div className="flex-1 px-8 py-10 md:px-12 md:py-14">{children}</div>
     </div>
   );
 }

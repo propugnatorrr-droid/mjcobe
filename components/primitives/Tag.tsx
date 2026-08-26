@@ -1,6 +1,18 @@
-export function Tag({ children }: { children: React.ReactNode }) {
+export function Tag({
+  children,
+  filled = false,
+}: {
+  children: React.ReactNode;
+  filled?: boolean;
+}) {
   return (
-    <span className="inline-block rounded-[2px] border border-[var(--line-strong)] px-2 py-1 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
+    <span
+      className={
+        filled
+          ? 'inline-block rounded-full bg-[var(--champagne)] px-3 py-1 font-mono text-eyebrow uppercase text-[var(--ink)]'
+          : 'inline-block rounded-full border border-[var(--line-strong)] px-3 py-1 font-mono text-eyebrow uppercase text-[var(--text-dim)]'
+      }
+    >
       {children}
     </span>
   );

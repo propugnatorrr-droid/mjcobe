@@ -24,7 +24,7 @@ export async function JourneyList({ journey }: { journey: SongPageData['journey'
                 <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
                   {await formatDay(event.occurredAt)}
                 </span>
-                <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+                <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
                   {await text(`journey.kind.${event.kind}` as CopyKey)}
                 </span>
                 <div className="min-w-0">

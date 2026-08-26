@@ -89,6 +89,14 @@ export const referralVisits = pgTable('referral_visits', {
   occurredAt: timestamp('occurred_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const newsletterSubscribers = pgTable('newsletter_subscribers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull(),
+  source: text('source'),                          // where they signed up, e.g. 'now_page'
+  subscribedAt: timestamp('subscribed_at', { withTimezone: true }).defaultNow().notNull(),
+  unsubscribedAt: timestamp('unsubscribed_at', { withTimezone: true }),
+}, (t) => [uniqueIndex('newsletter_subscribers_email_idx').on(t.email)]);
+
 export const analyticsEvents = pgTable('analytics_events', {
   id: uuid('id').primaryKey().defaultRandom(),
   kind: text('kind').notNull(),                    // 'page_view' | 'audio_play' | 'checkout_start'

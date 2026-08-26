@@ -75,20 +75,20 @@
   --color-champagne: var(--champagne);
 
   /* Fonts: swappable indirection. Licensed fonts drop in by changing the
-     next/font loader in app/layout.tsx only — no component names a font.
-     Switzer carries every role — display, UI, and numerals/labels (the
-     role mono used to own; tabular-nums is verified to work on it below,
-     it just isn't a monospace family). One loaded family, one @font-face. */
-  --font-display: var(--font-switzer-loader), ui-sans-serif, sans-serif;
+     next/font loaders in app/layout.tsx only — no component names a font.
+     Tanker (condensed poster display) carries headlines; Switzer carries
+     UI and numerals/labels (tabular-nums verified to work on it — it just
+     isn't a monospace family). */
+  --font-display: var(--font-tanker-loader), ui-sans-serif, sans-serif;
   --font-ui: var(--font-switzer-loader), ui-sans-serif, sans-serif;
   --font-mono: var(--font-switzer-loader), ui-sans-serif, sans-serif;
 
-  /* Type — only the scales DESIGN.md actually specifies. Display sets
-     Black weight explicitly: Switzer is variable and defaults to Regular. */
+  /* Type — only the scales DESIGN.md actually specifies. Tanker is a
+     single static weight (already condensed/bold by design) — no
+     font-weight override needed, unlike the old Switzer-Black display. */
   --text-display: clamp(3rem, 12vw, 11rem);
   --text-display--line-height: 0.92;
-  --text-display--letter-spacing: -0.04em;
-  --text-display--font-weight: 900;
+  --text-display--letter-spacing: -0.02em;
 
   --text-eyebrow: 0.6875rem;
   --text-eyebrow--line-height: 1;
@@ -106,6 +106,18 @@
      60ms stagger are literal, DESIGN-specified exceptions handled in JS. */
   --ease-signature: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-signature: 400ms;
+
+  /* Structure — the mockup-direction reversal: rounded, not hairline-only.
+     8px for cards/panels/inputs; buttons/tags/the meter use rounded-full
+     directly (a built-in Tailwind utility, no token needed). */
+  --radius-panel: 0.5rem;
+}
+
+/* Capped glow — one definition, reused. Only the primary hero CTA and the
+   #1 slot/crown moment may use it (see docs/DESIGN.md's "Glow" section).
+   Never on hover-only states, never on more than one element per view. */
+:root {
+  --glow-champagne: 0 0 24px 0 rgba(201, 162, 39, 0.35);
 }
 
 /* Baked into the font token itself so no call site can forget it: every

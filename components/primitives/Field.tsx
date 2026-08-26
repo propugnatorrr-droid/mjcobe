@@ -25,7 +25,7 @@ export function Field({
           {label}
         </span>
         {!required && optionalLabel ? (
-          <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+          <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
             {optionalLabel}
           </span>
         ) : null}
@@ -37,7 +37,7 @@ export function Field({
         placeholder={placeholder}
         defaultValue={defaultValue}
         inputMode={inputMode}
-        className="w-full border-b border-[var(--line)] bg-transparent pb-3 text-body text-[var(--text)] transition-colors [transition-duration:var(--duration-signature)] placeholder:text-[var(--text-faint)] focus:border-[var(--text)] focus:outline-none"
+        className="w-full border-b border-[var(--line)] bg-transparent pb-3 text-body text-[var(--text)] transition-colors [transition-duration:var(--duration-signature)] placeholder:text-[var(--text-dim)] focus:border-[var(--text)] focus:outline-none"
       />
     </label>
   );

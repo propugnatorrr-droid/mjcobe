@@ -66,6 +66,18 @@ export async function getOverview(): Promise<Overview> {
   };
 }
 
+/** Real daily totals for the last N days — not a fabricated trend line. */
+export async function getDailyTotals(days = 14): Promise<{ day: string; cents: number }[]> {
+  const result = await db.execute(sql`
+    select to_char(d.day, 'Mon DD') as day, coalesce(sum(l.amount_cents), 0)::int as cents
+    from generate_series(current_date - (${days}::int - 1), current_date, interval '1 day') as d(day)
+    left join ledger_entries l on l.occurred_at::date = d.day
+    group by d.day
+    order by d.day
+  `);
+  return rows(result).map((r) => ({ day: String(r.day), cents: num(r.cents) }));
+}
+
 export type ContributionRow = {
   contributionId: string;
   transactionId: string | null;

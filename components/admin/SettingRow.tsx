@@ -24,7 +24,7 @@ export function SettingRow({
           <input
             name="key"
             placeholder={admin.settings.newKey}
-            className="w-56 border-b border-[var(--line)] bg-transparent pb-1 font-mono text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--text)] focus:outline-none"
+            className="w-56 border-b border-[var(--line)] bg-transparent pb-1 font-mono text-sm text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--text)] focus:outline-none"
           />
         ) : (
           <>
@@ -39,7 +39,7 @@ export function SettingRow({
           name="value"
           defaultValue={value}
           placeholder={admin.settings.newValue}
-          className="min-w-0 flex-1 border-b border-[var(--line)] bg-transparent pb-1 font-mono text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--text)] focus:outline-none"
+          className="min-w-0 flex-1 border-b border-[var(--line)] bg-transparent pb-1 font-mono text-sm text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--text)] focus:outline-none"
         />
 
         <button
@@ -51,7 +51,7 @@ export function SettingRow({
       </div>
 
       {description ? (
-        <p className="mt-2 pl-0 font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+        <p className="mt-2 pl-0 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
           {description}
         </p>
       ) : null}
@@ -62,7 +62,7 @@ export function SettingRow({
         </p>
       ) : null}
       {state.ok ? (
-        <p className="mt-2 font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+        <p className="mt-2 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
           {admin.saved}
         </p>
       ) : null}

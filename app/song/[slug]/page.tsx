@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { SimulationRibbon } from '@/components/SimulationRibbon';
+import { SiteNav } from '@/components/SiteNav';
 import { SongHero } from '@/components/song/SongHero';
 import { FundingPanel } from '@/components/song/FundingPanel';
 import { CrownPanel } from '@/components/song/CrownPanel';
@@ -44,6 +45,7 @@ export default async function SongPage({ params }: Props) {
   return (
     <main className="surface-ink min-h-screen pb-40">
       <SimulationRibbon />
+      <SiteNav />
 
       <div className="mx-auto max-w-5xl px-6 md:px-12">
         <SongHero song={song} campaign={campaign} cover={cover} />
@@ -62,7 +64,7 @@ export default async function SongPage({ params }: Props) {
         </p>
 
         {!data.isAcceptingSupport ? (
-          <p className="mt-6 font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+          <p className="mt-6 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
             {await text('song.closed.notice')}
           </p>
         ) : null}

@@ -1,14 +1,6 @@
-export function Display({
-  children,
-  italic = false,
-}: {
-  children: React.ReactNode;
-  italic?: boolean;
-}) {
+export function Display({ children }: { children: React.ReactNode }) {
   return (
-    <h2
-      className={`font-display font-black text-display text-[var(--text)] ${italic ? 'italic' : ''}`}
-    >
+    <h2 className="font-display text-display text-[var(--text)]">
       {children}
     </h2>
   );

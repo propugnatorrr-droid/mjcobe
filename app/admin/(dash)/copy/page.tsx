@@ -35,7 +35,7 @@ export default async function CopyPage() {
                   name="value"
                   defaultValue={overrides.get(key) ?? ''}
                   placeholder={fallback}
-                  className="min-w-0 flex-1 border-b border-[var(--line)] bg-transparent pb-1 text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--text)] focus:outline-none"
+                  className="min-w-0 flex-1 border-b border-[var(--line)] bg-transparent pb-1 text-sm text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--text)] focus:outline-none"
                 />
                 <InlineAction>{admin.actions.save}</InlineAction>
               </div>

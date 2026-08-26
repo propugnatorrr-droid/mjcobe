@@ -61,7 +61,7 @@ export function OfflineForm({ campaigns }: { campaigns: { value: string; label: 
       <div className="flex items-center gap-6">
         <button
           type="submit"
-          className="rounded-[2px] bg-[var(--surface-invert)] px-6 py-3 font-ui text-sm uppercase tracking-[0.08em] text-[var(--surface-bg)] transition-colors [transition-duration:var(--duration-signature)] hover:bg-[var(--surface-invert-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
+          className="rounded-full bg-[var(--champagne)] px-6 py-3 font-ui text-sm font-medium uppercase tracking-[0.04em] text-[var(--ink)] transition-colors [transition-duration:var(--duration-signature)] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
         >
           {admin.offline.submit}
         </button>

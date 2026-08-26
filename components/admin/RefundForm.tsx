@@ -41,7 +41,7 @@ export function RefundForm({
         name="amount"
         inputMode="decimal"
         placeholder={maxLabel}
-        className="w-28 border-b border-[var(--line)] bg-transparent pb-1 font-mono text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--text)] focus:outline-none"
+        className="w-28 border-b border-[var(--line)] bg-transparent pb-1 font-mono text-sm text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--text)] focus:outline-none"
       />
 
       <select
@@ -66,7 +66,7 @@ export function RefundForm({
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="font-mono text-eyebrow uppercase text-[var(--text-faint)]"
+          className="font-mono text-eyebrow uppercase text-[var(--text-dim)]"
         >
           ×
         </button>

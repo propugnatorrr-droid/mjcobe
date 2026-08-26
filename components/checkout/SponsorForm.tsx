@@ -77,7 +77,7 @@ export function SponsorForm({
               <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
                 {labels.message}
               </span>
-              <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+              <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
                 {labels.optional}
               </span>
             </span>
@@ -98,7 +98,7 @@ export function SponsorForm({
           {labels.consentBody}
         </p>
         {approvalNote ? (
-          <p className="mb-8 max-w-[62ch] font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+          <p className="mb-8 max-w-[62ch] font-mono text-eyebrow uppercase text-[var(--text-dim)]">
             {approvalNote}
           </p>
         ) : null}

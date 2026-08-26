@@ -1,7 +1,7 @@
+import { Check } from 'lucide-react';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { ButtonLink } from '@/components/primitives/Button';
 import { AmountFigure } from '@/components/primitives/AmountFigure';
-import { Rule } from '@/components/primitives/Rule';
 import { cents } from '@/lib/money/cents';
 import { text } from '@/lib/copy/site-copy';
 import type { SongPageData } from '@/lib/song/queries';
@@ -24,7 +24,7 @@ export async function TierGrid({
     <section className="py-16 md:py-24">
       <Eyebrow>{await text('song.tiers.heading')}</Eyebrow>
 
-      <div className="mt-10 border-t border-[var(--line)]">
+      <div className="mt-10 flex flex-col gap-4">
         {tiers.map((tier) => {
           const exhausted =
             tier.quantityLimit !== null && tier.quantityLimit <= 0;
@@ -32,7 +32,8 @@ export async function TierGrid({
           return (
             <div
               key={tier.id}
-              className="grid grid-cols-1 gap-6 border-b border-[var(--line)] py-10 md:grid-cols-[10rem_1fr_auto] md:items-start md:gap-12"
+              className="grid grid-cols-1 gap-6 rounded-[var(--radius-panel)] border p-6 md:grid-cols-[10rem_1fr_auto] md:items-start md:gap-12 md:p-8"
+              style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
             >
               <span className="font-mono text-2xl text-[var(--text)]">
                 <AmountFigure cents={cents(tier.amountCents)} />
@@ -52,8 +53,9 @@ export async function TierGrid({
                     {tier.benefits.map((benefit) => (
                       <span
                         key={benefit}
-                        className="font-mono text-eyebrow uppercase text-[var(--text-faint)]"
+                        className="flex items-center gap-2 text-body text-[var(--text-dim)]"
                       >
+                        <Check aria-hidden size={16} color="var(--champagne)" strokeWidth={2.5} />
                         {benefit}
                       </span>
                     ))}
@@ -69,7 +71,7 @@ export async function TierGrid({
                   {selectLabel}
                 </ButtonLink>
               ) : (
-                <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+                <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
                   {exhausted ? soldOut : ''}
                 </span>
               )}
@@ -77,8 +79,6 @@ export async function TierGrid({
           );
         })}
       </div>
-
-      <Rule />
     </section>
   );
 }

@@ -171,6 +171,90 @@ const copyDefaults = {
   'thanks.copied': 'COPIED',
   'thanks.download': 'DOWNLOAD GRAPHIC',
   'thanks.og.line': 'I BACKED MJ COBE',
+
+  // ---- Nav ---------------------------------------------------------------
+  'nav.home': 'HOME',
+  'nav.music': 'MUSIC',
+  'nav.back_a_song': 'BACK A SONG',
+  'nav.journey': 'JOURNEY',
+  'nav.partners': 'PARTNERS',
+  'nav.mj_cobe': 'MJ COBE',
+  'nav.cta': 'BACK A RECORD',
+
+  // ---- Home ---------------------------------------------------------------
+  'home.listen': 'LISTEN',
+  'home.currently_building': 'CURRENTLY BUILDING',
+  'home.cta': 'BACK THIS SONG',
+  'home.top_sponsor_heading': '#1 BUSINESS SPONSOR',
+  'home.top_fan_heading': 'TOP FAN SUPPORTER',
+  'home.empty': 'Nothing is currently building. Check back soon.',
+
+  // ---- Music catalog --------------------------------------------------------
+  'music.title': 'MUSIC',
+  'music.released': 'RELEASED',
+  'music.released_sub': 'AVAILABLE EVERYWHERE',
+  'music.coming_soon': 'COMING SOON',
+  'music.coming_soon_sub': 'LISTEN TO A PREVIEW',
+  'music.building_now': 'BUILDING NOW',
+  'music.building_now_sub': 'BE PART OF WHAT’S NEXT',
+  'music.vault': 'VAULT',
+  'music.join_the_journey': 'JOIN THE JOURNEY',
+  'music.empty_section': 'Nothing here yet.',
+
+  // ---- Global journey page -------------------------------------------------
+  'journey.page.title': 'THE JOURNEY',
+  'journey.page.sub': 'You were here before the world caught on.',
+  'journey.page.empty': 'The timeline starts with the first entry.',
+  'journey.filter.all': 'ALL',
+  'journey.filter.milestones': 'MILESTONES',
+  'journey.filter.supporters': 'SUPPORTERS',
+  'journey.filter.sponsors': 'SPONSORS',
+
+  // ---- Partners page --------------------------------------------------------
+  'partners.title': 'BUILD WITH MJ COBE',
+  'partners.sub':
+    'Put your brand behind music, visuals and culture while the story is being created.',
+  'partners.cta': 'PARTNER WITH MJ COBE',
+  'partners.accepting_heading': 'CURRENT CAMPAIGNS ACCEPTING SPONSORS',
+  'partners.packages_heading': 'SPONSORSHIP PACKAGES',
+  'partners.view_campaign': 'VIEW CAMPAIGN',
+  'partners.stats_heading': 'OUR IMPACT',
+  'partners.stat.raised': 'RAISED FROM SPONSORS',
+  'partners.stat.sponsor_count': 'BUSINESSES ON BOARD',
+  'partners.past_sponsors': 'PAST & CURRENT SPONSORS',
+  'partners.custom': 'Custom packages available. Let’s build something iconic together.',
+  'partners.contact': 'Contact us at partners@mjcobe.com',
+  'partners.package.digital': 'DIGITAL PARTNER',
+  'partners.package.featured': 'FEATURED PARTNER',
+  'partners.package.visual': 'VISUAL PARTNER',
+  'partners.package.presenting': 'PRESENTING PARTNER',
+  'partners.empty': 'No campaigns are currently accepting sponsors.',
+
+  // ---- /now (link-in-bio) page ----------------------------------------------
+  'now.title': 'MJ COBE / RIGHT NOW',
+  'now.new_music': 'NEW MUSIC',
+  'now.back_next': 'BACK THE NEXT RECORD',
+  'now.top_sponsor': '#1 SPONSOR',
+  'now.latest_video': 'LATEST VIDEO',
+  'now.watch': 'WATCH',
+  'now.support_now': 'SUPPORT NOW',
+  'now.join_inner_circle': 'JOIN MJ’S INNER CIRCLE',
+  'now.inner_circle_sub': 'Exclusive updates. First access. Special invites.',
+  'now.email_placeholder': 'Email address',
+  'now.join': 'JOIN',
+  'now.privacy_note': 'We respect your privacy. Unsubscribe anytime.',
+  'now.subscribed': 'YOU’RE IN.',
+  'now.subscribe_error': 'ENTER A VALID EMAIL.',
+
+  // ---- Supporter profile ---------------------------------------------------
+  'supporter.since': 'MJ COBE SUPPORTER SINCE {year}',
+  'supporter.songs_backed': 'SONGS BACKED',
+  'supporter.total_contributions': 'TOTAL CONTRIBUTIONS',
+  'supporter.badges': 'BADGES',
+  'supporter.songs_helped': 'SONGS YOU HELPED BUILD',
+  'supporter.not_found': 'That supporter profile doesn’t exist or isn’t public.',
+  'supporter.no_badges': 'No badges earned yet.',
+  'supporter.contributed': 'YOU CONTRIBUTED',
 } as const;
 
 export type CopyKey = keyof typeof copyDefaults;

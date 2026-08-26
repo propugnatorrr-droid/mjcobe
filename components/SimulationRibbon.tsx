@@ -12,7 +12,7 @@ export async function SimulationRibbon() {
     <aside
       role="status"
       className="w-full border-b border-[var(--line-strong)] px-6 py-2 md:px-12"
-      style={{ background: 'var(--ember)', color: 'var(--surface-bg)' }}
+      style={{ background: 'var(--ember)', color: 'var(--text)' }}
     >
       <p className="mx-auto max-w-6xl font-mono text-eyebrow uppercase tracking-[0.14em]">
         {await text('simulation.ribbon')}

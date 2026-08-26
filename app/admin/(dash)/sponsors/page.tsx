@@ -29,7 +29,7 @@ export default async function SponsorReviewPage() {
                   <h2 className="text-body uppercase tracking-[0.06em] text-[var(--text)]">
                     {p.businessName}
                   </h2>
-                  <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+                  <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
                     {await formatDay(p.submittedAt)}
                   </span>
                 </div>
@@ -45,7 +45,7 @@ export default async function SponsorReviewPage() {
                     ['INDUSTRY', p.industry ?? '—'],
                   ].map(([label, value]) => (
                     <div key={label} className="flex gap-4">
-                      <dt className="w-28 shrink-0 font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+                      <dt className="w-28 shrink-0 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
                         {label}
                       </dt>
                       <dd className="min-w-0 truncate font-mono text-sm text-[var(--text-dim)]">

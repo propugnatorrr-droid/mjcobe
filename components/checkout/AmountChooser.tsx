@@ -58,7 +58,7 @@ export function AmountChooser({
                   {option.label}
                 </span>
                 {option.note ? (
-                  <span className="hidden font-mono text-eyebrow uppercase text-[var(--text-faint)] sm:inline">
+                  <span className="hidden font-mono text-eyebrow uppercase text-[var(--text-dim)] sm:inline">
                     {option.note}
                   </span>
                 ) : null}
@@ -92,7 +92,7 @@ export function AmountChooser({
             inputMode="decimal"
             autoFocus
             placeholder={customPlaceholder}
-            className="font-mono w-full border-b border-[var(--line)] bg-transparent pb-3 text-2xl text-[var(--text)] transition-colors [transition-duration:var(--duration-signature)] placeholder:text-[var(--text-faint)] focus:border-[var(--text)] focus:outline-none"
+            className="font-mono w-full border-b border-[var(--line)] bg-transparent pb-3 text-2xl text-[var(--text)] transition-colors [transition-duration:var(--duration-signature)] placeholder:text-[var(--text-dim)] focus:border-[var(--text)] focus:outline-none"
           />
         </div>
       ) : null}
