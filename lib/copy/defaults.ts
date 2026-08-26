@@ -102,6 +102,77 @@ const copyDefaults = {
   'journey.kind.campaign_opened': 'OPENED',
   'journey.kind.campaign_closed': 'CLOSED',
   'journey.kind.manual': 'NOTE',
+    // ---- Checkout ----------------------------------------------------------
+  'checkout.fan.heading': 'BACK THIS RECORD',
+  'checkout.business.heading': 'SPONSOR THIS RECORD',
+  'checkout.step.amount': 'AMOUNT',
+  'checkout.step.identity': 'HOW YOU APPEAR',
+  'checkout.step.business': 'YOUR BUSINESS',
+  'checkout.step.payment': 'PAYMENT',
+  'checkout.custom_amount': 'OTHER AMOUNT',
+  'checkout.custom_placeholder': 'Enter an amount',
+  'checkout.submit.fan': 'COMPLETE SUPPORT',
+  'checkout.submit.business': 'SUBMIT SPONSORSHIP',
+  'checkout.working': 'WORKING',
+
+  'checkout.field.email': 'EMAIL',
+  'checkout.field.display_name': 'DISPLAY NAME',
+  'checkout.field.instagram': 'INSTAGRAM',
+  'checkout.field.city': 'CITY',
+  'checkout.field.anonymous': 'Show me as anonymous',
+  'checkout.field.hide_amount': 'Hide my amount publicly',
+  'checkout.field.business_name': 'BUSINESS NAME',
+  'checkout.field.rep_name': 'REPRESENTATIVE',
+  'checkout.field.phone': 'PHONE',
+  'checkout.field.website': 'WEBSITE',
+  'checkout.field.industry': 'INDUSTRY',
+  'checkout.field.message': 'MESSAGE',
+  'checkout.field.optional': 'OPTIONAL',
+
+  'checkout.consent.fan':
+    'Contributions are voluntary support for MJ COBE\u2019s creative and promotional campaigns and do not provide ownership, equity, royalties, securities, repayment rights or financial returns.',
+  'checkout.consent.fan_checkbox':
+    'I understand this contribution is support and does not represent an investment, ownership interest, royalty interest or promise of financial return.',
+  'checkout.consent.business':
+    'Sponsorship does not provide ownership of MJ COBE or the underlying music. Sponsorship purchases promotional placement and participation in the campaign.',
+  'checkout.consent.business_checkbox':
+    'I understand sponsorship benefits are limited to the promotional benefits described for this campaign and are subject to approval by MJ COBE Management.',
+
+  'checkout.error.amount': 'Enter an amount between {min} and {max}.',
+  'checkout.error.email': 'Enter a valid email address.',
+  'checkout.error.display_name': 'Display name must be {max} characters or fewer.',
+  'checkout.error.business_name': 'Enter your business name.',
+  'checkout.error.consent': 'Please confirm the statement above to continue.',
+  'checkout.error.closed': 'This campaign is not accepting support right now.',
+  'checkout.error.declined': 'That payment was declined. No charge was made.',
+  'checkout.error.generic': 'Something went wrong. No charge was made.',
+  'checkout.error.blocked': 'This submission cannot be accepted.',
+
+  'checkout.choose_song': 'CHOOSE A RECORD',
+  'checkout.no_open_campaigns': 'No campaigns are open right now.',
+  'checkout.minimum_to_lead': 'Minimum to take #1 is {amount}.',
+  'checkout.packages': 'SPONSORSHIP PACKAGES',
+  'checkout.approval_note':
+    'Sponsorships above {amount} are reviewed before they appear publicly.',
+
+  // ---- Confirmation ------------------------------------------------------
+  'thanks.heading': 'YOU\u2019RE PART OF THE JOURNEY.',
+  'thanks.subhead': 'You just backed \u201C{song}\u201D.',
+  'thanks.subhead_business': '{business} is now backing \u201C{song}\u201D.',
+  'thanks.supporter_number': 'YOUR SUPPORTER NUMBER',
+  'thanks.founding_number': 'FOUNDING SUPPORTER',
+  'thanks.rank': 'YOUR RANKING',
+  'thanks.amount': 'CONTRIBUTED',
+  'thanks.pending.heading': 'SUBMITTED FOR REVIEW.',
+  'thanks.pending.body':
+    'Your sponsorship is with MJ COBE Management. You will hear back by email, and nothing appears publicly until it is approved.',
+  'thanks.share': 'SHARE MY SUPPORT',
+  'thanks.view_song': 'VIEW SONG JOURNEY',
+  'thanks.back_another': 'BACK ANOTHER RECORD',
+  'thanks.copy_link': 'COPY LINK',
+  'thanks.copied': 'COPIED',
+  'thanks.download': 'DOWNLOAD GRAPHIC',
+  'thanks.og.line': 'I BACKED MJ COBE',
 } as const;
 
 export type CopyKey = keyof typeof copyDefaults;
