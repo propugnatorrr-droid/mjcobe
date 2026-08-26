@@ -1,26 +1,121 @@
 @import "tailwindcss";
 
+/*
+ * Color values are copied verbatim from docs/DESIGN.md — no additions.
+ * --champagne-paper and the --paper-* triad are this repo's own derivation:
+ * DESIGN.md only specifies ink-surface text/line colors and the paper
+ * background itself, not a paper-surface text system. See the plan's
+ * ambiguity list. --champagne-paper exists because raw --champagne on
+ * --paper measures ~2.1:1 (fails 4.5:1); it's darkened to ~4.6:1 while
+ * staying the same hue.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #0a0a0b;
+  --ink-2: #121214;
+  --paper: #f2eee7;
+  --paper-2: #e5e0d7;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --text: #edeae4;
+  --text-dim: #8b8983;
+  --text-faint: #56544f;
+  --ember: #8e1d22;
+  --champagne: #c9a227;
+
+  --paper-text: var(--ink);
+  --paper-text-dim: #6b675e;
+  --paper-text-faint: #a39e92;
+  --paper-line: rgba(10, 10, 11, 0.12);
+  --paper-line-strong: rgba(10, 10, 11, 0.28);
+  --champagne-paper: #886615;
+}
+
+/*
+ * Primitives read var(--text), var(--line), etc. — never a surface-specific
+ * name — so wrapping any subtree in .surface-paper inverts it for free.
+ * This is the mechanism /partners will use later, and the gallery's paper
+ * section uses now.
+ */
+.surface-ink {
+  background: var(--ink);
+  color: var(--text);
+  /* Button's primary variant is "the inverted block" — light-on-dark here,
+     dark-on-light on paper — without Button ever knowing which surface
+     it's on. */
+  --surface-bg: var(--ink);
+  --surface-invert: var(--text);
+  --surface-invert-hover: var(--paper-2);
+}
+
+.surface-paper {
+  background: var(--paper);
+  color: var(--paper-text);
+  --text: var(--paper-text);
+  --text-dim: var(--paper-text-dim);
+  --text-faint: var(--paper-text-faint);
+  --line: var(--paper-line);
+  --line-strong: var(--paper-line-strong);
+  --champagne: var(--champagne-paper);
+  --surface-bg: var(--paper);
+  --surface-invert: var(--paper-text);
+  --surface-invert-hover: var(--ink-2);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-text-dim: var(--text-dim);
+  --color-text-faint: var(--text-faint);
+  --color-ember: var(--ember);
+  --color-champagne: var(--champagne);
+
+  /* Fonts: swappable indirection. Licensed fonts drop in by changing the
+     next/font loader in app/layout.tsx only — no component names a font.
+     Switzer carries both the display and UI roles (one loaded family). */
+  --font-display: var(--font-switzer-loader), ui-sans-serif, sans-serif;
+  --font-ui: var(--font-switzer-loader), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-mono-loader), ui-monospace, monospace;
+
+  /* Type — only the scales DESIGN.md actually specifies. Display sets
+     Black weight explicitly: Switzer is variable and defaults to Regular. */
+  --text-display: clamp(3rem, 12vw, 11rem);
+  --text-display--line-height: 0.92;
+  --text-display--letter-spacing: -0.04em;
+  --text-display--font-weight: 900;
+
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--line-height: 1;
+  --text-eyebrow--letter-spacing: 0.18em;
+
+  --text-body: 1rem;
+  --text-body--line-height: 1.55;
+
+  /* Spacing — only the section-padding rhythm DESIGN.md names. */
+  --spacing-section-mobile: 6rem;
+  --spacing-section-desktop: 12.5rem;
+
+  /* Motion — the one legal curve, and a 400ms default (midpoint of the
+     documented 300-500ms range). FundingMeter's 900ms and RevealText's
+     60ms stagger are literal, DESIGN-specified exceptions handled in JS. */
+  --ease-signature: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-signature: 400ms;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Baked into the font token itself so no call site can forget it: every
+   numeral in the app is tabular by construction. */
+@layer utilities {
+  .font-mono {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--font-ui);
 }
