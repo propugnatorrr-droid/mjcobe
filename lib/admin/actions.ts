@@ -1,0 +1,442 @@
+'use server';
+
+import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
+import { createHash } from 'node:crypto';
+import { headers } from 'next/headers';
+import { and, eq } from 'drizzle-orm';
+import { db } from '@/lib/db/client';
+import { dbw } from '@/lib/db/write';
+import * as s from '@/lib/db/schema';
+import { requireAdmin } from './guard';
+import { endSession, passwordMatches, startSession } from './session';
+import { recordAudit } from '@/lib/audit/log';
+import { refundContribution, settleContribution } from '@/lib/ledger/contributions';
+import { consentFor } from '@/lib/consent/text';
+import { createContribution } from '@/lib/ledger/contributions';
+import { bool, parseAmountCents, str } from '@/lib/checkout/validate';
+import type { RefundReasonCode } from '@/lib/payments';
+
+export type AdminState = { error?: string; ok?: string };
+
+async function ipHash() {
+  const h = await headers();
+  const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim();
+  return ip ? createHash('sha256').update(ip).digest('hex') : null;
+}
+
+// ------------------------------------------------------------------ auth ----
+
+export async function signIn(_prev: AdminState, formData: FormData): Promise<AdminState> {
+  const email = str(formData.get('email'), 254)?.toLowerCase();
+  const password = str(formData.get('password'), 200);
+  if (!email || !password) return { error: 'auth' };
+
+  const [row] = await db
+    .select()
+    .from(s.adminUsers)
+    .where(and(eq(s.adminUsers.email, email), eq(s.adminUsers.isActive, true)))
+    .limit(1);
+
+  if (!row || !passwordMatches(password)) return { error: 'auth' };
+
+  await dbw
+    .update(s.adminUsers)
+    .set({ lastLoginAt: new Date() })
+    .where(eq(s.adminUsers.id, row.id));
+
+  await startSession(row.email);
+  redirect('/admin');
+}
+
+export async function signOut(): Promise<void> {
+  await endSession();
+  redirect('/admin/login');
+}
+
+// ---------------------------------------------------------- moderation ------
+
+export async function moderateContribution(formData: FormData): Promise<void> {
+  const me = await requireAdmin();
+  const id = str(formData.get('contributionId'));
+  const action = str(formData.get('action'));
+  if (!id || !action) return;
+
+  const [before] = await db
+    .select()
+    .from(s.contributions)
+    .where(eq(s.contributions.id, id))
+    .limit(1);
+  if (!before) return;
+
+  const patch: Partial<typeof s.contributions.$inferInsert> = {};
+
+  if (action === 'approve') patch.moderation = 'approved';
+  if (action === 'flag') patch.moderation = 'flagged';
+  if (action === 'hide') {
+    patch.moderation = 'hidden';
+    patch.leaderboardVisible = false;
+  }
+  if (action === 'unhide') {
+    patch.moderation = 'approved';
+    patch.leaderboardVisible = true;
+  }
+  if (action === 'rename') {
+    patch.displayNameSnapshot = str(formData.get('displayName'), 64);
+  }
+
+  if (Object.keys(patch).length === 0) return;
+
+  await dbw.update(s.contributions).set(patch).where(eq(s.contributions.id, id));
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: `contribution.${action}`,
+    entity: 'contribution',
+    entityId: id,
+    before: { moderation: before.moderation, leaderboardVisible: before.leaderboardVisible, displayName: before.displayNameSnapshot },
+    after: patch,
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath('/admin/contributions');
+  revalidatePath('/', 'layout');
+}
+
+/** Blocks the identity behind a contribution, then hides it. */
+export async function blockFromContribution(formData: FormData): Promise<void> {
+  const me = await requireAdmin();
+  const id = str(formData.get('contributionId'));
+  const value = str(formData.get('blockValue'), 200);
+  const kind = (str(formData.get('blockKind')) ?? 'email') as
+    'domain' | 'email' | 'name' | 'category' | 'industry';
+  if (!id || !value) return;
+
+  await dbw.insert(s.blocklist).values({ kind, value, note: `contribution ${id}` })
+    .onConflictDoNothing();
+
+  await dbw
+    .update(s.contributions)
+    .set({ moderation: 'blocked', leaderboardVisible: false })
+    .where(eq(s.contributions.id, id));
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'contribution.block',
+    entity: 'contribution',
+    entityId: id,
+    after: { kind, value },
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath('/admin/contributions');
+  revalidatePath('/', 'layout');
+}
+
+// -------------------------------------------------------------- refunds -----
+
+export async function issueRefund(_prev: AdminState, formData: FormData): Promise<AdminState> {
+  const me = await requireAdmin();
+  const transactionId = str(formData.get('transactionId'));
+  const reason = (str(formData.get('reason')) ?? 'other') as RefundReasonCode;
+  if (!transactionId) return { error: 'missing' };
+
+  const [tx] = await db
+    .select()
+    .from(s.transactions)
+    .where(eq(s.transactions.id, transactionId))
+    .limit(1);
+  if (!tx) return { error: 'missing' };
+
+  // Blank amount means the whole remaining balance, which is the common case
+  // and the one most likely to be fat-fingered if typed by hand.
+  const typed = parseAmountCents(formData.get('amount'));
+  const amountCents = typed ?? tx.amountCents;
+
+  const result = await refundContribution({
+    transactionId,
+    amountCents,
+    reason,
+    note: str(formData.get('note'), 500) ?? undefined,
+    adminUserId: me.id,
+  });
+
+  if (!result.ok) return { error: result.message ?? 'failed' };
+
+  revalidatePath('/admin/contributions');
+  revalidatePath('/', 'layout');
+  return { ok: 'saved' };
+}
+
+// ------------------------------------------------------------- sponsors -----
+
+export async function approveSponsor(formData: FormData): Promise<void> {
+  const me = await requireAdmin();
+  const contributionId = str(formData.get('contributionId'));
+  const transactionId = str(formData.get('transactionId'));
+  const sponsorId = str(formData.get('sponsorId'));
+  const slug = str(formData.get('songSlug'));
+  if (!contributionId || !transactionId) return;
+
+  const settled = await settleContribution(transactionId);
+  if (!settled.ok) {
+    await recordAudit({
+      adminUserId: me.id,
+      action: 'sponsor.approve_failed',
+      entity: 'contribution',
+      entityId: contributionId,
+      after: { code: settled.code },
+      ipHash: await ipHash(),
+    });
+    return;
+  }
+
+  const now = new Date();
+  if (sponsorId) {
+    await dbw
+      .update(s.sponsors)
+      .set({ moderation: 'approved', approvedAt: now, supportedSince: now })
+      .where(eq(s.sponsors.id, sponsorId));
+  }
+
+  await dbw
+    .update(s.contributions)
+    .set({ moderation: 'approved' })
+    .where(eq(s.contributions.id, contributionId));
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'sponsor.approve',
+    entity: 'contribution',
+    entityId: contributionId,
+    after: { sponsorId, transactionId },
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath('/admin/sponsors');
+  if (slug) revalidatePath(`/song/${slug}`);
+  revalidatePath('/', 'layout');
+}
+
+/**
+ * Declining cancels rather than refunds when nothing was captured — there is
+ * no money to send back, and a phantom refund row would misstate the books.
+ */
+export async function declineSponsor(formData: FormData): Promise<void> {
+  const me = await requireAdmin();
+  const contributionId = str(formData.get('contributionId'));
+  const transactionId = str(formData.get('transactionId'));
+  const sponsorId = str(formData.get('sponsorId'));
+  const reason = (str(formData.get('reason')) ?? 'unverified_sponsor') as RefundReasonCode;
+  if (!contributionId) return;
+
+  if (transactionId) {
+    const [tx] = await db
+      .select()
+      .from(s.transactions)
+      .where(eq(s.transactions.id, transactionId))
+      .limit(1);
+
+    if (tx?.state === 'settled' || tx?.state === 'partially_refunded') {
+      await refundContribution({
+        transactionId,
+        amountCents: tx.amountCents,
+        reason,
+        adminUserId: me.id,
+      });
+    } else if (tx) {
+      await dbw
+        .update(s.transactions)
+        .set({ state: 'canceled', updatedAt: new Date() })
+        .where(eq(s.transactions.id, transactionId));
+    }
+  }
+
+  await dbw
+    .update(s.contributions)
+    .set({ moderation: 'blocked', leaderboardVisible: false })
+    .where(eq(s.contributions.id, contributionId));
+
+  if (sponsorId) {
+    await dbw
+      .update(s.sponsors)
+      .set({ moderation: 'blocked' })
+      .where(eq(s.sponsors.id, sponsorId));
+  }
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'sponsor.decline',
+    entity: 'contribution',
+    entityId: contributionId,
+    reason,
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath('/admin/sponsors');
+  revalidatePath('/', 'layout');
+}
+
+// -------------------------------------------------------------- offline -----
+
+export async function addOfflineContribution(
+  _prev: AdminState,
+  formData: FormData,
+): Promise<AdminState> {
+  const me = await requireAdmin();
+
+  const campaignId = str(formData.get('campaignId'));
+  const amountCents = parseAmountCents(formData.get('amount'));
+  const supportType = (str(formData.get('supportType')) ?? 'fan') as 'fan' | 'business';
+  if (!campaignId || !amountCents) return { error: 'missing' };
+
+  const [campaign] = await db
+    .select()
+    .from(s.campaigns)
+    .where(eq(s.campaigns.id, campaignId))
+    .limit(1);
+  if (!campaign) return { error: 'missing' };
+
+  const email = str(formData.get('email'), 254);
+  const consent = await consentFor(supportType);
+
+  let sponsorId: string | null = null;
+  if (supportType === 'business') {
+    const businessName = str(formData.get('businessName'), 120);
+    if (!businessName) return { error: 'missing' };
+    const [created] = await dbw
+      .insert(s.sponsors)
+      .values({
+        slug: `${businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}-${Math.random().toString(36).slice(2, 6)}`,
+        businessName,
+        email,
+        moderation: 'approved',
+        approvedAt: new Date(),
+        supportedSince: new Date(),
+      })
+      .returning({ id: s.sponsors.id });
+    sponsorId = created.id;
+  }
+
+  const created = await createContribution({
+    campaignId,
+    songId: campaign.songId,
+    supportType,
+    amountCents,
+    sponsorId,
+    supporter:
+      supportType === 'fan' && email
+        ? { email, displayName: str(formData.get('displayName'), 64) }
+        : undefined,
+    consent: { version: consent.version, text: consent.text },
+    providerId: 'offline',
+  });
+
+  const settled = await settleContribution(created.transactionId);
+  if (!settled.ok) return { error: settled.message };
+
+  const method = (str(formData.get('method')) ?? 'other') as 'cash' | 'check' | 'wire' | 'other';
+  await dbw
+    .update(s.transactions)
+    .set({ offlineMethod: method })
+    .where(eq(s.transactions.id, created.transactionId));
+
+  const visible = bool(formData.get('leaderboardEligible'));
+  await dbw
+    .update(s.contributions)
+    .set({ moderation: 'approved', leaderboardVisible: visible })
+    .where(eq(s.contributions.id, created.contributionId));
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'contribution.offline',
+    entity: 'contribution',
+    entityId: created.contributionId,
+    after: { amountCents, supportType, method, visible },
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath('/admin');
+  revalidatePath('/', 'layout');
+  return { ok: 'saved' };
+}
+
+// ------------------------------------------------------- settings + copy ----
+
+export async function saveSetting(_prev: AdminState, formData: FormData): Promise<AdminState> {
+  const me = await requireAdmin();
+  const key = str(formData.get('key'), 100);
+  const raw = str(formData.get('value'), 5000);
+  if (!key) return { error: 'missing' };
+
+  if (raw === null) {
+    await dbw.delete(s.settings).where(eq(s.settings.key, key));
+    await recordAudit({ adminUserId: me.id, action: 'setting.delete', entity: 'setting', entityId: key });
+    revalidatePath('/admin/settings');
+    revalidatePath('/', 'layout');
+    return { ok: 'saved' };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { error: 'json' };
+  }
+
+  const [before] = await db.select().from(s.settings).where(eq(s.settings.key, key)).limit(1);
+
+  await dbw
+    .insert(s.settings)
+    .values({ key, value: parsed as never, updatedByAdminId: me.id })
+    .onConflictDoUpdate({
+      target: s.settings.key,
+      set: { value: parsed as never, updatedAt: new Date(), updatedByAdminId: me.id },
+    });
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'setting.save',
+    entity: 'setting',
+    entityId: key,
+    before: before?.value ?? null,
+    after: parsed,
+  });
+
+  revalidatePath('/admin/settings');
+  revalidatePath('/', 'layout');
+  return { ok: 'saved' };
+}
+
+export async function saveCopy(formData: FormData): Promise<void> {
+  const me = await requireAdmin();
+  const key = str(formData.get('key'), 120);
+  const value = str(formData.get('value'), 5000);
+  if (!key) return;
+
+  const [before] = await db.select().from(s.siteCopy).where(eq(s.siteCopy.key, key)).limit(1);
+
+  if (value === null) {
+    await dbw.delete(s.siteCopy).where(eq(s.siteCopy.key, key));
+  } else {
+    await dbw
+      .insert(s.siteCopy)
+      .values({ key, value, updatedByAdminId: me.id })
+      .onConflictDoUpdate({
+        target: s.siteCopy.key,
+        set: { value, updatedAt: new Date(), updatedByAdminId: me.id },
+      });
+  }
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: value === null ? 'copy.reset' : 'copy.save',
+    entity: 'site_copy',
+    entityId: key,
+    before: before?.value ?? null,
+    after: value,
+  });
+
+  revalidatePath('/admin/copy');
+  revalidatePath('/', 'layout');
+}
