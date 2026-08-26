@@ -247,7 +247,9 @@ export async function listAllCampaigns() {
     .select({
       campaignId: s.campaigns.id,
       songId: s.songs.id,
-      label: sql<string>`${s.songs.title} || ' — ' || ${s.campaigns.name}`,
+      // campaigns.name already reads e.g. "SONG TITLE — Release Campaign"
+      // (see seed.ts) — do not prefix the song title again here.
+      label: s.campaigns.name,
     })
     .from(s.campaigns)
     .innerJoin(s.songs, eq(s.songs.id, s.campaigns.songId))

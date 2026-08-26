@@ -25,6 +25,35 @@ async function ipHash() {
   return ip ? createHash('sha256').update(ip).digest('hex') : null;
 }
 
+// -------------------------------------------------------------- referrals ----
+
+export async function createReferralLink(_prev: AdminState, formData: FormData): Promise<AdminState> {
+  const me = await requireAdmin();
+  const code = str(formData.get('code'), 40)?.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+  const campaignId = str(formData.get('campaignId'));
+  if (!code || !campaignId) return { error: 'missing' };
+
+  const [created] = await dbw
+    .insert(s.referralLinks)
+    .values({ code, campaignId, label: str(formData.get('label'), 200) })
+    .onConflictDoNothing()
+    .returning({ id: s.referralLinks.id });
+
+  if (!created) return { error: 'duplicate' };
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'referral_link.create',
+    entity: 'referral_link',
+    entityId: created.id,
+    after: { code, campaignId },
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath('/admin/referrals');
+  return { ok: 'saved' };
+}
+
 // -------------------------------------------------------------- blocklist ----
 
 export async function addBlocklistEntry(_prev: AdminState, formData: FormData): Promise<AdminState> {

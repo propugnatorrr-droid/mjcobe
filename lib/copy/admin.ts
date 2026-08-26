@@ -21,6 +21,7 @@ export const admin = {
     copy: 'COPY',
     audit: 'AUDIT',
     blocklist: 'BLOCKLIST',
+    referrals: 'REFERRAL LINKS',
   },
 
   overview: {
@@ -148,6 +149,19 @@ export const admin = {
       tour: 'Tour',
       other: 'Other',
     },
+  },
+
+  referrals: {
+    heading: 'REFERRAL LINKS',
+    hint: 'Trackable promo links — mjcobe.com/r/CODE logs a real visit, then forwards to that campaign’s song page.',
+    empty: 'No referral links yet.',
+    code: 'CODE',
+    campaign: 'CAMPAIGN',
+    label: 'LABEL (OPTIONAL)',
+    visits: 'VISITS',
+    create: 'CREATE LINK',
+    duplicate: 'That code is already in use.',
+    url: 'URL',
   },
 
   offline: {
