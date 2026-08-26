@@ -180,7 +180,7 @@ export type CopyKey = keyof typeof copyDefaults;
 export function copy(key: CopyKey): string {
   return copyDefaults[key];
 }
-
+export const copyKeys = Object.keys(copyDefaults) as CopyKey[];
 /** Client-safe interpolation for strings already resolved on the server. */
 export function interpolate(
   raw: string,
