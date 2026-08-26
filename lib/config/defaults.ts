@@ -24,6 +24,14 @@ const configDefaults = {
   updatesVisibleCount: 3,
   journeyVisibleCount: 6,
 
+    // Checkout bounds. Admin-overridable via the settings table.
+  minContributionCents: 500,
+  maxContributionCents: 5_000_000,
+  sponsorMinContributionCents: 25_000,
+  displayNameMaxLength: 32,
+  /** Above this, a sponsor is held for manual approval unless the campaign opts out. */
+  sponsorApprovalThresholdCents: 100_000,
+
   // Asset pipeline — widths are capped at each source asset's native
   // resolution (never upscaled); see scripts/process-assets.ts.
   heroImageWidths: [640, 1008],
