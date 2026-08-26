@@ -254,6 +254,10 @@ export async function listAllCampaigns() {
     .orderBy(desc(s.campaigns.createdAt));
 }
 
+export async function listBlocklist() {
+  return db.select().from(s.blocklist).orderBy(desc(s.blocklist.createdAt));
+}
+
 export async function hasUnsettledLedger(contributionId: string) {
   const [row] = await db
     .select({ id: s.ledgerEntries.id })

@@ -25,6 +25,55 @@ async function ipHash() {
   return ip ? createHash('sha256').update(ip).digest('hex') : null;
 }
 
+// -------------------------------------------------------------- blocklist ----
+
+export async function addBlocklistEntry(_prev: AdminState, formData: FormData): Promise<AdminState> {
+  const me = await requireAdmin();
+  const kind = str(formData.get('kind')) as
+    | 'domain' | 'email' | 'name' | 'category' | 'industry' | null;
+  const value = str(formData.get('value'), 200)?.toLowerCase();
+  if (!kind || !value) return { error: 'missing' };
+
+  await dbw
+    .insert(s.blocklist)
+    .values({ kind, value, note: str(formData.get('note'), 300) })
+    .onConflictDoNothing();
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'blocklist.add',
+    entity: 'blocklist',
+    entityId: value,
+    after: { kind, value },
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath('/admin/blocklist');
+  return { ok: 'saved' };
+}
+
+export async function removeBlocklistEntry(formData: FormData): Promise<void> {
+  const me = await requireAdmin();
+  const id = str(formData.get('id'));
+  if (!id) return;
+
+  const [before] = await db.select().from(s.blocklist).where(eq(s.blocklist.id, id)).limit(1);
+  if (!before) return;
+
+  await dbw.delete(s.blocklist).where(eq(s.blocklist.id, id));
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'blocklist.remove',
+    entity: 'blocklist',
+    entityId: id,
+    before: { kind: before.kind, value: before.value },
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath('/admin/blocklist');
+}
+
 // ------------------------------------------------------------------ auth ----
 
 export async function signIn(_prev: AdminState, formData: FormData): Promise<AdminState> {

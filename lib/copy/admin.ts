@@ -20,6 +20,7 @@ export const admin = {
     settings: 'SETTINGS',
     copy: 'COPY',
     audit: 'AUDIT',
+    blocklist: 'BLOCKLIST',
   },
 
   overview: {
@@ -189,6 +190,24 @@ export const admin = {
   audit: {
     heading: 'AUDIT LOG',
     hint: 'Append-only. Nothing here can be edited or deleted.',
+  },
+
+  blocklist: {
+    heading: 'BLOCKLIST',
+    hint: 'Domains, emails, names, categories or industries blocked from checkout entirely.',
+    empty: 'Nothing is blocked.',
+    kind: 'KIND',
+    value: 'VALUE',
+    note: 'NOTE (OPTIONAL)',
+    add: 'ADD',
+    remove: 'REMOVE',
+    kinds: {
+      domain: 'Domain',
+      email: 'Email',
+      name: 'Name',
+      category: 'Category',
+      industry: 'Industry',
+    },
   },
 
   saved: 'SAVED',
