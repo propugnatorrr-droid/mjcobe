@@ -230,6 +230,15 @@ const copyDefaults = {
   'partners.package.presenting': 'PRESENTING PARTNER',
   'partners.empty': 'No campaigns are currently accepting sponsors.',
 
+  // ---- Sponsor profile (/partner/[slug]) -------------------------------------
+  'partner.official_supporter': 'OFFICIAL SUPPORTER OF',
+  'partner.contributed': 'CONTRIBUTED',
+  'partner.since': 'SUPPORTED MJ COBE SINCE {month} {year}',
+  'partner.website': 'WEBSITE',
+  'partner.instagram': 'INSTAGRAM',
+  'partner.shop': 'SHOP',
+  'partner.not_found': 'That partner profile doesn’t exist or isn’t public.',
+
   // ---- /now (link-in-bio) page ----------------------------------------------
   'now.title': 'MJ COBE / RIGHT NOW',
   'now.new_music': 'NEW MUSIC',
