@@ -42,6 +42,30 @@ export function MetricCard({
   );
 }
 
+export function Metric({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-2 border-t border-[var(--line-strong)] pt-4">
+      <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
+        {label}
+      </span>
+      <span
+        className="font-mono text-2xl tabular-nums md:text-3xl"
+        style={{ color: accent ? 'var(--champagne)' : 'var(--text)' }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export function Table({
   head,
   children,
@@ -111,6 +135,30 @@ export function InlineAction({
     >
       {children}
     </button>
+  );
+}
+
+export function AdminInput({
+  name,
+  placeholder,
+  defaultValue,
+  type = 'text',
+  wide = false,
+}: {
+  name: string;
+  placeholder?: string;
+  defaultValue?: string;
+  type?: string;
+  wide?: boolean;
+}) {
+  return (
+    <input
+      name={name}
+      type={type}
+      placeholder={placeholder}
+      defaultValue={defaultValue}
+      className={`${wide ? 'w-full' : 'w-40'} border-b border-[var(--line)] bg-transparent pb-1 font-mono text-sm text-[var(--text)] transition-colors [transition-duration:var(--duration-signature)] placeholder:text-[var(--text-faint)] focus:border-[var(--text)] focus:outline-none`}
+    />
   );
 }
 

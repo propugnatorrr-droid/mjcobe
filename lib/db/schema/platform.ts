@@ -1,5 +1,5 @@
 import {
-  pgTable, uuid, text, integer, boolean, timestamp, jsonb, index, uniqueIndex,
+  pgTable, uuid, text, boolean, timestamp, jsonb, index, uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { adminRole, blocklistKind, moderationState } from './enums';
 import { campaigns } from './catalog';

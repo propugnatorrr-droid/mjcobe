@@ -38,15 +38,22 @@ states. Sponsor logos are force-normalized to monochrome knockout white; SVG
 required at upload.
 
 ## Type
-Display:  PP Editorial New  (fallback: Instrument Serif)
-UI:       Neue Montreal     (fallback: Geist)
-Numerals: any true mono with TABULAR figures (fallback: Geist Mono)
+One family, every role: **Switzer** (Fontshare / Indian Type Foundry, ITF
+Free Font License — self-hosted via `next/font/local`, never a CDN link).
+Switzer carries display, UI, and numerals/labels — the role a separate mono
+family used to own. It is not monospace, but its `tnum` OpenType feature
+gives genuinely equal-width tabular figures (verified empirically: all ten
+digits render at identical width under `font-variant-numeric: tabular-nums`
+at any size) — this is a deliberate choice, not a compromise. No component
+ever names "Switzer" directly; everything goes through `--font-display`,
+`--font-ui`, `--font-mono` (see `app/globals.css`).
 
-- Display: `clamp(3rem, 12vw, 11rem)`, tracking `-0.03em`, line-height 0.92.
-  Italic display allowed only at huge sizes, sparingly, for emotional beats.
-- Labels/eyebrows: mono, UPPERCASE, 11px, tracking `0.18em`, `--text-dim`.
+- Display: `clamp(3rem, 12vw, 11rem)`, tracking `-0.04em` at Black weight,
+  line-height 0.92. Italic (Switzer's real Variable Italic, never a
+  synthetic slant) allowed only at huge sizes, sparingly, for emotional beats.
+- Labels/eyebrows: UPPERCASE, 11px, tracking `0.18em`, `--text-dim`.
 - Body: 16–18px, line-height 1.55, max-width 62ch.
-- EVERY NUMBER IS TABULAR MONO. Counters must never reflow width.
+- EVERY NUMBER IS TABULAR. Counters must never reflow width.
 
 ## Structure
 - Hairlines, not cards. `1px solid var(--line)` separating full-bleed rows IS
@@ -76,6 +83,9 @@ stickers — badges render as mono uppercase text tags with a hairline border.
   overlay`, animated at 8fps. Static if `prefers-reduced-motion`.
 - Hero imagery: subtle chromatic vignette, corners ~12% darker.
 - Secondary photography: duotone (ink → paper) at 85% for editorial cohesion.
+- The banned-gradient rule above targets decorative UI/background/text
+  gradients. A photographic vignette or duotone applied as a treatment layer
+  over real imagery is the sanctioned exception — it's grading, not decoration.
 
 ## Motion
 - Duration 300–500ms. Easing `cubic-bezier(0.16, 1, 0.3, 1)`. Only that.

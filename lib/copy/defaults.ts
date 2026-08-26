@@ -24,10 +24,8 @@ const copyDefaults = {
   'leaderboard.fan_heading': 'TOP FAN SUPPORTERS',
   'leaderboard.business_heading': 'OFFICIAL SONG PARTNERS',
 
-  'revealimage.placeholder_label': 'HERO IMAGE — PLACEHOLDER',
-
   'lookbook.hero_alt':
-    'MJ COBE standing alone on a moonlit beach at night, wearing a striped beanie and a silver chain.',
+    'MJ COBE in close chest-up view on a moonlit beach at night, wearing a striped beanie, glasses and a silver chain.',
   'lookbook.loop_alt':
     'MJ COBE in silhouette on an empty beach at night, facing the moonlit ocean.',
 

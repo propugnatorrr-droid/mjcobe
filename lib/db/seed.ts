@@ -76,7 +76,7 @@ const LAST = ['reyes','holt','banks','okafor','ellis','navarro','whitfield','ose
   'castille','burrell','adeyemi','strand','vance','moreau','ifill','beaumont','sowande','quill'];
 const SUFFIX = ['','_','.','__','music','atl','ldn','x','ii','_official','sings','onthebeat'];
 
-function handle(i: number): string {
+function handle(_i: number): string {
   const style = Math.floor(rand() * 4);
   const f = pick(FIRST), l = pick(LAST);
   if (style === 0) return `@${f}.${l}`;
@@ -177,7 +177,7 @@ async function main() {
   const now = new Date('2026-08-26T12:00:00Z');
   const campaignStart = new Date('2026-06-14T00:00:00Z');
 
-  const [live, released1, released2, coming] = await db.insert(s.songs).values([
+  const [live, released1, released2, _coming] = await db.insert(s.songs).values([
     { slug: 'cant-read-your-mind', title: "CAN'T READ YOUR MIND", status: 'building',
       coverAssetId: heroAsset.id, isPublished: true, sortIndex: 0,
       previewStartMs: 42_000, previewEndMs: 72_000,

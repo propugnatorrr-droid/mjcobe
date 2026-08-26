@@ -8,7 +8,10 @@ import { formatDay } from '@/lib/song/queries';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminOverview() {
-  const [data, recent] = await Promise.all([getOverview(), listRecentTransactions()]);
+  const [data, recentRaw] = await Promise.all([getOverview(), listRecentTransactions()]);
+  const recent = await Promise.all(
+    recentRaw.map(async (t) => ({ ...t, day: await formatDay(t.createdAt) })),
+  );
 
   return (
     <>
@@ -49,7 +52,7 @@ export default async function AdminOverview() {
       <Table head={[admin.table.date, admin.table.song, admin.table.amount, admin.table.state]}>
         {recent.map((t) => (
           <tr key={t.id}>
-            <Td mono dim>{await formatDay(t.createdAt)}</Td>
+            <Td mono dim>{t.day}</Td>
             <Td>{t.songTitle}</Td>
             <Td mono>{formatCents(cents(t.amountCents))}</Td>
             <Td><StateDot state={t.state} /></Td>

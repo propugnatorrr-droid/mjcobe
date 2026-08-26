@@ -45,3 +45,7 @@ github token.txt
 
 # review screenshots
 gallery-*.png
+
+# raw lookbook sources — process-assets.ts derivatives in public/media/ are
+# what ships; the originals stay local only
+/assets/raw/

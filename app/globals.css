@@ -76,10 +76,12 @@
 
   /* Fonts: swappable indirection. Licensed fonts drop in by changing the
      next/font loader in app/layout.tsx only — no component names a font.
-     Switzer carries both the display and UI roles (one loaded family). */
+     Switzer carries every role — display, UI, and numerals/labels (the
+     role mono used to own; tabular-nums is verified to work on it below,
+     it just isn't a monospace family). One loaded family, one @font-face. */
   --font-display: var(--font-switzer-loader), ui-sans-serif, sans-serif;
   --font-ui: var(--font-switzer-loader), ui-sans-serif, sans-serif;
-  --font-mono: var(--font-mono-loader), ui-monospace, monospace;
+  --font-mono: var(--font-switzer-loader), ui-sans-serif, sans-serif;
 
   /* Type — only the scales DESIGN.md actually specifies. Display sets
      Black weight explicitly: Switzer is variable and defaults to Regular. */

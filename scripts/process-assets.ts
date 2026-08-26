@@ -9,7 +9,7 @@
  * source's native width — see docs/DESIGN.md and the Slice 0.5 plan.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
+import { mkdirSync, writeFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
 

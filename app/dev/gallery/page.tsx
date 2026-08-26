@@ -8,8 +8,12 @@ import { LeaderboardRow } from '@/components/primitives/LeaderboardRow';
 import { Tag } from '@/components/primitives/Tag';
 import { Button } from '@/components/primitives/Button';
 import { RevealImage } from '@/components/primitives/RevealImage';
+import { RevealVideo } from '@/components/primitives/RevealVideo';
 import { RevealText } from '@/components/primitives/RevealText';
+import { LookbookImage } from '@/components/primitives/LookbookImage';
+import { PhotoTreatment } from '@/components/treatments/PhotoTreatment';
 import { copy } from '@/lib/copy/defaults';
+import { getLookbookImage, getLookbookVideo } from '@/lib/lookbook/manifest';
 import {
   gallerySong,
   gallerySongPercent,
@@ -17,6 +21,9 @@ import {
   fanLeaderboardMoreCount,
   businessLeaderboard,
 } from '@/lib/fixtures/gallery';
+
+const heroAsset = getLookbookImage('hero');
+const loopAsset = getLookbookVideo('loop');
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -136,16 +143,23 @@ export default function GalleryPage() {
       <Rule />
 
       <section className="my-24">
-        <SectionLabel>RevealImage</SectionLabel>
-        {/* No MJ photography exists in the repo yet — an honestly-labeled
-            placeholder stands in, not a stock photo. */}
-        <RevealImage>
-          <div className="flex aspect-video w-full items-center justify-center bg-[var(--ink-2)]">
-            <span className="font-mono text-eyebrow uppercase text-[var(--text-faint)]">
-              {copy('revealimage.placeholder_label')}
-            </span>
-          </div>
-        </RevealImage>
+        <SectionLabel>RevealImage — hero</SectionLabel>
+        <div className="max-w-sm">
+          <RevealImage>
+            <PhotoTreatment>
+              <LookbookImage asset={heroAsset} sizes="(min-width: 768px) 24rem, 100vw" />
+            </PhotoTreatment>
+          </RevealImage>
+        </div>
+      </section>
+
+      <Rule />
+
+      <section className="my-24">
+        <SectionLabel>RevealVideo — loop</SectionLabel>
+        <PhotoTreatment vignette={false}>
+          <RevealVideo asset={loopAsset} />
+        </PhotoTreatment>
       </section>
 
       <Rule />
