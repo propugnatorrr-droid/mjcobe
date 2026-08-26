@@ -1,4 +1,5 @@
-import { PlayCircle } from 'lucide-react';
+import Link from 'next/link';
+import { PlayCircle, ExternalLink } from 'lucide-react';
 import { SiteNav } from '@/components/SiteNav';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { ButtonLink } from '@/components/primitives/Button';
@@ -7,7 +8,17 @@ import { NewsletterForm } from '@/components/now/NewsletterForm';
 import { listCatalog } from '@/lib/catalog/queries';
 import { getLeaderboard } from '@/lib/campaign/queries';
 import { text } from '@/lib/copy/site-copy';
+import { setting } from '@/lib/config/settings';
 import { cents } from '@/lib/money/cents';
+
+const SOCIAL_PLATFORMS = [
+  { slug: 'instagram', settingKey: 'socialInstagramUrl', copyKey: 'now.social.instagram' },
+  { slug: 'tiktok', settingKey: 'socialTiktokUrl', copyKey: 'now.social.tiktok' },
+  { slug: 'youtube', settingKey: 'socialYoutubeUrl', copyKey: 'now.social.youtube' },
+  { slug: 'x', settingKey: 'socialXUrl', copyKey: 'now.social.x' },
+  { slug: 'spotify', settingKey: 'socialSpotifyUrl', copyKey: 'now.social.spotify' },
+  { slug: 'apple-music', settingKey: 'socialAppleMusicUrl', copyKey: 'now.social.apple_music' },
+] as const;
 
 export const revalidate = 60;
 
@@ -41,6 +52,16 @@ export default async function NowPage() {
     : null;
 
   const videoSong = catalog.find((s) => s.status === 'released' || s.status === 'building') ?? null;
+
+  const socialLinks = (
+    await Promise.all(
+      SOCIAL_PLATFORMS.map(async (p) => ({
+        ...p,
+        url: await setting(p.settingKey),
+        label: await text(p.copyKey),
+      })),
+    )
+  ).filter((p) => p.url);
 
   return (
     <main className="surface-ink min-h-screen">
@@ -87,6 +108,22 @@ export default async function NowPage() {
               <PlayCircle aria-hidden size={16} className="mr-2" />
               {watch}
             </ButtonLink>
+          </div>
+        ) : null}
+
+        {socialLinks.length > 0 ? (
+          <div className="flex w-full flex-col gap-2">
+            {socialLinks.map((p) => (
+              <Link
+                key={p.slug}
+                href={`/api/go/${p.slug}`}
+                className="flex items-center justify-between rounded-[var(--radius-panel)] border px-5 py-3.5 font-ui text-sm uppercase tracking-[0.04em] text-[var(--text)] transition-colors [transition-duration:var(--duration-signature)] hover:border-[var(--champagne)]"
+                style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
+              >
+                {p.label}
+                <ExternalLink aria-hidden size={16} color="var(--text-dim)" />
+              </Link>
+            ))}
           </div>
         ) : null}
 

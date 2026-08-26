@@ -14,7 +14,7 @@ import { recordAudit } from '@/lib/audit/log';
 import { refundContribution, settleContribution } from '@/lib/ledger/contributions';
 import { consentFor } from '@/lib/consent/text';
 import { createContribution } from '@/lib/ledger/contributions';
-import { bool, parseAmountCents, str } from '@/lib/checkout/validate';
+import { bool, parseAmountCents, slugify, str } from '@/lib/checkout/validate';
 import type { RefundReasonCode } from '@/lib/payments';
 
 export type AdminState = { error?: string; ok?: string };
@@ -361,7 +361,7 @@ export async function addOfflineContribution(
   return { ok: 'saved' };
 }
 
-// ------------------------------------------------------- settings + copy ----
+// --------------------------------------------------------------- settings ---
 
 export async function saveSetting(_prev: AdminState, formData: FormData): Promise<AdminState> {
   const me = await requireAdmin();
@@ -407,6 +407,182 @@ export async function saveSetting(_prev: AdminState, formData: FormData): Promis
   revalidatePath('/', 'layout');
   return { ok: 'saved' };
 }
+
+// ----------------------------------------------------------------- songs ----
+
+export async function createSong(_prev: AdminState, formData: FormData): Promise<AdminState> {
+  const me = await requireAdmin();
+  const title = str(formData.get('title'), 200);
+  if (!title) return { error: 'missing' };
+
+  const slug = str(formData.get('slug'), 80) || slugify(title);
+  const status = (str(formData.get('status')) ?? 'draft') as typeof s.songs.$inferInsert.status;
+
+  const [created] = await dbw
+    .insert(s.songs)
+    .values({
+      slug,
+      title,
+      status,
+      description: str(formData.get('description'), 2000),
+      spotifyUrl: str(formData.get('spotifyUrl'), 500),
+      appleMusicUrl: str(formData.get('appleMusicUrl'), 500),
+      youtubeUrl: str(formData.get('youtubeUrl'), 500),
+      musicVideoUrl: str(formData.get('musicVideoUrl'), 500),
+      isPublished: bool(formData.get('isPublished')),
+    })
+    .returning({ id: s.songs.id });
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'song.create',
+    entity: 'song',
+    entityId: created.id,
+    after: { title, slug, status },
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath('/admin/songs');
+  revalidatePath('/music');
+  revalidatePath('/', 'layout');
+  redirect(`/admin/songs/${created.id}`);
+}
+
+export async function updateSong(_prev: AdminState, formData: FormData): Promise<AdminState> {
+  const me = await requireAdmin();
+  const id = str(formData.get('id'));
+  const title = str(formData.get('title'), 200);
+  if (!id || !title) return { error: 'missing' };
+
+  const [before] = await db.select().from(s.songs).where(eq(s.songs.id, id)).limit(1);
+  if (!before) return { error: 'missing' };
+
+  const slug = str(formData.get('slug'), 80) || before.slug;
+  const status = (str(formData.get('status')) ?? before.status) as typeof s.songs.$inferInsert.status;
+
+  const patch = {
+    title,
+    slug,
+    status,
+    description: str(formData.get('description'), 2000),
+    spotifyUrl: str(formData.get('spotifyUrl'), 500),
+    appleMusicUrl: str(formData.get('appleMusicUrl'), 500),
+    youtubeUrl: str(formData.get('youtubeUrl'), 500),
+    musicVideoUrl: str(formData.get('musicVideoUrl'), 500),
+    isPublished: bool(formData.get('isPublished')),
+    updatedAt: new Date(),
+  };
+
+  await dbw.update(s.songs).set(patch).where(eq(s.songs.id, id));
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'song.update',
+    entity: 'song',
+    entityId: id,
+    before: { title: before.title, slug: before.slug, status: before.status },
+    after: { title, slug, status },
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath(`/admin/songs/${id}`);
+  revalidatePath('/admin/songs');
+  revalidatePath('/music');
+  revalidatePath(`/song/${slug}`);
+  revalidatePath('/', 'layout');
+  return { ok: 'saved' };
+}
+
+// ------------------------------------------------------------- campaigns ----
+
+export async function createCampaign(_prev: AdminState, formData: FormData): Promise<AdminState> {
+  const me = await requireAdmin();
+  const songId = str(formData.get('songId'));
+  const name = str(formData.get('name'), 200);
+  const goalCents = parseAmountCents(formData.get('goal'));
+  if (!songId || !name || !goalCents) return { error: 'missing' };
+
+  const [song] = await db.select().from(s.songs).where(eq(s.songs.id, songId)).limit(1);
+  if (!song) return { error: 'missing' };
+
+  const slug = `${song.slug}-${slugify(name)}`.slice(0, 80);
+
+  const [created] = await dbw
+    .insert(s.campaigns)
+    .values({
+      songId,
+      slug,
+      name,
+      goalCents,
+      kind: (str(formData.get('kind')) ?? 'release') as typeof s.campaigns.$inferInsert.kind,
+      status: (str(formData.get('status')) ?? 'draft') as typeof s.campaigns.$inferInsert.status,
+      objective: str(formData.get('objective'), 500),
+      fanSupportEnabled: bool(formData.get('fanSupportEnabled')),
+      businessSponsorshipEnabled: bool(formData.get('businessSponsorshipEnabled')),
+    })
+    .returning({ id: s.campaigns.id });
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'campaign.create',
+    entity: 'campaign',
+    entityId: created.id,
+    after: { songId, name, goalCents },
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath(`/admin/songs/${songId}`);
+  revalidatePath('/music');
+  revalidatePath(`/song/${song.slug}`);
+  revalidatePath('/', 'layout');
+  return { ok: 'saved' };
+}
+
+export async function updateCampaign(_prev: AdminState, formData: FormData): Promise<AdminState> {
+  const me = await requireAdmin();
+  const id = str(formData.get('id'));
+  const songId = str(formData.get('songId'));
+  if (!id || !songId) return { error: 'missing' };
+
+  const [before] = await db.select().from(s.campaigns).where(eq(s.campaigns.id, id)).limit(1);
+  if (!before) return { error: 'missing' };
+
+  const name = str(formData.get('name'), 200) ?? before.name;
+  const goalCents = parseAmountCents(formData.get('goal')) ?? before.goalCents;
+  const status = (str(formData.get('status')) ?? before.status) as typeof s.campaigns.$inferInsert.status;
+
+  const patch = {
+    name,
+    goalCents,
+    status,
+    objective: str(formData.get('objective'), 500),
+    fanSupportEnabled: bool(formData.get('fanSupportEnabled')),
+    businessSponsorshipEnabled: bool(formData.get('businessSponsorshipEnabled')),
+    updatedAt: new Date(),
+  };
+
+  await dbw.update(s.campaigns).set(patch).where(eq(s.campaigns.id, id));
+
+  const [song] = await db.select({ slug: s.songs.slug }).from(s.songs).where(eq(s.songs.id, songId)).limit(1);
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'campaign.update',
+    entity: 'campaign',
+    entityId: id,
+    before: { name: before.name, goalCents: before.goalCents, status: before.status },
+    after: { name, goalCents, status },
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath(`/admin/songs/${songId}`);
+  revalidatePath('/music');
+  if (song) revalidatePath(`/song/${song.slug}`);
+  revalidatePath('/', 'layout');
+  return { ok: 'saved' };
+}
+
+// ------------------------------------------------------------------ copy ----
 
 export async function saveCopy(formData: FormData): Promise<void> {
   const me = await requireAdmin();

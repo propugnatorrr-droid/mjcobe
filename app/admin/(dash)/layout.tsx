@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {
-  LayoutGrid, Receipt, Landmark, Wallet, Settings, FileText, ShieldCheck, LogOut,
+  LayoutGrid, Music, Receipt, Landmark, Wallet, Settings, FileText, ShieldCheck, LogOut,
 } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { signOut } from '@/lib/admin/actions';
@@ -12,6 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const links = [
     { href: '/admin', label: admin.nav.overview, icon: LayoutGrid },
+    { href: '/admin/songs', label: admin.nav.songs, icon: Music },
     { href: '/admin/contributions', label: admin.nav.contributions, icon: Receipt },
     { href: '/admin/sponsors', label: admin.nav.sponsors, icon: Landmark },
     { href: '/admin/offline', label: admin.nav.offline, icon: Wallet },

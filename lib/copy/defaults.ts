@@ -245,6 +245,12 @@ const copyDefaults = {
   'now.privacy_note': 'We respect your privacy. Unsubscribe anytime.',
   'now.subscribed': 'YOU’RE IN.',
   'now.subscribe_error': 'ENTER A VALID EMAIL.',
+  'now.social.instagram': 'INSTAGRAM',
+  'now.social.tiktok': 'TIKTOK',
+  'now.social.youtube': 'YOUTUBE',
+  'now.social.x': 'X',
+  'now.social.spotify': 'SPOTIFY',
+  'now.social.apple_music': 'APPLE MUSIC',
 
   // ---- Supporter profile ---------------------------------------------------
   'supporter.since': 'MJ COBE SUPPORTER SINCE {year}',

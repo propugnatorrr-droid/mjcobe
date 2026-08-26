@@ -39,6 +39,15 @@ const configDefaults = {
   photoGrainOpacity: 0.035,
   photoVignetteDarken: 0.12,
   videoMaxBytes: 1_000_000,
+
+  // Artist-level social profiles for the /now page. Admin-overridable;
+  // blank hides that row rather than linking nowhere.
+  socialInstagramUrl: 'https://instagram.com/mjcobe',
+  socialTiktokUrl: 'https://tiktok.com/@mjcobe',
+  socialYoutubeUrl: 'https://youtube.com/@mjcobe',
+  socialXUrl: 'https://x.com/mjcobe',
+  socialSpotifyUrl: 'https://open.spotify.com/artist/mjcobe',
+  socialAppleMusicUrl: 'https://music.apple.com/artist/mjcobe',
 } as const;
 
 export type ConfigKey = keyof typeof configDefaults;
