@@ -1,15 +1,28 @@
 /**
  * File-based fallback for `settings`. The DB-backed table slots in behind
- * `config()` in Slice 1; call sites never read this object directly.
+ * `config()` / `setting()`; call sites never read this object directly.
  */
 const configDefaults = {
   currency: 'USD',
   locale: 'en-US',
+  /** Fixed zone so server-rendered dates never disagree with a client re-render. */
+  displayTimeZone: 'UTC',
+
   meterAnimationMs: 900,
   revealTextStaggerMs: 60,
   grainOpacity: 0.04,
   grainFps: 8,
   leaderboardVisibleRows: 5,
+
+  // Ranking / bidding floors. Campaign rows may override per campaign.
+  minBidCents: 1_000,
+  minIncrementCents: 50_000,
+  fanIncrementCents: 100,
+  meterIncludesSponsorship: false,
+
+  // Song page density.
+  updatesVisibleCount: 3,
+  journeyVisibleCount: 6,
 
   // Asset pipeline — widths are capped at each source asset's native
   // resolution (never upscaled); see scripts/process-assets.ts.
