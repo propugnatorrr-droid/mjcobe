@@ -161,11 +161,26 @@ async function main() {
   });
 
   // ---------- media ----------
+  // Paths/derivatives must match the real files scripts/process-assets.ts
+  // wrote to public/media/ — see lib/lookbook/manifest.ts, the client-safe
+  // static registry this row is meant to eventually replace.
   const [heroAsset, loopAsset] = await db.insert(s.mediaAssets).values([
-    { kind: 'image', role: 'hero', path: 'media/hero/hero-1008.avif', width: 1008, height: 1792,
-      altCopyKey: 'lookbook.hero_alt', dominantColor: '#111820' },
-    { kind: 'video', role: 'loop', path: 'media/loop/loop.webm', width: 1280, height: 720,
-      durationMs: 4060, altCopyKey: 'lookbook.loop_alt', dominantColor: '#0d1319' },
+    { kind: 'image', role: 'hero', path: '/media/hero-1008.jpg', width: 1008, height: 1792,
+      derivatives: {
+        'avif-640': '/media/hero-640.avif', 'avif-1008': '/media/hero-1008.avif',
+        'webp-640': '/media/hero-640.webp', 'webp-1008': '/media/hero-1008.webp',
+        'jpeg-640': '/media/hero-640.jpg', 'jpeg-1008': '/media/hero-1008.jpg',
+      },
+      altCopyKey: 'lookbook.hero_alt', dominantColor: 'rgb(17, 31, 33)',
+      placeholder: 'data:image/avif;base64,AAAAHGZ0eXBhdmlmAAAAAG1pZjFhdmlmbWlhZgAAANZtZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAACJpbG9jAAAAAERAAAEAAQAAAAAA+gABAAAAAAAAAGkAAAAjaWluZgAAAAAAAQAAABVpbmZlAgAAAAABAABhdjAxAAAAAA5waXRtAAAAAAABAAAAVmlwcnAAAAA4aXBjbwAAAAxhdjFDgSACAAAAABRpc3BlAAAAAAAAABQAAAAkAAAAEHBpeGkAAAAAAwgICAAAABZpcG1hAAAAAAAAAAEAAQOBAgMAAABxbWRhdBIACgk4EWcbSAhoNIAyWhxCYuTjDCEBY4jA7pPM7PU6sSdJTvLsUi/AJGkcWdkibvwVeC/Y4MHk/P8gba8nlmuNmznBBa2ONJuQx6VTATqLF7Cr/A39H0ITPZfkcFYyk6kIxOOTd+N5UA==' },
+    { kind: 'video', role: 'loop', path: '/media/loop.mp4', width: 1280, height: 720,
+      derivatives: {
+        webm: '/media/loop.webm', mp4: '/media/loop.mp4',
+        'poster-avif': '/media/loop-poster.avif', 'poster-webp': '/media/loop-poster.webp',
+        'poster-jpg': '/media/loop-poster.jpg',
+      },
+      durationMs: 4060, altCopyKey: 'lookbook.loop_alt', dominantColor: 'rgb(4, 18, 34)',
+      placeholder: 'data:image/avif;base64,AAAAHGZ0eXBhdmlmAAAAAG1pZjFhdmlmbWlhZgAAANZtZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAACJpbG9jAAAAAERAAAEAAQAAAAAA+gABAAAAAAAAAEAAAAAjaWluZgAAAAAAAQAAABVpbmZlAgAAAAABAABhdjAxAAAAAA5waXRtAAAAAAABAAAAVmlwcnAAAAA4aXBjbwAAAAxhdjFDgSACAAAAABRpc3BlAAAAAAAAABQAAAALAAAAEHBpeGkAAAAAAwgICAAAABZpcG1hAAAAAAAAAAEAAQOBAgMAAABIbWRhdBIACgg4EOdNICGg0jIyHEJi5OAAFiLs8cxkecnRO91EbhJaGKhB9BOI11z1+EWIYsrGARLdCm3W6m53hbY51kA=' },
   ]).returning();
 
   await db.insert(s.lookbookAssets).values([
