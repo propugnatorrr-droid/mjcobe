@@ -8,15 +8,21 @@ import * as schema from './schema';
  * cannot hold a multi-statement transaction. Creating a contribution touches
  * five tables; a partial write would record money against nobody.
  */
-if (typeof WebSocket === 'undefined') {
-  // Node runtimes below 22 have no global WebSocket.
-  const ws = require('ws');
-  neonConfig.webSocketConstructor = ws;
+// Node 22+ (Vercel's default) exposes a global WebSocket; no `ws` shim needed.
+neonConfig.webSocketConstructor = globalThis.WebSocket;
+
+let pool: Pool | null = null;
+
+function writeDb(): NeonDatabase<typeof schema> {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error('DATABASE_URL is not set');
+  pool ??= new Pool({ connectionString: url });
+  return drizzle(pool, { schema });
 }
 
-if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not set');
+/** Lazy so a missing env var fails the request, not the build. */
+export const dbw = new Proxy({} as NeonDatabase<typeof schema>, {
+  get: (_t, prop) => Reflect.get(writeDb(), prop),
+});
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-
-export const dbw = drizzle(pool, { schema });
 export type WriteTx = Parameters<Parameters<typeof dbw.transaction>[0]>[0];
