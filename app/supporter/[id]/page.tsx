@@ -19,7 +19,7 @@ export default async function SupporterProfilePage({
 
   if (!profile) notFound();
 
-  const [since, songsBacked, totalContributions, badgesLabel, songsHelped, noBadges] =
+  const [since, songsBacked, totalContributions, badgesLabel, songsHelped, noBadges, contributedLabel] =
     await Promise.all([
       text('supporter.since', { year: String(profile.since.getFullYear()) }),
       text('supporter.songs_backed'),
@@ -27,6 +27,7 @@ export default async function SupporterProfilePage({
       text('supporter.badges'),
       text('supporter.songs_helped'),
       text('supporter.no_badges'),
+      text('supporter.contributed'),
     ]);
 
   return (
@@ -119,6 +120,9 @@ export default async function SupporterProfilePage({
                     />
                   ) : null}
                   <p className="text-body text-[var(--text)]">{song.title}</p>
+                  <p className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
+                    {contributedLabel} <AmountFigure cents={cents(song.contributedCents)} />
+                  </p>
                 </Link>
               ))}
             </div>
