@@ -2,31 +2,51 @@ import Link from 'next/link';
 import { Disc3 } from 'lucide-react';
 import { text } from '@/lib/copy/site-copy';
 
-/**
- * PRD §2: the back-a-record CTA has to stay visible on mobile. The desktop
- * nav carries it above `sm`; below that it docks here. Pages with their own
- * docked bar (the song page's SupportBar) must not also render this.
- */
 export async function MobileCta({ href = '/back' }: { href?: string }) {
   const label = await text('nav.cta');
 
   return (
     <>
-      {/* Reserves scroll room so the bar never covers the last element. */}
-      <div aria-hidden className="h-24 sm:hidden" />
       <div
-        className="fixed inset-x-0 bottom-0 z-40 border-t px-4 py-3 sm:hidden"
-        style={{ borderColor: 'var(--line)', background: 'var(--ink)' }}
+        aria-hidden
+        className="h-[calc(5.75rem+env(safe-area-inset-bottom))] sm:hidden"
+      />
+
+      <aside
+        aria-label="Back a record"
+        className={[
+          'fixed inset-x-0 bottom-0 z-40 sm:hidden',
+          'border-t border-[var(--line)]',
+          'bg-[rgba(10,10,11,0.98)]',
+          'px-4 pt-3',
+        ].join(' ')}
+        style={{
+          paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+        }}
       >
         <Link
           href={href}
-          className="bg-gold flex items-center justify-center gap-3 rounded-full py-3.5 font-ui text-sm font-medium uppercase tracking-[0.12em] text-[var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
+          className={[
+            'bg-gold',
+            'flex min-h-13 w-full items-center justify-center gap-3',
+            'rounded-full px-6 py-3.5',
+            'font-ui text-xs font-semibold uppercase tracking-[0.14em]',
+            'text-[var(--ink)]',
+            'transition-[filter,transform,box-shadow]',
+            '[transition-duration:var(--duration-signature)]',
+            '[transition-timing-function:var(--ease-signature)]',
+            'hover:brightness-110',
+            'active:translate-y-px',
+            'focus-visible:outline focus-visible:outline-2',
+            'focus-visible:outline-offset-2',
+            'focus-visible:outline-[var(--champagne)]',
+          ].join(' ')}
           style={{ boxShadow: 'var(--glow-champagne)' }}
         >
-          <Disc3 aria-hidden size={18} />
-          {label}
+          <Disc3 aria-hidden size={18} strokeWidth={1.8} />
+          <span>{label}</span>
         </Link>
-      </div>
+      </aside>
     </>
   );
 }
