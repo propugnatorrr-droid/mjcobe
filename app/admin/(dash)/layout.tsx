@@ -14,7 +14,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin', label: admin.nav.overview, icon: LayoutGrid },
     { href: '/admin/songs', label: admin.nav.songs, icon: Music },
     { href: '/admin/contributions', label: admin.nav.contributions, icon: Receipt },
-    { href: '/admin/sponsors', label: admin.nav.sponsors, icon: Landmark },
+{ href: '/admin/sponsors', label: admin.nav.sponsors, icon: Landmark },
+{
+  href: '/admin/sponsors/manage',
+  label: admin.nav.sponsorProfiles,
+  icon: Landmark,
+},
     { href: '/admin/offline', label: admin.nav.offline, icon: Wallet },
     { href: '/admin/referrals', label: admin.nav.referrals, icon: Link2 },
     { href: '/admin/settings', label: admin.nav.settings, icon: Settings },
