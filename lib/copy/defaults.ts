@@ -373,6 +373,28 @@ const copyDefaults = {
   'legal.contact.support': 'SUPPORT',
   'legal.placeholder':
     'This policy is being finalised with counsel and will be published here before the first live campaign closes.',
+  'checkout.business.subheading':
+    'Put your business behind the music, visuals and cultural rollout while the story is still being created.',
+  'checkout.business.claim_heading':
+    'CLAIM THE #1 PARTNER POSITION',
+  'checkout.business.claim_body':
+    'Your amount must meet the current minimum when the sponsorship is submitted. Approved sponsorships are ranked by settled contribution total.',
+  'checkout.field.logo': 'BUSINESS LOGO',
+  'checkout.logo.help':
+    'Upload a transparent PNG or WebP logo. It will be displayed without cropping, stretching or recoloring.',
+  'checkout.logo.choose': 'CHOOSE LOGO',
+  'checkout.logo.remove': 'REMOVE',
+  'checkout.logo.error_type':
+    'Upload a PNG or WebP logo.',
+  'checkout.logo.error_size':
+    'The logo must be 2 MB or smaller.',
+  'checkout.logo.error_upload':
+    'The logo could not be uploaded. Try again or submit without a logo.',
+  'checkout.summary': 'SPONSORSHIP SUMMARY',
+  'checkout.package.includes': 'PACKAGE INCLUDES',
+  'checkout.custom_sponsorship': 'CUSTOM SPONSORSHIP',
+  'checkout.approval_heading': 'SPONSOR REVIEW',
+
 } as const;
 
 export type CopyKey = keyof typeof copyDefaults;
