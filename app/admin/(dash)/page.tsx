@@ -24,7 +24,7 @@ export default async function AdminOverview() {
       <AdminHeading>{admin.nav.overview}</AdminHeading>
 
       <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Metric icon={DollarSign} label={admin.overview.totalRaised} value={formatCents(cents(data.totalCents))} accent />
+        <Metric icon={DollarSign} label={admin.overview.totalRaised} value={formatCents(cents(data.totalCents))} />
         <Metric icon={Clock} label={admin.overview.today} value={formatCents(cents(data.todayCents))} />
         <Metric icon={TrendingUp} label={admin.overview.week} value={formatCents(cents(data.weekCents))} />
         <Metric icon={Calendar} label={admin.overview.month} value={formatCents(cents(data.monthCents))} />
@@ -39,7 +39,6 @@ export default async function AdminOverview() {
           icon={AlertCircle}
           label={admin.overview.pendingReview}
           value={String(data.pendingSponsorCount)}
-          accent={data.pendingSponsorCount > 0}
         />
       </div>
 

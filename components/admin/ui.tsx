@@ -21,12 +21,10 @@ export function AdminHint({ children }: { children: ReactNode }) {
 function MetricShell({
   label,
   icon: Icon,
-  accent,
   children,
 }: {
   label: string;
   icon?: IconType;
-  accent?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -77,16 +75,14 @@ export function MetricCard({
 export function Metric({
   label,
   value,
-  accent = false,
   icon,
 }: {
   label: string;
   value: string;
-  accent?: boolean;
   icon?: IconType;
 }) {
   return (
-    <MetricShell label={label} icon={icon} accent={accent}>
+    <MetricShell label={label} icon={icon}>
       <span className="mt-3 block font-serif text-3xl tabular-nums text-gold md:text-4xl">
         {value}
       </span>
