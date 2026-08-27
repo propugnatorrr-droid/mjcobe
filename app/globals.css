@@ -475,3 +475,68 @@ a {
       );
   }
 }
+/* -------------------------------------------------------------------------- */
+/* Music catalog                                                               */
+/* -------------------------------------------------------------------------- */
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.catalog-song-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.catalog-song-art {
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+}
+
+.catalog-song-content {
+  min-height: 18rem;
+}
+
+@media (min-width: 430px) and (max-width: 639px) {
+  .catalog-song-card {
+    display: grid;
+    grid-template-columns: 10rem minmax(0, 1fr);
+  }
+
+  .catalog-song-art {
+    aspect-ratio: auto;
+    min-height: 100%;
+  }
+
+  .catalog-song-content {
+    min-height: 100%;
+  }
+}
+
+@media (min-width: 640px) {
+  .catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .catalog-song-card {
+    display: flex;
+  }
+}
+
+@media (min-width: 1024px) {
+  .catalog-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .catalog-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .catalog-song-content {
+    min-height: 20rem;
+  }
+}
