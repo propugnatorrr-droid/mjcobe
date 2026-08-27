@@ -209,7 +209,11 @@ export async function submitSponsorship(
   }
   if (amountCents === null) amountCents = parseAmountCents(formData.get('amount'));
 
-  if (amountCents === null || amountCents < min || amountCents > max) {
+  if (
+    amountCents === null ||
+    amountCents < min ||
+    amountCents > max
+  ) {
     return {
       error: await text('checkout.error.amount', {
         min: formatCents(cents(min)),
@@ -218,7 +222,31 @@ export async function submitSponsorship(
     };
   }
 
-  const businessName = str(formData.get('businessName'), 120);
+  if (bool(formData.get('claimTop'))) {
+    const topSpot = await getTopSpot(
+      campaign.id,
+      'business',
+    );
+
+    if (amountCents < topSpot.minimumToLeadCents) {
+      return {
+        error: await text(
+          'checkout.error.minimum_to_lead',
+          {
+            amount: formatCents(
+              cents(topSpot.minimumToLeadCents),
+            ),
+          },
+        ),
+      };
+    }
+  }
+
+  const businessName = str(
+    formData.get('businessName'),
+    120,
+  );
+
   if (!businessName) return { error: await text('checkout.error.business_name') };
 
   const email = str(formData.get('email'), 254);
