@@ -133,7 +133,8 @@ const PHOTOS: PhotoJob[] = [
   { file: 'openart-gpt-image-2-edit-1_1787828810872_8d675790.webp', slug: 'journey-streams', role: 'journey', altCopyKey: 'journey.streams_alt', shape: 'wide' },
 ];
 
-const LOGOS: { file: string; sponsorSlug: string }[] = [
+const LOGOS: { file: string; sponsorSlug: string; fromRepo?: boolean; absolute?: string }[] = [
+  { file: '', absolute: 'C:/Users/Osman/Downloads/lowkey.png', sponsorSlug: 'lowkey-studios' },
   { file: 'image-removebg-preview (1).png', sponsorSlug: 'abc-clothing' },
   { file: 'image-removebg-preview (2).png', sponsorSlug: 'ridgeline-print' },
   { file: 'image-removebg-preview.png', sponsorSlug: 'northbound-coffee' },
@@ -206,7 +207,7 @@ async function main() {
 
   console.log('\nProcessing brand logos…');
   for (const logo of LOGOS) {
-    const src = path.join(SRC, 'brands', logo.file);
+    const src = logo.absolute ?? path.join(SRC, 'brands', logo.file);
     const filename = `brand-${logo.sponsorSlug}.png`;
     const outPath = path.join(OUT, filename);
     // Transparency must survive, so logos stay PNG and are only bounded.
