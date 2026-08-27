@@ -316,6 +316,8 @@ const copyDefaults = {
     'Take the leading position and become the most visible business backing this record. Standard sponsorship packages remain available without entering the competition.',
   'partner.rank_label': '#{rank} OFFICIAL PARTNER',
   'partner.all_partners': 'ALL OFFICIAL PARTNERS',
+  'partner.official_partners_body':
+    'Businesses helping build the visual, marketing and cultural rollout behind this record.',
 
   // ---- /now (link-in-bio) page ----------------------------------------------
   'now.title': 'MJ COBE / RIGHT NOW',
