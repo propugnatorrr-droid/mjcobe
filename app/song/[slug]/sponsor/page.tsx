@@ -2,9 +2,6 @@ import { notFound } from 'next/navigation';
 import { SimulationRibbon } from '@/components/SimulationRibbon';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
-import { Eyebrow } from '@/components/primitives/Eyebrow';
-import { Display } from '@/components/primitives/Display';
-import { Rule } from '@/components/primitives/Rule';
 import { SponsorForm } from '@/components/checkout/SponsorForm';
 import type { AmountOption } from '@/components/checkout/AmountChooser';
 import { getSongPage } from '@/lib/song/queries';
@@ -54,23 +51,26 @@ export default async function SponsorPage({ params }: Props) {
       <SimulationRibbon />
       <SiteNav />
 
-      <div className="mx-auto max-w-3xl px-6 pt-16 md:px-12 md:pt-24">
-        <Eyebrow>{await text('checkout.business.heading')}</Eyebrow>
-        <div className="mt-8">
-          <Display>{data.song.title}</Display>
-        </div>
-
-        {data.crown?.leader ? (
-          <p className="mt-10 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
-            {await text('checkout.minimum_to_lead', {
-              amount: formatCents(cents(data.crown.minimumToLeadCents)),
-            })}
+      {/* Hero band */}
+      <section className="border-b py-12" style={{ borderColor: 'var(--line)' }}>
+        <div className="mx-auto max-w-[80rem] px-6 text-center md:px-10">
+          <h1 className="font-display text-[clamp(2rem,5.5vw,4rem)] uppercase leading-none text-gold">
+            {await text('checkout.business.heading')}
+          </h1>
+          <p className="mt-4 font-serif text-lg italic text-[var(--text-dim)]">
+            {data.song.title}
           </p>
-        ) : null}
-
-        <div className="my-16">
-          <Rule />
+          {data.crown?.leader ? (
+            <p className="mt-5 font-ui text-[0.625rem] uppercase tracking-[0.2em] text-[var(--champagne)]">
+              {await text('checkout.minimum_to_lead', {
+                amount: formatCents(cents(data.crown.minimumToLeadCents)),
+              })}
+            </p>
+          ) : null}
         </div>
+      </section>
+
+      <div className="mx-auto max-w-[80rem] px-6 pt-10 md:px-10">
 
         <SponsorForm
           campaignId={data.campaign.id}

@@ -1,11 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ShieldCheck } from 'lucide-react';
 import { SimulationRibbon } from '@/components/SimulationRibbon';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
-import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { Display } from '@/components/primitives/Display';
-import { Rule } from '@/components/primitives/Rule';
 import { FanCheckoutForm } from '@/components/checkout/FanCheckoutForm';
 import type { AmountOption } from '@/components/checkout/AmountChooser';
 import { getOpenCampaigns, getTiersFor } from '@/lib/checkout/queries';
@@ -65,10 +64,23 @@ export default async function BackPage({ searchParams }: Props) {
       <SimulationRibbon />
       <SiteNav />
 
-      <div className="mx-auto max-w-3xl px-6 pt-16 md:px-12 md:pt-24">
-        <Eyebrow>{await text('checkout.fan.heading')}</Eyebrow>
-        <div className="mt-8">
-          <Display>{selected.songTitle}</Display>
+      <div className="mx-auto max-w-[80rem] px-6 pt-10 md:px-10 md:pt-12">
+        <div
+          className="flex flex-wrap items-center justify-between gap-4 border-b pb-6"
+          style={{ borderColor: 'var(--line)' }}
+        >
+          <div>
+            <p className="font-ui text-[0.625rem] uppercase tracking-[0.24em] text-[var(--champagne)]">
+              {await text('checkout.fan.heading')}
+            </p>
+            <h1 className="mt-2 font-serif text-[clamp(1.75rem,4vw,3rem)] leading-tight text-[var(--text)]">
+              {selected.songTitle}
+            </h1>
+          </div>
+          <p className="flex items-center gap-2.5 font-ui text-[0.625rem] uppercase tracking-[0.18em] text-[var(--text-dim)]">
+            <ShieldCheck aria-hidden size={14} color="var(--champagne)" />
+            {await text('checkout.secure_badge')}
+          </p>
         </div>
 
         {payable.length > 1 ? (
@@ -94,10 +106,7 @@ export default async function BackPage({ searchParams }: Props) {
           </div>
         ) : null}
 
-        <div className="my-16">
-          <Rule />
-        </div>
-
+        <div className="mt-10">
         <FanCheckoutForm
           campaignId={selected.campaignId}
           options={options}
@@ -119,8 +128,19 @@ export default async function BackPage({ searchParams }: Props) {
             consentCheckbox: await text('checkout.consent.fan_checkbox'),
             submit: await text('checkout.submit.fan'),
             working: await text('checkout.working'),
+            chooseRole: await text('checkout.choose_role'),
+            fanRole: await text('checkout.role.fan'),
+            fanRoleSub: await text('checkout.role.fan_sub'),
+            businessRole: await text('checkout.role.business'),
+            businessRoleSub: await text('checkout.role.business_sub'),
+            yourSelection: await text('checkout.your_selection'),
+            tierBenefits: await text('checkout.tier_benefits'),
+            secure: await text('checkout.secure'),
+            secureSub: await text('checkout.secure_sub'),
           }}
+          sponsorHref={`/song/${selected.songSlug}/sponsor`}
         />
+        </div>
       </div>
       <SiteFooter />
     </main>

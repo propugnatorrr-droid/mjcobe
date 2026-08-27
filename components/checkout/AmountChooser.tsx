@@ -45,6 +45,9 @@ export function AmountChooser({
   customLabel,
   customPlaceholder,
   currencySymbol,
+  selectedId,
+  onSelect,
+  showSummary = true,
 }: {
   options: AmountOption[];
   /** 'tierId' for fans, 'packageId' for sponsors. */
@@ -52,8 +55,20 @@ export function AmountChooser({
   customLabel: string;
   customPlaceholder: string;
   currencySymbol: string;
+  /** Controlled mode: the parent owns the selection so a sidebar can mirror
+   * it. Uncontrolled (both omitted) keeps the standalone behaviour. */
+  selectedId?: string | null;
+  onSelect?: (id: string | null) => void;
+  /** Off when the parent renders its own selection summary. */
+  showSummary?: boolean;
 }) {
-  const [selected, setSelected] = useState<string | null>(options[0]?.id ?? null);
+  const [ownSelected, setOwnSelected] = useState<string | null>(options[0]?.id ?? null);
+  const controlled = onSelect !== undefined;
+  const selected = controlled ? (selectedId ?? null) : ownSelected;
+  const setSelected = (id: string | null) => {
+    if (controlled) onSelect(id);
+    else setOwnSelected(id);
+  };
   const isCustom = selected === null;
   const activeOption = options.find((o) => o.id === selected) ?? null;
 
@@ -122,7 +137,7 @@ export function AmountChooser({
             className="font-mono w-full border-b border-[var(--line)] bg-transparent pb-3 text-2xl text-[var(--text)] transition-colors [transition-duration:var(--duration-signature)] placeholder:text-[var(--text-dim)] focus:border-[var(--text)] focus:outline-none"
           />
         </div>
-      ) : activeOption?.benefits?.length ? (
+      ) : showSummary && activeOption?.benefits?.length ? (
         <div
           className="rounded-[var(--radius-panel)] border p-6"
           style={{ borderColor: 'var(--champagne)', background: 'var(--ink-2)' }}

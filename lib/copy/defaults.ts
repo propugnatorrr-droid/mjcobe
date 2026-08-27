@@ -150,6 +150,17 @@ const copyDefaults = {
   'checkout.no_open_campaigns': 'No campaigns are open right now.',
   'checkout.minimum_to_lead': 'Minimum to take #1 is {amount}.',
   'checkout.packages': 'SPONSORSHIP PACKAGES',
+  'checkout.choose_role': 'CHOOSE YOUR ROLE',
+  'checkout.role.fan': 'FAN SUPPORT',
+  'checkout.role.fan_sub': 'I want to back MJ COBE and be part of the movement.',
+  'checkout.role.business': 'BUSINESS SPONSORSHIP',
+  'checkout.role.business_sub': 'I want to support MJ COBE as a brand or organization.',
+  'checkout.your_selection': 'YOUR SELECTION',
+  'checkout.tier_benefits': 'TIER BENEFITS',
+  'checkout.secure': '100% SECURE',
+  'checkout.secure_sub': 'Your information is encrypted and never shared.',
+  'checkout.secure_badge': 'SECURE CHECKOUT',
+  'checkout.questions': 'Questions? Contact support.',
   'checkout.approval_note':
     'Sponsorships above {amount} are reviewed before they appear publicly.',
 
