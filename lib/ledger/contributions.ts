@@ -152,14 +152,39 @@ export type SettleResult =
 export async function settleContribution(transactionId: string): Promise<SettleResult> {
   const [tx] = await dbw.select().from(s.transactions).where(eq(s.transactions.id, transactionId)).limit(1);
   if (!tx) return { ok: false, code: 'not_found', message: 'Transaction not found.' };
-  if (tx.state === 'settled') {
-    const [existing] = await dbw.select().from(s.supporterNumbers)
-      .where(eq(s.supporterNumbers.contributionId, tx.contributionId)).limit(1);
-    return { ok: true, supporterNumber: existing?.number ?? null, foundingNumber: null };
-  }
-  if (tx.state !== 'initiated' && tx.state !== 'authorized') {
-    return { ok: false, code: 'bad_state', message: `Cannot settle from ${tx.state}.` };
-  }
+if (tx.state === 'settled') {
+  const existing = await dbw
+    .select({
+      seriesKey:
+        s.supporterNumbers.seriesKey,
+      number:
+        s.supporterNumbers.number,
+    })
+    .from(s.supporterNumbers)
+    .where(
+      eq(
+        s.supporterNumbers.contributionId,
+        tx.contributionId,
+      ),
+    );
+
+  return {
+    ok: true,
+    supporterNumber:
+      existing.find(
+        (number) =>
+          number.seriesKey ===
+          'supporter',
+      )?.number ?? null,
+    foundingNumber:
+      existing.find(
+        (number) =>
+          number.seriesKey ===
+          'founding',
+      )?.number ?? null,
+  };
+}
+
 
   const provider = getProvider(tx.provider);
   const outcome = await provider.capture(tx.providerRef ?? '');
@@ -202,12 +227,44 @@ export async function settleContribution(transactionId: string): Promise<SettleR
 
     // Sequential per campaign and series. Computed inside the transaction so
     // two simultaneous checkouts cannot be issued the same number.
-    const nextNumber = async (seriesKey: string) => {
-      const [row] = await t.select({ max: sql<number>`coalesce(max(${s.supporterNumbers.number}), 0)` })
-        .from(s.supporterNumbers)
-        .where(sql`${s.supporterNumbers.campaignId} = ${contribution.campaignId} and ${s.supporterNumbers.seriesKey} = ${seriesKey}`);
-      return Number(row.max) + 1;
-    };
+const nextNumber = async (
+  seriesKey: string,
+) => {
+  // Serialise number issuance per campaign and
+  // series. Without this lock, simultaneous
+  // settlements can both read the same MAX value.
+  await t.execute(sql`
+    select pg_advisory_xact_lock(
+      hashtextextended(
+        ${`${contribution.campaignId}:${seriesKey}`},
+        0
+      )
+    )
+  `);
+
+  const [row] = await t
+    .select({
+      max: sql<number>`
+        coalesce(
+          max(${s.supporterNumbers.number}),
+          0
+        )
+      `,
+    })
+    .from(s.supporterNumbers)
+    .where(
+      sql`
+        ${s.supporterNumbers.campaignId}
+          = ${contribution.campaignId}
+        and
+        ${s.supporterNumbers.seriesKey}
+          = ${seriesKey}
+      `,
+    );
+
+  return Number(row.max) + 1;
+};
+
 
     let supporterNumber: number | null = null;
     let foundingNumber: number | null = null;
