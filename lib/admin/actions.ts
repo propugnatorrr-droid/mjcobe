@@ -15,6 +15,12 @@ import { refundContribution, settleContribution } from '@/lib/ledger/contributio
 import { consentFor } from '@/lib/consent/text';
 import { createContribution } from '@/lib/ledger/contributions';
 import { bool, parseAmountCents, slugify, str } from '@/lib/checkout/validate';
+import {
+  deleteUnreferencedLogoAsset,
+  getPendingSponsorLogos,
+  storePendingSponsorLogo,
+  validateSponsorLogo,
+} from '@/lib/media/sponsor-logo';
 import type { RefundReasonCode } from '@/lib/payments';
 
 export type AdminState = {
@@ -958,6 +964,280 @@ export async function moderateSponsorVisibility(
   );
   revalidatePath('/partners');
   revalidatePath('/', 'layout');
+}
+function revalidateSponsorProfile(
+  sponsorId: string,
+  sponsorSlug: string,
+) {
+  revalidatePath('/admin/sponsors');
+  revalidatePath(
+    '/admin/sponsors/manage',
+  );
+  revalidatePath(
+    `/admin/sponsors/${sponsorId}`,
+  );
+  revalidatePath(
+    `/partner/${sponsorSlug}`,
+  );
+  revalidatePath('/partners');
+  revalidatePath('/', 'layout');
+}
+
+export async function uploadSponsorLogo(
+  formData: FormData,
+): Promise<void> {
+  const me = await requireAdmin();
+  const sponsorId = str(
+    formData.get('sponsorId'),
+  );
+
+  if (!sponsorId) {
+    return;
+  }
+
+  const [sponsor] = await db
+    .select()
+    .from(s.sponsors)
+    .where(
+      eq(s.sponsors.id, sponsorId),
+    )
+    .limit(1);
+
+  if (!sponsor) {
+    return;
+  }
+
+  const validation =
+    await validateSponsorLogo(
+      formData.get('logo'),
+    );
+
+  if (
+    !validation.ok ||
+    !validation.file
+  ) {
+    await recordAudit({
+      adminUserId: me.id,
+      action:
+        'sponsor.logo_upload_rejected',
+      entity: 'sponsor',
+      entityId: sponsorId,
+      before: {
+        logoAssetId:
+          sponsor.logoAssetId,
+      },
+      after: {
+        reason: validation.ok
+          ? 'missing'
+          : validation.reason,
+      },
+      ipHash: await ipHash(),
+    });
+
+    return;
+  }
+
+  const assetId =
+    await storePendingSponsorLogo(
+      validation.file,
+      sponsorId,
+    );
+
+  await recordAudit({
+    adminUserId: me.id,
+    action:
+      'sponsor.logo_upload_pending',
+    entity: 'sponsor',
+    entityId: sponsorId,
+    before: {
+      logoAssetId:
+        sponsor.logoAssetId,
+    },
+    after: {
+      pendingLogoAssetId: assetId,
+    },
+    ipHash: await ipHash(),
+  });
+
+  revalidateSponsorProfile(
+    sponsorId,
+    sponsor.slug,
+  );
+}
+
+export async function approveSponsorLogo(
+  formData: FormData,
+): Promise<void> {
+  const me = await requireAdmin();
+  const sponsorId = str(
+    formData.get('sponsorId'),
+  );
+  const assetId = str(
+    formData.get('assetId'),
+  );
+
+  if (!sponsorId || !assetId) {
+    return;
+  }
+
+  const [sponsor] = await db
+    .select()
+    .from(s.sponsors)
+    .where(
+      eq(s.sponsors.id, sponsorId),
+    )
+    .limit(1);
+
+  if (!sponsor) {
+    return;
+  }
+
+  const pending =
+    await getPendingSponsorLogos(
+      sponsorId,
+    );
+
+  const selected = pending.find(
+    (asset) => asset.id === assetId,
+  );
+
+  if (!selected) {
+    return;
+  }
+
+  const previousAssetId =
+    sponsor.logoAssetId;
+
+  await dbw.transaction(async (tx) => {
+    await tx
+      .update(s.sponsors)
+      .set({
+        logoAssetId: selected.id,
+      })
+      .where(
+        eq(
+          s.sponsors.id,
+          sponsorId,
+        ),
+      );
+
+    await tx
+      .update(s.mediaAssets)
+      .set({
+        role: 'logo',
+        derivatives: {},
+      })
+      .where(
+        eq(
+          s.mediaAssets.id,
+          selected.id,
+        ),
+      );
+  });
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'sponsor.logo_approve',
+    entity: 'sponsor',
+    entityId: sponsorId,
+    before: {
+      logoAssetId:
+        previousAssetId,
+    },
+    after: {
+      logoAssetId: selected.id,
+    },
+    ipHash: await ipHash(),
+  });
+
+  for (const asset of pending) {
+    if (asset.id !== selected.id) {
+      await deleteUnreferencedLogoAsset(
+        asset.id,
+      );
+    }
+  }
+
+  if (
+    previousAssetId &&
+    previousAssetId !== selected.id
+  ) {
+    await deleteUnreferencedLogoAsset(
+      previousAssetId,
+    );
+  }
+
+  revalidateSponsorProfile(
+    sponsorId,
+    sponsor.slug,
+  );
+}
+
+export async function rejectSponsorLogo(
+  formData: FormData,
+): Promise<void> {
+  const me = await requireAdmin();
+  const sponsorId = str(
+    formData.get('sponsorId'),
+  );
+  const assetId = str(
+    formData.get('assetId'),
+  );
+
+  if (!sponsorId || !assetId) {
+    return;
+  }
+
+  const [sponsor] = await db
+    .select()
+    .from(s.sponsors)
+    .where(
+      eq(s.sponsors.id, sponsorId),
+    )
+    .limit(1);
+
+  if (!sponsor) {
+    return;
+  }
+
+  const pending =
+    await getPendingSponsorLogos(
+      sponsorId,
+    );
+
+  const selected = pending.find(
+    (asset) => asset.id === assetId,
+  );
+
+  if (!selected) {
+    return;
+  }
+
+  await deleteUnreferencedLogoAsset(
+    selected.id,
+  );
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'sponsor.logo_reject',
+    entity: 'sponsor',
+    entityId: sponsorId,
+    before: {
+      pendingLogoAssetId:
+        selected.id,
+      pendingLogoPath:
+        selected.path,
+    },
+    after: {
+      pendingLogoAssetId: null,
+    },
+    ipHash: await ipHash(),
+  });
+
+  revalidateSponsorProfile(
+    sponsorId,
+    sponsor.slug,
+  );
 }
 
 // -------------------------------------------------------------- offline -----
