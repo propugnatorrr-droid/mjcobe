@@ -18,7 +18,6 @@ type FeaturedCampaignProps = {
     viewProject: string;
     supporters: string;
     raisedToward: string;
-    funded: string;
     topFan: string;
     topSponsor: string;
     anonymous: string;
