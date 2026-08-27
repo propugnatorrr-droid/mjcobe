@@ -57,6 +57,7 @@ export function AmountChooser({
   selectedId,
   onSelect,
   onCustomAmountChange,
+  customDefaultValue,
   showSummary = true,
 }: {
   options: AmountOption[];
