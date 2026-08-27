@@ -46,6 +46,8 @@ export default async function BackPage({ searchParams }: Props) {
     label: tier.name,
     amountLabel: formatCents(cents(tier.amountCents)),
     amountCents: tier.amountCents,
+    benefits: tier.benefits,
+    iconKey: tier.badgeKey,
     note: tier.description,
     disabled: tier.quantityLimit !== null && tier.quantityLimit <= 0,
   }));

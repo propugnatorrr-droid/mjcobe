@@ -29,6 +29,12 @@ export default async function SponsorPage({ params }: Props) {
     amountLabel: formatCents(cents(pkg.priceCents)),
     amountCents: pkg.priceCents,
     note: pkg.deliverables[0] ?? null,
+    benefits: pkg.deliverables,
+    iconKey: pkg.name.toLowerCase().includes('digital') ? 'digital'
+      : pkg.name.toLowerCase().includes('featured') ? 'featured'
+      : pkg.name.toLowerCase().includes('visual') ? 'visual'
+      : pkg.name.toLowerCase().includes('presenting') ? 'presenting'
+      : null,
   }));
 
   const locale = await setting('locale');
