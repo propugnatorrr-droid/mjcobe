@@ -34,8 +34,16 @@ function MetricShell({
       className="rounded-[var(--radius-panel)] border p-5"
       style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
     >
-      <span className="flex items-center gap-2 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
-        {Icon ? <Icon aria-hidden size={16} color={accent ? 'var(--champagne)' : undefined} /> : null}
+      <span className="flex items-center gap-3 font-ui text-[0.625rem] uppercase tracking-[0.18em] text-[var(--text-dim)]">
+        {Icon ? (
+          <span
+            aria-hidden
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+            style={{ outline: '1px solid var(--champagne)' }}
+          >
+            <Icon size={15} color="var(--champagne)" />
+          </span>
+        ) : null}
         {label}
       </span>
       {children}
@@ -56,9 +64,7 @@ export function MetricCard({
 }) {
   return (
     <MetricShell label={label} icon={icon}>
-      <p className="mt-3 font-mono text-2xl tabular-nums text-[var(--text)]">
-        {value}
-      </p>
+      <p className="mt-3 font-serif text-3xl tabular-nums text-gold">{value}</p>
       {note ? (
         <p className="mt-2 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
           {note}
@@ -81,10 +87,7 @@ export function Metric({
 }) {
   return (
     <MetricShell label={label} icon={icon} accent={accent}>
-      <span
-        className="font-mono text-2xl tabular-nums md:text-3xl"
-        style={{ color: accent ? 'var(--champagne)' : 'var(--text)' }}
-      >
+      <span className="mt-3 block font-serif text-3xl tabular-nums text-gold md:text-4xl">
         {value}
       </span>
     </MetricShell>

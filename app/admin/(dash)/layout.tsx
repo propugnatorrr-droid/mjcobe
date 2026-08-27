@@ -29,9 +29,21 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         className="flex w-64 shrink-0 flex-col border-r px-5 py-8"
         style={{ borderColor: 'var(--line)' }}
       >
-        <span className="mb-10 px-2 font-mono text-eyebrow uppercase tracking-[0.18em] text-[var(--champagne)]">
-          {admin.brand}
-        </span>
+        <div className="mb-9 flex items-center gap-3 px-2">
+          <span
+            aria-hidden
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-serif text-base text-gold"
+            style={{ outline: '1px solid var(--champagne)' }}
+          >
+            MJ
+          </span>
+          <span className="flex flex-col leading-none">
+            <span className="font-serif text-lg tracking-[0.12em] text-gold">MJ COBE</span>
+            <span className="mt-1 font-ui text-[0.5rem] uppercase tracking-[0.3em] text-[var(--text-dim)]">
+              {admin.brand}
+            </span>
+          </span>
+        </div>
 
         <nav className="flex flex-1 flex-col gap-1">
           {links.map((l) => {
