@@ -540,3 +540,64 @@ a {
     min-height: 20rem;
   }
 }
+/* -------------------------------------------------------------------------- */
+/* Song journey hero                                                           */
+/* -------------------------------------------------------------------------- */
+
+.song-hero-backdrop {
+  filter: blur(34px) saturate(0.72) brightness(0.55);
+  transform: scale(1.16);
+}
+
+.song-hero-backdrop-treatment {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10, 10, 11, 0.28) 0%,
+      rgba(10, 10, 11, 0.78) 56%,
+      var(--ink) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(10, 10, 11, 0.7) 0%,
+      rgba(10, 10, 11, 0.24) 100%
+    );
+}
+
+.song-vinyl {
+  background:
+    radial-gradient(
+      circle at center,
+      var(--champagne) 0 2.5%,
+      #201b10 2.7% 7%,
+      #070708 7.2% 19%,
+      #171719 19.3% 20%,
+      #080809 20.3% 32%,
+      #171719 32.3% 33%,
+      #080809 33.3% 45%,
+      #171719 45.3% 46%,
+      #080809 46.3% 100%
+    );
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.07);
+  opacity: 0.94;
+}
+
+@media (min-width: 1024px) {
+  .song-hero-backdrop-treatment {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(10, 10, 11, 0.78) 0%,
+        rgba(10, 10, 11, 0.54) 44%,
+        rgba(10, 10, 11, 0.72) 100%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(10, 10, 11, 0.2) 0%,
+        rgba(10, 10, 11, 0.48) 60%,
+        var(--ink) 100%
+      );
+  }
+}
