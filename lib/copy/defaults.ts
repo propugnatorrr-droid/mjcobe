@@ -26,6 +26,27 @@ const copyDefaults = {
 
   'lookbook.hero_alt':
     'MJ COBE in close chest-up view on a moonlit beach at night, wearing a striped beanie, glasses and a silver chain.',
+  'cover.some_real_alt':
+    'MJ COBE seated at a dim kitchen table at night, a glass of whisky in one hand.',
+  'cover.night_shift_alt':
+    'MJ COBE leaning against a car on a rain-slicked city street at night, red tail-light glow on the road.',
+  'cover.lower_frequency_alt':
+    'MJ COBE standing alone in a bare room under a single bulb, rain streaking the window beside him.',
+  'press.partners_alt':
+    'MJ COBE singing into a vintage condenser microphone under a hard spotlight.',
+  'press.now_alt':
+    'MJ COBE seated in a leather armchair beside a window, night city skyline behind him.',
+  'journey.video_production_alt':
+    'A cinema camera on a tripod at night, MJ COBE standing out of focus behind it.',
+  'journey.visual_treatment_alt':
+    'Hands adjusting faders on a lit studio mixing console.',
+  'journey.campaign_opened_alt':
+    'A condenser microphone and pop filter in a darkened vocal booth.',
+  'journey.first_100_alt':
+    'Silhouetted hands raised in a dark venue against warm stage light.',
+  'journey.streams_alt':
+    'An audio waveform glowing gold on a dark studio monitor.',
+
   'lookbook.loop_alt':
     'MJ COBE in silhouette on an empty beach at night, facing the moonlit ocean.',
 

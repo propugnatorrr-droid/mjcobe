@@ -107,9 +107,22 @@ export default async function JourneyPage({
                       }`}
                     >
                       <div
-                        className="rounded-[var(--radius-panel)] border p-5"
+                        className="overflow-hidden rounded-[var(--radius-panel)] border"
                         style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
                       >
+                        {event.imagePath ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={event.imagePath}
+                            alt=""
+                            width={640}
+                            height={360}
+                            loading="lazy"
+                            className="aspect-video w-full object-cover"
+                            style={{ background: 'var(--ink)' }}
+                          />
+                        ) : null}
+                        <div className="p-5">
                         <div
                           className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 ${
                             right ? '' : 'lg:justify-end'
@@ -139,6 +152,7 @@ export default async function JourneyPage({
                         {event.body ? (
                           <p className="mt-2 text-body text-[var(--text-dim)]">{event.body}</p>
                         ) : null}
+                        </div>
                       </div>
                     </div>
                   </li>

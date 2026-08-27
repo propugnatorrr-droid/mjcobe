@@ -8,6 +8,7 @@ import { LookbookImage } from '@/components/primitives/LookbookImage';
 import { PhotoTreatment } from '@/components/treatments/PhotoTreatment';
 import { NewsletterForm } from '@/components/now/NewsletterForm';
 import { getLookbookImage } from '@/lib/lookbook/manifest';
+import { getImageByPath } from '@/lib/media/queries';
 import { listCatalog } from '@/lib/catalog/queries';
 import { getLeaderboard } from '@/lib/campaign/queries';
 import { getRecentActivity } from '@/lib/activity/queries';
@@ -82,7 +83,7 @@ export default async function NowPage() {
     text('home.listen'), text('home.funded'),
   ]);
 
-  const hero = getLookbookImage('hero');
+  const hero = (await getImageByPath('/media/press-now-1792.jpg')) ?? getLookbookImage('hero');
 
   const newMusicSongs = catalog
     .filter((s) => s.status !== 'vault' && s.status !== 'draft')
@@ -123,7 +124,7 @@ export default async function NowPage() {
                 sizes="(min-width: 768px) 52vw, 100vw"
                 priority
                 className="absolute inset-0 h-full w-full object-cover"
-                objectPosition="50% 20%"
+                objectPosition="50% 35%"
               />
             </PhotoTreatment>
           </div>

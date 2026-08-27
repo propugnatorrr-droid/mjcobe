@@ -1,6 +1,8 @@
 import { copy } from '@/lib/copy/defaults';
 import type { LookbookAsset } from '@/lib/lookbook/manifest';
 
+/** Manifest entries and DB-backed rows share this shape by construction —
+ * see lib/media/queries.ts. */
 type ImageAsset = Extract<LookbookAsset, { kind: 'image' }>;
 
 /** Renders one manifest image asset as a responsive <picture>, never wider

@@ -11,6 +11,7 @@ import { LookbookImage } from '@/components/primitives/LookbookImage';
 import { PhotoTreatment } from '@/components/treatments/PhotoTreatment';
 import { ButtonLink } from '@/components/primitives/Button';
 import { getLookbookImage } from '@/lib/lookbook/manifest';
+import { getImageByPath } from '@/lib/media/queries';
 import { getPartnersPage } from '@/lib/partners/queries';
 import { text } from '@/lib/copy/site-copy';
 import { cents, formatCents } from '@/lib/money/cents';
@@ -40,7 +41,8 @@ export default async function PartnersPage() {
     text('partners.contact'), text('partners.empty'),
   ]);
 
-  const hero = getLookbookImage('hero');
+  // Prefer the delivered landscape press shot; fall back to the portrait.
+  const hero = (await getImageByPath('/media/press-partners-1792.jpg')) ?? getLookbookImage('hero');
 
   const stats = [
     { icon: DollarSign, value: formatCents(cents(data.totalSponsorCents)), label: statRaised },
@@ -67,7 +69,7 @@ export default async function PartnersPage() {
                 sizes="(min-width: 768px) 54vw, 100vw"
                 priority
                 className="absolute inset-0 h-full w-full object-cover"
-                objectPosition="50% 20%"
+                objectPosition="50% 35%"
               />
             </PhotoTreatment>
           </div>

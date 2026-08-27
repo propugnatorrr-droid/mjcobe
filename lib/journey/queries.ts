@@ -23,6 +23,8 @@ export type JourneyEntry = {
   occurredAt: Date;
   songTitle: string | null;
   songSlug: string | null;
+  imagePath: string | null;
+  imagePlaceholder: string | null;
 };
 
 /** The global timeline: every visible journey event across every song,
@@ -37,9 +39,12 @@ export const getGlobalJourney = cache(async (): Promise<JourneyEntry[]> => {
       occurredAt: s.journeyEvents.occurredAt,
       songTitle: s.songs.title,
       songSlug: s.songs.slug,
+      imagePath: s.mediaAssets.path,
+      imagePlaceholder: s.mediaAssets.placeholder,
     })
     .from(s.journeyEvents)
     .leftJoin(s.songs, eq(s.songs.id, s.journeyEvents.songId))
+    .leftJoin(s.mediaAssets, eq(s.mediaAssets.id, s.journeyEvents.mediaAssetId))
     .where(eq(s.journeyEvents.isVisible, true))
     .orderBy(desc(s.journeyEvents.occurredAt));
 
