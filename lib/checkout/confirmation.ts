@@ -1,7 +1,6 @@
 import 'server-only';
 
 import {
-  and,
   eq,
   sql,
 } from 'drizzle-orm';
@@ -105,32 +104,30 @@ export async function getConfirmationData(
     return null;
   }
 
-  const [settlement] = await db
-    .select({
-      netCents: sql<number>`
-        coalesce(
-          sum(${s.ledgerEntries.amountCents}),
-          0
-        )::int
-      `,
-    })
-    .from(s.ledgerEntries)
-    .where(
-      and(
-        eq(
-          s.ledgerEntries.contributionId,
-          row.contributionId,
+const [settlement] = await db
+  .select({
+    netCents: sql<number>`
+      coalesce(
+        sum(
+          ${s.ledgerEntries.amountCents}
         ),
-        eq(
-          s.ledgerEntries.kind,
-          'contribution',
-        ),
-      ),
-    );
+        0
+      )::int
+    `,
+  })
+  .from(s.ledgerEntries)
+  .where(
+    eq(
+      s.ledgerEntries.contributionId,
+      row.contributionId,
+    ),
+  );
 
-  const settled =
-    Number(settlement?.netCents ?? 0) >
-    0;
+const settled =
+  Number(
+    settlement?.netCents ?? 0,
+  ) > 0;
+
 
   if (!settled) {
     return {
