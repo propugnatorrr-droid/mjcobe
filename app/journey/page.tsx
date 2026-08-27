@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Crown } from 'lucide-react';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
 import { formatDay } from '@/lib/song/queries';
@@ -32,22 +33,32 @@ export default async function JourneyPage({
     text('journey.filter.sponsors'),
   ]);
 
-  const visible = filter === 'all' ? entries : entries.filter((e) => journeyGroup(e.kind) === filter);
+  const visible =
+    filter === 'all' ? entries : entries.filter((e) => journeyGroup(e.kind) === filter);
 
   return (
     <main className="surface-ink min-h-screen">
-      <SiteNav />
+      <SiteNav sub="THE JOURNEY" />
 
-      <section className="mx-auto max-w-3xl px-6 py-16 md:px-12 md:py-24">
-        <h1 className="font-display text-display text-[var(--text)]">{title}</h1>
-        <p className="mt-4 text-body text-[var(--text-dim)]">{sub}</p>
+      {/* Title band */}
+      <section className="border-b py-14" style={{ borderColor: 'var(--line)' }}>
+        <div className="mx-auto max-w-[92rem] px-6 text-center md:px-10">
+          <h1 className="font-display text-[clamp(2.5rem,8vw,6rem)] uppercase leading-none text-gold">
+            {title}
+          </h1>
+          <Crown aria-hidden size={18} color="var(--champagne)" className="mx-auto mt-5" />
+          <p className="mt-5 font-serif text-lg italic text-[var(--text-dim)]">{sub}</p>
+        </div>
+      </section>
 
-        <div className="mt-10 flex flex-wrap gap-3">
+      <div className="mx-auto max-w-[68rem] px-6 py-12 md:px-10">
+        {/* Filters, right-aligned as in the mockup */}
+        <div className="flex flex-wrap justify-center gap-3 lg:justify-end">
           {FILTERS.map((f, i) => (
             <Link
               key={f}
               href={f === 'all' ? '/journey' : `/journey?filter=${f}`}
-              className="rounded-full border px-4 py-1.5 font-mono text-eyebrow uppercase transition-colors [transition-duration:var(--duration-signature)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
+              className="rounded-full border px-5 py-2 font-ui text-[0.625rem] uppercase tracking-[0.18em] transition-colors [transition-duration:var(--duration-signature)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
               style={
                 filter === f
                   ? { borderColor: 'var(--champagne)', color: 'var(--champagne)' }
@@ -60,50 +71,74 @@ export default async function JourneyPage({
         </div>
 
         {visible.length === 0 ? (
-          <p className="mt-16 text-body text-[var(--text-dim)]">{empty}</p>
+          <p className="mt-16 text-center text-body text-[var(--text-dim)]">{empty}</p>
         ) : (
-          <ol className="relative mt-14 border-l pl-10" style={{ borderColor: 'var(--line)' }}>
+          /* Centre spine with events alternating left/right on wide screens. */
+          <ol className="relative mt-12">
+            <span
+              aria-hidden
+              className="absolute inset-y-0 left-4 w-px lg:left-1/2 lg:-translate-x-1/2"
+              style={{ background: 'var(--line-strong)' }}
+            />
+
             {await Promise.all(
-              visible.map(async (event) => {
+              visible.map(async (event, i) => {
                 const Icon = journeyIcon(event.kind);
+                const right = i % 2 === 1;
+
                 return (
-                  <li key={event.id} className="relative pb-10 last:pb-0">
+                  <li key={event.id} className="relative pb-8 last:pb-0">
                     <span
                       aria-hidden
-                      className="absolute -left-[45px] top-1 flex h-8 w-8 items-center justify-center rounded-full border"
-                      style={{ borderColor: 'var(--champagne)', background: 'var(--ink)' }}
+                      className="absolute left-4 top-6 z-10 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border lg:left-1/2"
+                      style={{
+                        borderColor: 'var(--champagne)',
+                        background: 'var(--ink)',
+                        boxShadow: 'var(--glow-champagne)',
+                      }}
                     >
-                      <Icon size={14} color="var(--champagne)" />
+                      <Icon size={15} color="var(--champagne)" />
                     </span>
 
                     <div
-                      className="rounded-[var(--radius-panel)] border p-5"
-                      style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
+                      className={`pl-12 lg:w-[calc(50%-3rem)] lg:pl-0 ${
+                        right ? 'lg:ml-auto lg:pl-12' : 'lg:pr-12 lg:text-right'
+                      }`}
                     >
-                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                        <span className="font-mono text-eyebrow uppercase text-[var(--champagne)]">
-                          {await formatDay(event.occurredAt)}
-                        </span>
-                        <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
-                          {await text(`journey.kind.${event.kind}` as CopyKey)}
-                        </span>
-                      </div>
+                      <div
+                        className="rounded-[var(--radius-panel)] border p-5"
+                        style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
+                      >
+                        <div
+                          className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 ${
+                            right ? '' : 'lg:justify-end'
+                          }`}
+                        >
+                          <span className="font-ui text-[0.625rem] uppercase tracking-[0.2em] text-[var(--champagne)]">
+                            {await formatDay(event.occurredAt)}
+                          </span>
+                          <span className="font-ui text-[0.625rem] uppercase tracking-[0.2em] text-[var(--text-faint)]">
+                            {await text(`journey.kind.${event.kind}` as CopyKey)}
+                          </span>
+                        </div>
 
-                      <p className="mt-2 text-body text-[var(--text)]">
-                        {event.songSlug ? (
-                          <Link href={`/song/${event.songSlug}`} className="hover:text-[var(--champagne)]">
-                            {event.title}
-                          </Link>
-                        ) : (
-                          event.title
-                        )}
-                      </p>
-
-                      {event.body ? (
-                        <p className="mt-2 max-w-[62ch] text-body text-[var(--text-dim)]">
-                          {event.body}
+                        <p className="mt-2 font-display text-lg uppercase tracking-[0.02em] text-[var(--text)]">
+                          {event.songSlug ? (
+                            <Link
+                              href={`/song/${event.songSlug}`}
+                              className="hover:text-[var(--champagne)]"
+                            >
+                              {event.title}
+                            </Link>
+                          ) : (
+                            event.title
+                          )}
                         </p>
-                      ) : null}
+
+                        {event.body ? (
+                          <p className="mt-2 text-body text-[var(--text-dim)]">{event.body}</p>
+                        ) : null}
+                      </div>
                     </div>
                   </li>
                 );
@@ -111,7 +146,15 @@ export default async function JourneyPage({
             )}
           </ol>
         )}
-      </section>
+
+        <div className="mt-14 flex items-center gap-6">
+          <span className="rule-gold h-px flex-1 opacity-40" />
+          <Crown aria-hidden size={16} color="var(--champagne)" />
+          <span className="rule-gold h-px flex-1 opacity-40" />
+        </div>
+        <p className="mt-6 text-center font-serif text-xl italic text-[var(--text-dim)]">{sub}</p>
+      </div>
+
       <SiteFooter />
     </main>
   );

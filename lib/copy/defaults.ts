@@ -290,6 +290,7 @@ const copyDefaults = {
   'now.subscribed': 'YOU’RE IN.',
   'now.subscribe_error': 'ENTER A VALID EMAIL.',
   'now.happening_now': 'HAPPENING NOW',
+  'now.right_now': 'RIGHT NOW',
   'now.activity.fan': '{name} just backed {song} — {amount}',
   'now.activity.fan_anonymous': 'A supporter just backed {song} — {amount}',
   'now.activity.fan_hidden': '{name} just backed {song}',
