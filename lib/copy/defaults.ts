@@ -51,6 +51,7 @@ const copyDefaults = {
     'MJ COBE in silhouette on an empty beach at night, facing the moonlit ocean.',
 
   // ---- Song page ---------------------------------------------------------
+  'song.nav_label': 'SONG JOURNEY',
   'song.section.support': 'SUPPORT THIS RECORD',
   'song.section.supporters': 'TOP SUPPORTERS',
   'song.section.partners': 'OFFICIAL SONG PARTNERS',
