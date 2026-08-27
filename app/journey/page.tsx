@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { SiteNav } from '@/components/SiteNav';
 import { formatDay } from '@/lib/song/queries';
 import { getGlobalJourney, journeyGroup, type JourneyFilter } from '@/lib/journey/queries';
+import { journeyIcon } from '@/lib/journey/icons';
 import { text } from '@/lib/copy/site-copy';
 import type { CopyKey } from '@/lib/copy/defaults';
 
@@ -36,7 +37,7 @@ export default async function JourneyPage({
     <main className="surface-ink min-h-screen">
       <SiteNav />
 
-      <section className="mx-auto max-w-4xl px-6 py-16 md:px-12 md:py-24">
+      <section className="mx-auto max-w-3xl px-6 py-16 md:px-12 md:py-24">
         <h1 className="font-display text-display text-[var(--text)]">{title}</h1>
         <p className="mt-4 text-body text-[var(--text-dim)]">{sub}</p>
 
@@ -60,41 +61,52 @@ export default async function JourneyPage({
         {visible.length === 0 ? (
           <p className="mt-16 text-body text-[var(--text-dim)]">{empty}</p>
         ) : (
-          <ol className="mt-10 border-t" style={{ borderColor: 'var(--line)' }}>
+          <ol className="relative mt-14 border-l pl-10" style={{ borderColor: 'var(--line)' }}>
             {await Promise.all(
-              visible.map(async (event) => (
-                <li
-                  key={event.id}
-                  className="grid grid-cols-1 gap-3 border-b py-8 md:grid-cols-[10rem_8rem_1fr] md:gap-8"
-                  style={{ borderColor: 'var(--line)' }}
-                >
-                  <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
-                    {await formatDay(event.occurredAt)}
-                  </span>
-                  <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
-                    {await text(`journey.kind.${event.kind}` as CopyKey)}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-body text-[var(--text)]">
-                      {event.songSlug ? (
-                        <Link
-                          href={`/song/${event.songSlug}`}
-                          className="hover:text-[var(--champagne)]"
-                        >
-                          {event.title}
-                        </Link>
-                      ) : (
-                        event.title
-                      )}
-                    </p>
-                    {event.body ? (
-                      <p className="mt-2 max-w-[62ch] text-body text-[var(--text-dim)]">
-                        {event.body}
+              visible.map(async (event) => {
+                const Icon = journeyIcon(event.kind);
+                return (
+                  <li key={event.id} className="relative pb-10 last:pb-0">
+                    <span
+                      aria-hidden
+                      className="absolute -left-[45px] top-1 flex h-8 w-8 items-center justify-center rounded-full border"
+                      style={{ borderColor: 'var(--champagne)', background: 'var(--ink)' }}
+                    >
+                      <Icon size={14} color="var(--champagne)" />
+                    </span>
+
+                    <div
+                      className="rounded-[var(--radius-panel)] border p-5"
+                      style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
+                    >
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                        <span className="font-mono text-eyebrow uppercase text-[var(--champagne)]">
+                          {await formatDay(event.occurredAt)}
+                        </span>
+                        <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
+                          {await text(`journey.kind.${event.kind}` as CopyKey)}
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-body text-[var(--text)]">
+                        {event.songSlug ? (
+                          <Link href={`/song/${event.songSlug}`} className="hover:text-[var(--champagne)]">
+                            {event.title}
+                          </Link>
+                        ) : (
+                          event.title
+                        )}
                       </p>
-                    ) : null}
-                  </div>
-                </li>
-              )),
+
+                      {event.body ? (
+                        <p className="mt-2 max-w-[62ch] text-body text-[var(--text-dim)]">
+                          {event.body}
+                        </p>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              }),
             )}
           </ol>
         )}
