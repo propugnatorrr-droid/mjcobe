@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import { GrainOverlay } from '@/components/GrainOverlay';
 import './globals.css';
@@ -12,8 +12,16 @@ const tanker = localFont({
 
 const zodiak = localFont({
   src: [
-    { path: './fonts/zodiak/Zodiak-Variable.woff2', style: 'normal' },
-    { path: './fonts/zodiak/Zodiak-VariableItalic.woff2', style: 'italic' },
+    {
+      path: './fonts/zodiak/Zodiak-Variable.woff2',
+      style: 'normal',
+      weight: '100 900',
+    },
+    {
+      path: './fonts/zodiak/Zodiak-VariableItalic.woff2',
+      style: 'italic',
+      weight: '100 900',
+    },
   ],
   variable: '--font-zodiak-loader',
   display: 'swap',
@@ -22,8 +30,16 @@ const zodiak = localFont({
 
 const switzer = localFont({
   src: [
-    { path: './fonts/switzer/Switzer-Variable.woff2', style: 'normal' },
-    { path: './fonts/switzer/Switzer-VariableItalic.woff2', style: 'italic' },
+    {
+      path: './fonts/switzer/Switzer-Variable.woff2',
+      style: 'normal',
+      weight: '100 900',
+    },
+    {
+      path: './fonts/switzer/Switzer-VariableItalic.woff2',
+      style: 'italic',
+      weight: '100 900',
+    },
   ],
   variable: '--font-switzer-loader',
   display: 'swap',
@@ -31,8 +47,41 @@ const switzer = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'MJ COBE | Soul Has A New Face.',
-  description: 'Soul has a new face.',
+  title: {
+    default: 'MJ COBE | Soul Has A New Face.',
+    template: '%s | MJ COBE',
+  },
+  description:
+    'Original R&B. A new visual world. A career being built in real time.',
+  applicationName: 'MJ COBE',
+  creator: 'MJ COBE',
+  publisher: 'MJ COBE',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'MJ COBE',
+    title: 'MJ COBE | Soul Has A New Face.',
+    description:
+      'Original R&B. A new visual world. A career being built in real time.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MJ COBE | Soul Has A New Face.',
+    description:
+      'Original R&B. A new visual world. A career being built in real time.',
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#0a0a0b',
+  colorScheme: 'dark',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
@@ -41,7 +90,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       lang="en"
       className={`${tanker.variable} ${zodiak.variable} ${switzer.variable} h-full antialiased`}
     >
-      <body className="surface-ink min-h-full">
+      <body className="surface-ink min-h-full overflow-x-clip">
         {children}
         <GrainOverlay />
       </body>
