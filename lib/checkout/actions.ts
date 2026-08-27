@@ -14,6 +14,7 @@ import { formatCents, cents } from '@/lib/money/cents';
 import { createContribution, settleContribution } from '@/lib/ledger/contributions';
 import { consentFor } from '@/lib/consent/text';
 import { createThanksToken } from './tokens';
+import { getTopSpot } from '@/lib/campaign/queries';
 import { bool, EMAIL_RE, normalizeHandle, parseAmountCents, slugify, str } from './validate';
 
 export type CheckoutState = { error?: string };
