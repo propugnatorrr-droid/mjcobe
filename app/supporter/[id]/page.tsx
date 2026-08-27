@@ -35,7 +35,16 @@ export default async function SupporterProfilePage({
       <SiteNav />
 
       <section className="mx-auto max-w-3xl px-6 py-16 md:px-12 md:py-24">
-        <h1 className="font-display text-display text-[var(--text)]">{profile.displayName}</h1>
+        <div
+          className="flex h-24 w-24 items-center justify-center rounded-full border-2"
+          style={{ borderColor: 'var(--champagne)' }}
+        >
+          <span className="font-display text-4xl text-[var(--champagne)]">
+            {profile.displayName.replace('@', '').charAt(0).toUpperCase() || '?'}
+          </span>
+        </div>
+
+        <h1 className="mt-6 font-display text-display text-[var(--text)]">{profile.displayName}</h1>
         <p className="mt-2 font-mono text-eyebrow uppercase text-[var(--champagne)]">{since}</p>
 
         {(profile.instagram || profile.tiktok || profile.website) && (
