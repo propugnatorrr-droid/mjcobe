@@ -54,7 +54,6 @@ export type SponsorFormLabels = Record<
   | 'approvalHeading'
   | 'claimHeading'
   | 'claimBody'
-  | 'minimumToLead',
   string
 >;
 
