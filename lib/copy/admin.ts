@@ -22,6 +22,7 @@ export const admin = {
     audit: 'AUDIT',
     blocklist: 'BLOCKLIST',
     referrals: 'REFERRAL LINKS',
+    sponsorProfiles: 'PARTNER PROFILES',
   },
 
   overview: {
@@ -71,6 +72,9 @@ export const admin = {
     add: 'ADD',
     filter: 'FILTER',
     all: 'ALL',
+    view: 'VIEW',
+manage: 'MANAGE',
+preview: 'PUBLIC PREVIEW',
   },
 
   refund: {
@@ -109,6 +113,24 @@ export const admin = {
     review: 'REVIEW SUBMISSION',
     declineReason: 'DECLINE REASON',
     noLogo: 'NO LOGO SUBMITTED',
+    directory: 'PARTNER PROFILES',
+directoryHint:
+  'Manage approved, pending, hidden and blocked business profiles. Public profiles only appear while approved.',
+profile: 'PARTNER PROFILE',
+profileHint:
+  'Edit the public brand information shown on the partner profile.',
+businessName: 'BUSINESS NAME',
+description: 'PUBLIC DESCRIPTION',
+shopUrl: 'SHOP URL',
+publicStatus: 'PUBLIC STATUS',
+contributions: 'CONTRIBUTIONS',
+totalBacked: 'TOTAL BACKED',
+created: 'CREATED',
+editProfile: 'EDIT PROFILE',
+saveProfile: 'SAVE PROFILE',
+hideProfile: 'HIDE PUBLIC PROFILE',
+showProfile: 'RESTORE PUBLIC PROFILE',
+noSponsors: 'No sponsor profiles have been created.',
   },
 
 
