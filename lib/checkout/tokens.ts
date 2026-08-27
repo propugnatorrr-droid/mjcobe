@@ -7,7 +7,9 @@ import * as s from '@/lib/db/schema';
 
 /** URL-safe, unguessable, and short enough to read aloud. */
 function makeCode(): string {
-  return randomBytes(9).toString('base64url');
+return randomBytes(16).toString(
+  'base64url',
+);
 }
 
 export async function createThanksToken(args: {
