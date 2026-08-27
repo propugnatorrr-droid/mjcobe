@@ -68,6 +68,7 @@ export function AmountChooser({
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
   onCustomAmountChange?: (amount: string) => void;
+  customDefaultValue?: string;
   showSummary?: boolean;
 }) {
   const [ownSelected, setOwnSelected] = useState<string | null>(
@@ -302,6 +303,7 @@ export function AmountChooser({
               name="amount"
               inputMode="decimal"
               required
+              defaultValue={customDefaultValue}
               placeholder={customPlaceholder}
               onChange={(event) => {
                 onCustomAmountChange?.(event.currentTarget.value);
