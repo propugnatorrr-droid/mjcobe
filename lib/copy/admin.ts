@@ -95,9 +95,22 @@ export const admin = {
     approved: 'APPROVED',
     empty: 'No sponsorships are waiting.',
     approveHint:
-      'Approving settles the payment and puts this business on the leaderboard.',
-    declineHint: 'Declining refunds in full and leaves nothing public.',
+      'Review the business, destination links, logo and campaign amount before settlement. Approval captures the payment and places the business on the public leaderboard.',
+    declineHint:
+      'Declining cancels an uncaptured payment or refunds the remaining settled balance.',
+    logo: 'LOGO PREVIEW',
+    contact: 'REPRESENTATIVE',
+    phone: 'PHONE',
+    website: 'WEBSITE',
+    instagram: 'INSTAGRAM',
+    industry: 'INDUSTRY',
+    message: 'SPONSOR MESSAGE',
+    paymentState: 'PAYMENT STATE',
+    review: 'REVIEW SUBMISSION',
+    declineReason: 'DECLINE REASON',
+    noLogo: 'NO LOGO SUBMITTED',
   },
+
 
   songs: {
     heading: 'SONG MANAGEMENT',
