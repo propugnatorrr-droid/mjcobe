@@ -12,7 +12,13 @@ import { listCatalog } from '@/lib/catalog/queries';
 import { getLeaderboard } from '@/lib/campaign/queries';
 import { text } from '@/lib/copy/site-copy';
 import { cents, formatCents } from '@/lib/money/cents';
+import type { Metadata } from 'next';
 import type { LeaderboardRowData } from '@/lib/campaign/queries';
+export const metadata: Metadata = {
+  title: 'Soul Has A New Face.',
+  description:
+    'Original R&B. A new visual world. A career being built in real time.',
+};
 
 export const revalidate = 60;
 
