@@ -156,7 +156,9 @@ export type AdminSponsor = {
   industry: string | null;
   description: string | null;
   message: string | null;
-  logoPath: string | null;
+logoPath: string | null;
+pendingLogoAssetId: string | null;
+pendingLogoPath: string | null;
   moderation: string;
   approvedAt: Date | null;
   supportedSince: Date | null;
@@ -201,9 +203,19 @@ function adminSponsorFromRow(
     message: row.message
       ? String(row.message)
       : null,
-    logoPath: row.logo_path
-      ? String(row.logo_path)
-      : null,
+logoPath: row.logo_path
+  ? String(row.logo_path)
+  : null,
+pendingLogoAssetId:
+  row.pending_logo_asset_id
+    ? String(
+        row.pending_logo_asset_id,
+      )
+    : null,
+pendingLogoPath:
+  row.pending_logo_path
+    ? String(row.pending_logo_path)
+    : null,
     moderation: String(row.moderation),
     approvedAt: row.approved_at
       ? new Date(String(row.approved_at))
@@ -242,7 +254,9 @@ export async function listAdminSponsors(): Promise<
       sp.approved_at,
       sp.supported_since,
       sp.created_at,
-      ma.path as logo_path,
+ma.path as logo_path,
+pma.id as pending_logo_asset_id,
+pma.path as pending_logo_path,
       count(distinct c.id)
         filter (
           where l.id is not null
@@ -258,9 +272,11 @@ export async function listAdminSponsors(): Promise<
       on c.sponsor_id = sp.id
     left join ledger_entries l
       on l.contribution_id = c.id
-    group by
-      sp.id,
-      ma.path
+group by
+  sp.id,
+  ma.path,
+  pma.id,
+  pma.path
     order by
       case sp.moderation
         when 'approved' then 0
@@ -299,7 +315,9 @@ export async function getAdminSponsor(
       sp.approved_at,
       sp.supported_since,
       sp.created_at,
-      ma.path as logo_path,
+ma.path as logo_path,
+pma.id as pending_logo_asset_id,
+pma.path as pending_logo_path,
       count(distinct c.id)
         filter (
           where l.id is not null
@@ -316,9 +334,11 @@ export async function getAdminSponsor(
     left join ledger_entries l
       on l.contribution_id = c.id
     where sp.id = ${id}
-    group by
-      sp.id,
-      ma.path
+group by
+  sp.id,
+  ma.path,
+  pma.id,
+  pma.path
     limit 1
   `);
 
@@ -366,7 +386,9 @@ export async function listPendingSponsors(): Promise<
       sp.instagram,
       sp.industry,
       sp.message,
-      ma.path as logo_path,
+ma.path as logo_path,
+pma.id as pending_logo_asset_id,
+pma.path as pending_logo_path,
       c.amount_cents,
       c.created_at as submitted_at,
       so.title as song_title,
@@ -378,8 +400,23 @@ export async function listPendingSponsors(): Promise<
       on t.contribution_id = c.id
     left join sponsors sp
       on sp.id = c.sponsor_id
-    left join media_assets ma
-      on ma.id = sp.logo_asset_id
+left join media_assets ma
+  on ma.id = sp.logo_asset_id
+left join lateral (
+  select
+    pending.id,
+    pending.path
+  from media_assets pending
+  where
+    pending.role =
+      'sponsor-logo-pending'
+    and
+    pending.derivatives
+      ->> 'pendingSponsorId'
+      = sp.id::text
+  order by pending.created_at desc
+  limit 1
+) pma on true
     left join ledger_entries l
       on l.contribution_id = c.id
     where c.support_type = 'business'
