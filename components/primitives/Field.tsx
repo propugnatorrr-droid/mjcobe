@@ -1,4 +1,3 @@
-/** Hairline-underline input. No boxes, no radius, no fill. */
 export function Field({
   label,
   name,
@@ -8,6 +7,7 @@ export function Field({
   placeholder,
   defaultValue,
   inputMode,
+  autoComplete,
 }: {
   label: string;
   name: string;
@@ -17,19 +17,22 @@ export function Field({
   placeholder?: string;
   defaultValue?: string;
   inputMode?: 'text' | 'email' | 'tel' | 'url' | 'decimal';
+  autoComplete?: string;
 }) {
   return (
-    <label className="flex flex-col gap-3">
-      <span className="flex items-baseline gap-3">
-        <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
+    <label className="flex min-w-0 flex-col gap-2.5">
+      <span className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className="font-ui text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-[var(--text-dim)]">
           {label}
         </span>
+
         {!required && optionalLabel ? (
-          <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
+          <span className="font-ui text-[0.5625rem] uppercase tracking-[0.14em] text-[var(--text-faint)]">
             {optionalLabel}
           </span>
         ) : null}
       </span>
+
       <input
         name={name}
         type={type}
@@ -37,7 +40,22 @@ export function Field({
         placeholder={placeholder}
         defaultValue={defaultValue}
         inputMode={inputMode}
-        className="w-full border-b border-[var(--line)] bg-transparent pb-3 text-body text-[var(--text)] transition-colors [transition-duration:var(--duration-signature)] placeholder:text-[var(--text-dim)] focus:border-[var(--text)] focus:outline-none"
+        autoComplete={autoComplete}
+        className={[
+          'min-h-13 w-full rounded-[var(--radius-panel)]',
+          'border border-[var(--line)]',
+          'bg-[var(--field-bg)] px-4 py-3',
+          'font-ui text-base text-[var(--text)]',
+          'transition-[border-color,background-color,box-shadow]',
+          '[transition-duration:var(--duration-signature)]',
+          '[transition-timing-function:var(--ease-signature)]',
+          'placeholder:text-[var(--text-faint)]',
+          'hover:border-[var(--line-strong)]',
+          'focus:border-[var(--champagne)]',
+          'focus:bg-[var(--ink-2)]',
+          'focus:outline-none',
+          'focus:ring-2 focus:ring-[rgba(201,162,39,0.16)]',
+        ].join(' ')}
       />
     </label>
   );
@@ -47,20 +65,43 @@ export function CheckField({
   label,
   name,
   defaultChecked = false,
+  required = false,
 }: {
   label: string;
   name: string;
   defaultChecked?: boolean;
+  required?: boolean;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-4">
+    <label
+      className={[
+        'flex cursor-pointer items-start gap-3',
+        'rounded-[var(--radius-panel)]',
+        'border border-[var(--line)]',
+        'bg-[var(--field-bg)] px-4 py-3.5',
+        'transition-colors',
+        '[transition-duration:var(--duration-signature)]',
+        'hover:border-[var(--line-strong)]',
+      ].join(' ')}
+    >
       <input
         type="checkbox"
         name={name}
         defaultChecked={defaultChecked}
-        className="mt-1 h-4 w-4 shrink-0 appearance-none border border-[var(--line-strong)] bg-transparent transition-colors [transition-duration:var(--duration-signature)] checked:border-[var(--champagne)] checked:bg-[var(--champagne)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
+        required={required}
+        className={[
+          'mt-0.5 h-5 w-5 shrink-0',
+          'cursor-pointer rounded',
+          'accent-[var(--champagne)]',
+          'focus-visible:outline focus-visible:outline-2',
+          'focus-visible:outline-offset-2',
+          'focus-visible:outline-[var(--champagne)]',
+        ].join(' ')}
       />
-      <span className="text-body text-[var(--text-dim)]">{label}</span>
+
+      <span className="text-sm leading-6 text-[var(--text-dim)]">
+        {label}
+      </span>
     </label>
   );
 }
