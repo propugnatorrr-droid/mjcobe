@@ -15,6 +15,10 @@ import { createContribution, settleContribution } from '@/lib/ledger/contributio
 import { consentFor } from '@/lib/consent/text';
 import { createThanksToken } from './tokens';
 import { getTopSpot } from '@/lib/campaign/queries';
+import {
+  storeSponsorLogo,
+  validateSponsorLogo,
+} from '@/lib/media/sponsor-logo';
 import { bool, EMAIL_RE, normalizeHandle, parseAmountCents, slugify, str } from './validate';
 
 export type CheckoutState = { error?: string };
@@ -260,12 +264,44 @@ export async function submitSponsorship(
     return { error: await text('checkout.error.blocked') };
   }
 
+  const logoValidation = validateSponsorLogo(
+    formData.get('logo'),
+  );
+
+  if (!logoValidation.ok) {
+    return {
+      error:
+        logoValidation.reason === 'size'
+          ? await text('checkout.logo.error_size')
+          : await text('checkout.logo.error_type'),
+    };
+  }
+
   const consent = await consentFor('business');
-  const { ipHash, userAgent } = await requestFingerprint();
+  const { ipHash, userAgent } =
+    await requestFingerprint();
 
   let token: string;
+
   try {
+    let logoAssetId: string | null = null;
+
+    if (logoValidation.file) {
+      try {
+        logoAssetId = await storeSponsorLogo(
+          logoValidation.file,
+        );
+      } catch {
+        return {
+          error: await text(
+            'checkout.logo.error_upload',
+          ),
+        };
+      }
+    }
+
     // Reuse an existing sponsor record when the same business returns, so a
+
     // second sponsorship tops up one identity instead of splitting the total.
     const [existing] = await db
       .select()
@@ -284,13 +320,31 @@ export async function submitSponsorship(
           email,
           phone: str(formData.get('phone'), 40),
           website,
-          instagram: normalizeHandle(str(formData.get('instagram'), 64)),
-          industry: str(formData.get('industry'), 80),
-          message: str(formData.get('message'), 1000),
+          instagram: normalizeHandle(
+            str(formData.get('instagram'), 64),
+          ),
+          industry: str(
+            formData.get('industry'),
+            80,
+          ),
+          message: str(
+            formData.get('message'),
+            1000,
+          ),
+          logoAssetId,
           moderation: 'pending',
         })
         .returning({ id: s.sponsors.id });
       sponsorId = created.id;
+    } else if (logoAssetId) {
+      await dbw
+        .update(s.sponsors)
+        .set({
+          logoAssetId,
+          moderation: 'pending',
+          approvedAt: null,
+        })
+        .where(eq(s.sponsors.id, sponsorId));
     }
 
     const created = await createContribution({
