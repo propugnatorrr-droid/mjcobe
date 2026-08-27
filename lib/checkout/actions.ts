@@ -193,7 +193,16 @@ export async function submitSponsorship(
     const [pkg] = await db
       .select()
       .from(s.sponsorPackages)
-      .where(eq(s.sponsorPackages.id, packageId))
+      .where(
+        and(
+          eq(s.sponsorPackages.id, packageId),
+          eq(
+            s.sponsorPackages.campaignId,
+            campaign.id,
+          ),
+          eq(s.sponsorPackages.isActive, true),
+        ),
+      )
       .limit(1);
     if (pkg) amountCents = pkg.priceCents;
   }
