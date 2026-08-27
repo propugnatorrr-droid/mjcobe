@@ -1,15 +1,18 @@
 import Link from 'next/link';
-import { PlayCircle, ExternalLink } from 'lucide-react';
+import { PlayCircle, ExternalLink, Flame, Trophy } from 'lucide-react';
 import { SiteNav } from '@/components/SiteNav';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { ButtonLink } from '@/components/primitives/Button';
 import { AmountFigure } from '@/components/primitives/AmountFigure';
+import { AudioPreview } from '@/components/song/AudioPreview';
 import { NewsletterForm } from '@/components/now/NewsletterForm';
 import { listCatalog } from '@/lib/catalog/queries';
 import { getLeaderboard } from '@/lib/campaign/queries';
+import { getRecentActivity } from '@/lib/activity/queries';
+import { formatRelativeTime } from '@/lib/song/queries';
 import { text } from '@/lib/copy/site-copy';
 import { setting } from '@/lib/config/settings';
-import { cents } from '@/lib/money/cents';
+import { cents, formatCents } from '@/lib/money/cents';
 
 const SOCIAL_PLATFORMS = [
   { slug: 'instagram', settingKey: 'socialInstagramUrl', copyKey: 'now.social.instagram' },
@@ -22,11 +25,22 @@ const SOCIAL_PLATFORMS = [
 
 export const revalidate = 60;
 
+async function activityLine(entry: Awaited<ReturnType<typeof getRecentActivity>>[number]) {
+  const amount = formatCents(cents(entry.amountCents));
+  if (entry.supportType === 'business') {
+    return text('now.activity.business', { name: entry.name, song: entry.songTitle, amount });
+  }
+  if (entry.isAnonymous) return text('now.activity.fan_anonymous', { song: entry.songTitle, amount });
+  if (entry.hideAmount) return text('now.activity.fan_hidden', { name: entry.name, song: entry.songTitle });
+  return text('now.activity.fan', { name: entry.name, song: entry.songTitle, amount });
+}
+
 export default async function NowPage() {
-  const [catalog, title, newMusic, backNext, topSponsorLabel, latestVideo, watch,
+  const [catalog, activity, title, newMusic, backNext, topSponsorLabel, latestVideo, watch,
     supportNow, joinInnerCircle, innerCircleSub, emailPlaceholder, join, privacyNote,
-    subscribed, subscribeError] = await Promise.all([
+    subscribed, subscribeError, happeningNow, previewComingSoon] = await Promise.all([
     listCatalog(),
+    getRecentActivity(5),
     text('now.title'),
     text('now.new_music'),
     text('now.back_next'),
@@ -41,7 +55,13 @@ export default async function NowPage() {
     text('now.privacy_note'),
     text('now.subscribed'),
     text('now.subscribe_error'),
+    text('now.happening_now'),
+    text('song.preview_coming_soon'),
   ]);
+
+  const newMusicSongs = catalog
+    .filter((s) => s.status !== 'vault' && s.status !== 'draft')
+    .slice(0, 3);
 
   const featured = catalog.find((s) => s.status === 'building')
     ?? catalog.find((s) => s.status === 'released')
@@ -70,12 +90,73 @@ export default async function NowPage() {
       <section className="mx-auto flex max-w-lg flex-col items-center gap-10 px-6 py-16 text-center md:py-24">
         <h1 className="font-display text-display text-[var(--text)]">{title}</h1>
 
+        {activity.length > 0 ? (
+          <div
+            className="flex w-full flex-col gap-3 rounded-[var(--radius-panel)] border p-6 text-left"
+            style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
+          >
+            <span className="flex items-center gap-2 font-mono text-eyebrow uppercase text-[var(--champagne)]">
+              <Flame aria-hidden size={14} />
+              {happeningNow}
+            </span>
+            {await Promise.all(
+              activity.map(async (entry) => (
+                <div key={entry.id} className="flex items-baseline justify-between gap-4">
+                  <p className="text-body text-[var(--text)]">{await activityLine(entry)}</p>
+                  <span className="shrink-0 font-mono text-xs text-[var(--text-faint)]">
+                    {formatRelativeTime(entry.occurredAt)}
+                  </span>
+                </div>
+              )),
+            )}
+          </div>
+        ) : null}
+
+        {newMusicSongs.length > 0 ? (
+          <div className="flex w-full flex-col gap-3 text-left">
+            <Eyebrow>{newMusic}</Eyebrow>
+            {await Promise.all(
+              newMusicSongs.map(async (song) => (
+                <div
+                  key={song.id}
+                  className="flex items-center gap-4 rounded-[var(--radius-panel)] border p-3"
+                  style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
+                >
+                  {song.coverPath ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={song.coverPath}
+                      alt=""
+                      width={56}
+                      height={56}
+                      className="h-14 w-14 shrink-0 rounded-[var(--radius-panel)] object-cover"
+                    />
+                  ) : (
+                    <div className="h-14 w-14 shrink-0 rounded-[var(--radius-panel)]" style={{ background: 'var(--ink)' }} />
+                  )}
+                  <Link href={`/song/${song.slug}`} className="min-w-0 flex-1">
+                    <p className="truncate font-display text-lg text-[var(--text)]">{song.title}</p>
+                  </Link>
+                  <div className="w-40 shrink-0">
+                    <AudioPreview
+                      src={song.audioPath}
+                      previewStartMs={song.previewStartMs}
+                      previewEndMs={song.previewEndMs}
+                      comingSoonLabel={previewComingSoon}
+                    />
+                  </div>
+                </div>
+              )),
+            )}
+          </div>
+        ) : null}
+
         {featured ? (
           <div
             className="flex w-full flex-col items-center gap-4 rounded-[var(--radius-panel)] border p-6"
             style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
           >
-            <Eyebrow>{newMusic}</Eyebrow>
+            <Eyebrow>{backNext}</Eyebrow>
             <h2 className="font-display text-2xl text-[var(--text)]">{featured.title}</h2>
             <ButtonLink href={`/song/${featured.slug}`} variant="primary" glow className="w-full">
               {featured.status === 'building' ? backNext : supportNow}
@@ -88,7 +169,10 @@ export default async function NowPage() {
             className="flex w-full flex-col items-center gap-2 rounded-[var(--radius-panel)] border p-6"
             style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
           >
-            <p className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">{topSponsorLabel}</p>
+            <span className="flex items-center gap-2 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
+              <Trophy aria-hidden size={14} color="var(--champagne)" />
+              {topSponsorLabel}
+            </span>
             <p className="flex items-baseline gap-3 text-body text-[var(--text)]">
               {topSponsor.isAnonymous ? await text('song.anonymous') : topSponsor.name}
               {!topSponsor.hideAmount ? (

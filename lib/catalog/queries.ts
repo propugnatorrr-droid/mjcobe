@@ -11,6 +11,9 @@ export type CatalogSong = {
   description: string | null;
   coverPath: string | null;
   coverPlaceholder: string | null;
+  audioPath: string | null;
+  previewStartMs: number;
+  previewEndMs: number;
   spotifyUrl: string | null;
   appleMusicUrl: string | null;
   youtubeUrl: string | null;
@@ -29,6 +32,7 @@ export const listCatalog = cache(async (): Promise<CatalogSong[]> => {
     select
       so.id, so.slug, so.title, so.status::text as status, so.description,
       ma.path as cover_path, ma.placeholder as cover_placeholder,
+      aa.path as audio_path, so.preview_start_ms, so.preview_end_ms,
       so.spotify_url, so.apple_music_url, so.youtube_url,
       cp.id as campaign_id,
       coalesce(fan.cents, 0)::int as raised_cents,
@@ -36,6 +40,7 @@ export const listCatalog = cache(async (): Promise<CatalogSong[]> => {
       coalesce(fan.supporters, 0)::int as supporter_count
     from songs so
     left join media_assets ma on ma.id = so.cover_asset_id
+    left join media_assets aa on aa.id = so.audio_asset_id
     left join lateral (
       select cp.* from campaigns cp
       where cp.song_id = so.id
@@ -66,6 +71,9 @@ export const listCatalog = cache(async (): Promise<CatalogSong[]> => {
       description: r.description ? String(r.description) : null,
       coverPath: r.cover_path ? String(r.cover_path) : null,
       coverPlaceholder: r.cover_placeholder ? String(r.cover_placeholder) : null,
+      audioPath: r.audio_path ? String(r.audio_path) : null,
+      previewStartMs: Number(r.preview_start_ms ?? 0),
+      previewEndMs: Number(r.preview_end_ms ?? 30_000),
       spotifyUrl: r.spotify_url ? String(r.spotify_url) : null,
       appleMusicUrl: r.apple_music_url ? String(r.apple_music_url) : null,
       youtubeUrl: r.youtube_url ? String(r.youtube_url) : null,

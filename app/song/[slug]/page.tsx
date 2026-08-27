@@ -36,7 +36,7 @@ export default async function SongPage({ params }: Props) {
   const data = await getSongPage(slug);
   if (!data) notFound();
 
-  const { song, campaign, cover, totals, fan, business, crown } = data;
+  const { song, campaign, cover, audio, totals, fan, business, crown } = data;
 
   const supportEnabled = data.isAcceptingSupport && (campaign?.fanSupportEnabled ?? false);
   const sponsorEnabled =
@@ -48,7 +48,7 @@ export default async function SongPage({ params }: Props) {
       <SiteNav />
 
       <div className="mx-auto max-w-5xl px-6 md:px-12">
-        <SongHero song={song} campaign={campaign} cover={cover} />
+        <SongHero song={song} campaign={campaign} cover={cover} audio={audio} />
 
         <FundingPanel
           totals={totals}
@@ -88,6 +88,7 @@ export default async function SongPage({ params }: Props) {
           rows={business.rows}
           totalCount={business.totalCount}
           linkPrefix="/partner"
+          moreHref={`/song/${song.slug}/sponsors`}
         />
 
         <Rule />
@@ -98,6 +99,7 @@ export default async function SongPage({ params }: Props) {
           moreKey="leaderboard.more_supporters"
           rows={fan.rows}
           totalCount={fan.totalCount}
+          moreHref={`/song/${song.slug}/supporters`}
         />
 
         <Rule />

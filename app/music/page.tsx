@@ -4,46 +4,67 @@ import { SiteNav } from '@/components/SiteNav';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { FundingMeter } from '@/components/primitives/FundingMeter';
 import { ButtonLink } from '@/components/primitives/Button';
+import { AudioPreview } from '@/components/song/AudioPreview';
 import { listCatalog, type CatalogSong } from '@/lib/catalog/queries';
 import { text } from '@/lib/copy/site-copy';
 
 export const revalidate = 60;
 
-function SongCard({ song, cta }: { song: CatalogSong; cta: string }) {
+async function SongCard({ song, cta }: { song: CatalogSong; cta: string }) {
+  const comingSoonLabel = await text('song.preview_coming_soon');
+
   return (
-    <Link
-      href={`/song/${song.slug}`}
-      className="group flex flex-col gap-4 rounded-[var(--radius-panel)] border p-4 transition-colors [transition-duration:var(--duration-signature)] hover:border-[var(--champagne)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
+    <div
+      className="group flex flex-col gap-4 rounded-[var(--radius-panel)] border p-4 transition-colors [transition-duration:var(--duration-signature)] hover:border-[var(--champagne)]"
       style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
     >
-      {song.coverPath ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={song.coverPath}
-          alt=""
-          width={320}
-          height={320}
-          className="aspect-square w-full rounded-[var(--radius-panel)] object-cover"
-          style={{ backgroundColor: 'var(--ink)' }}
-        />
-      ) : (
-        <div
-          className="aspect-square w-full rounded-[var(--radius-panel)]"
-          style={{ background: 'var(--ink)' }}
-        />
-      )}
+      <Link href={`/song/${song.slug}`} className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]">
+        {song.coverPath ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={song.coverPath}
+            alt=""
+            width={320}
+            height={320}
+            className="aspect-square w-full rounded-[var(--radius-panel)] object-cover"
+            style={{ backgroundColor: 'var(--ink)' }}
+          />
+        ) : (
+          <div
+            className="aspect-square w-full rounded-[var(--radius-panel)]"
+            style={{ background: 'var(--ink)' }}
+          />
+        )}
+      </Link>
       <div>
-        <h3 className="font-display text-2xl text-[var(--text)]">{song.title}</h3>
+        <Link href={`/song/${song.slug}`}>
+          <h3 className="font-display text-2xl text-[var(--text)] group-hover:text-[var(--champagne)]">
+            {song.title}
+          </h3>
+        </Link>
+
+        <div className="mt-3">
+          <AudioPreview
+            src={song.audioPath}
+            previewStartMs={song.previewStartMs}
+            previewEndMs={song.previewEndMs}
+            comingSoonLabel={comingSoonLabel}
+          />
+        </div>
+
         {song.goalCents > 0 ? (
           <div className="mt-3">
             <FundingMeter percent={song.percent} />
           </div>
         ) : null}
-        <p className="mt-3 font-mono text-eyebrow uppercase text-[var(--champagne)] group-hover:underline">
+        <Link
+          href={`/song/${song.slug}`}
+          className="mt-3 block font-mono text-eyebrow uppercase text-[var(--champagne)] hover:underline"
+        >
           {cta}
-        </p>
+        </Link>
       </div>
-    </Link>
+    </div>
   );
 }
 

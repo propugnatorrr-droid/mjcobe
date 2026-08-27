@@ -3,6 +3,7 @@ import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { RevealText } from '@/components/primitives/RevealText';
 import { RevealImage } from '@/components/primitives/RevealImage';
 import { Rule } from '@/components/primitives/Rule';
+import { AudioPreview } from '@/components/song/AudioPreview';
 import { text } from '@/lib/copy/site-copy';
 import type { CopyKey } from '@/lib/copy/defaults';
 import type { SongPageData } from '@/lib/song/queries';
@@ -16,13 +17,16 @@ export async function SongHero({
   song,
   campaign,
   cover,
-}: Pick<SongPageData, 'song' | 'campaign' | 'cover'>) {
+  audio,
+}: Pick<SongPageData, 'song' | 'campaign' | 'cover' | 'audio'>) {
   const statusKey: CopyKey =
     campaign?.status === 'live' ? 'eyebrow.currently_building' : 'eyebrow.live';
 
   const alt = cover?.altCopyKey
     ? await text(cover.altCopyKey as CopyKey)
     : song.title;
+
+  const comingSoonLabel = await text('song.preview_coming_soon');
 
   return (
     <header className="pt-24 md:pt-40">
@@ -45,6 +49,15 @@ export async function SongHero({
           {song.description}
         </p>
       ) : null}
+
+      <div className="mt-8 max-w-xl">
+        <AudioPreview
+          src={audio?.path ?? null}
+          previewStartMs={song.previewStartMs}
+          previewEndMs={song.previewEndMs}
+          comingSoonLabel={comingSoonLabel}
+        />
+      </div>
 
       {cover ? (
         <div className="mt-16">

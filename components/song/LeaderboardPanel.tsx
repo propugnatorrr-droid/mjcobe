@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { LeaderboardRow } from '@/components/primitives/LeaderboardRow';
 import { cents } from '@/lib/money/cents';
@@ -12,6 +13,7 @@ export async function LeaderboardPanel({
   rows,
   totalCount,
   linkPrefix,
+  moreHref,
 }: {
   headingKey: CopyKey;
   emptyKey: CopyKey;
@@ -20,6 +22,8 @@ export async function LeaderboardPanel({
   totalCount: number;
   /** Present for sponsors, absent for fans until profiles ship. */
   linkPrefix?: string;
+  /** Where "N more" links through to the full ranked list. */
+  moreHref?: string;
 }) {
   const anonymous = await text('song.anonymous');
   const hidden = await text('song.amount_hidden');
@@ -55,9 +59,18 @@ export async function LeaderboardPanel({
       </div>
 
       {remaining > 0 ? (
-        <p className="mt-6 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
-          {await text(moreKey, { count: remaining })}
-        </p>
+        moreHref ? (
+          <Link
+            href={moreHref}
+            className="mt-6 block font-mono text-eyebrow uppercase text-[var(--text-dim)] transition-colors [transition-duration:var(--duration-signature)] hover:text-[var(--champagne)]"
+          >
+            {await text(moreKey, { count: remaining })}
+          </Link>
+        ) : (
+          <p className="mt-6 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
+            {await text(moreKey, { count: remaining })}
+          </p>
+        )
       ) : null}
     </section>
   );

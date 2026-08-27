@@ -20,6 +20,7 @@ export type SongPageData = {
   song: Song;
   campaign: Campaign | null;
   cover: MediaAsset | null;
+  audio: MediaAsset | null;
   totals: CampaignTotals;
   fan: { rows: LeaderboardRowData[]; totalCount: number };
   business: { rows: LeaderboardRowData[]; totalCount: number };
@@ -87,14 +88,15 @@ export const getSongPage = cache(async (slug: string): Promise<SongPageData | nu
 
   if (!song) return null;
 
-  const [cover, campaign] = await Promise.all([
+  const [cover, audio, campaign] = await Promise.all([
     loadMedia(song.coverAssetId),
+    loadMedia(song.audioAssetId),
     activeCampaign(song.id),
   ]);
 
   if (!campaign) {
     return {
-      song, campaign: null, cover,
+      song, campaign: null, cover, audio,
       totals: EMPTY_TOTALS,
       fan: { rows: [], totalCount: 0 },
       business: { rows: [], totalCount: 0 },
@@ -134,7 +136,7 @@ export const getSongPage = cache(async (slug: string): Promise<SongPageData | nu
     ]);
 
   return {
-    song, campaign, cover, totals, fan, business, crown,
+    song, campaign, cover, audio, totals, fan, business, crown,
     tiers, packages, updates, journey,
     daysLeft: daysUntil(campaign.endsAt),
     isAcceptingSupport:
@@ -151,4 +153,17 @@ export async function formatDay(value: Date): Promise<string> {
   return new Intl.DateTimeFormat(locale, {
     day: '2-digit', month: 'short', year: 'numeric', timeZone,
   }).format(value).toUpperCase();
+}
+
+/** "15s ago" / "2m ago" / "3h ago" / falls back to formatDay past a day —
+ * computed once at render time, not live-ticking (this is a server component). */
+export function formatRelativeTime(value: Date, now = new Date()): string {
+  const seconds = Math.max(0, Math.floor((now.getTime() - value.getTime()) / 1000));
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
