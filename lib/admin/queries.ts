@@ -143,6 +143,191 @@ export async function listContributions(filter?: {
     email: r.email ? String(r.email) : null,
   }));
 }
+export type AdminSponsor = {
+  id: string;
+  slug: string;
+  businessName: string;
+  repName: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  instagram: string | null;
+  shopUrl: string | null;
+  industry: string | null;
+  description: string | null;
+  message: string | null;
+  logoPath: string | null;
+  moderation: string;
+  approvedAt: Date | null;
+  supportedSince: Date | null;
+  createdAt: Date;
+  contributionCount: number;
+  netCents: number;
+};
+
+function adminSponsorFromRow(
+  row: Row,
+): AdminSponsor {
+  return {
+    id: String(row.id),
+    slug: String(row.slug),
+    businessName: String(
+      row.business_name ?? '',
+    ),
+    repName: row.rep_name
+      ? String(row.rep_name)
+      : null,
+    email: row.email
+      ? String(row.email)
+      : null,
+    phone: row.phone
+      ? String(row.phone)
+      : null,
+    website: row.website
+      ? String(row.website)
+      : null,
+    instagram: row.instagram
+      ? String(row.instagram)
+      : null,
+    shopUrl: row.shop_url
+      ? String(row.shop_url)
+      : null,
+    industry: row.industry
+      ? String(row.industry)
+      : null,
+    description: row.description
+      ? String(row.description)
+      : null,
+    message: row.message
+      ? String(row.message)
+      : null,
+    logoPath: row.logo_path
+      ? String(row.logo_path)
+      : null,
+    moderation: String(row.moderation),
+    approvedAt: row.approved_at
+      ? new Date(String(row.approved_at))
+      : null,
+    supportedSince: row.supported_since
+      ? new Date(String(row.supported_since))
+      : null,
+    createdAt: new Date(
+      String(row.created_at),
+    ),
+    contributionCount: num(
+      row.contribution_count,
+    ),
+    netCents: num(row.net_cents),
+  };
+}
+
+export async function listAdminSponsors(): Promise<
+  AdminSponsor[]
+> {
+  const result = await db.execute(sql`
+    select
+      sp.id,
+      sp.slug,
+      sp.business_name,
+      sp.rep_name,
+      sp.email,
+      sp.phone,
+      sp.website,
+      sp.instagram,
+      sp.shop_url,
+      sp.industry,
+      sp.description,
+      sp.message,
+      sp.moderation::text as moderation,
+      sp.approved_at,
+      sp.supported_since,
+      sp.created_at,
+      ma.path as logo_path,
+      count(distinct c.id)
+        filter (
+          where l.id is not null
+        )::int as contribution_count,
+      coalesce(
+        sum(l.amount_cents),
+        0
+      )::int as net_cents
+    from sponsors sp
+    left join media_assets ma
+      on ma.id = sp.logo_asset_id
+    left join contributions c
+      on c.sponsor_id = sp.id
+    left join ledger_entries l
+      on l.contribution_id = c.id
+    group by
+      sp.id,
+      ma.path
+    order by
+      case sp.moderation
+        when 'approved' then 0
+        when 'pending' then 1
+        when 'flagged' then 2
+        when 'hidden' then 3
+        else 4
+      end,
+      net_cents desc,
+      sp.created_at desc
+  `);
+
+  return rows(result).map(
+    adminSponsorFromRow,
+  );
+}
+
+export async function getAdminSponsor(
+  id: string,
+): Promise<AdminSponsor | null> {
+  const result = await db.execute(sql`
+    select
+      sp.id,
+      sp.slug,
+      sp.business_name,
+      sp.rep_name,
+      sp.email,
+      sp.phone,
+      sp.website,
+      sp.instagram,
+      sp.shop_url,
+      sp.industry,
+      sp.description,
+      sp.message,
+      sp.moderation::text as moderation,
+      sp.approved_at,
+      sp.supported_since,
+      sp.created_at,
+      ma.path as logo_path,
+      count(distinct c.id)
+        filter (
+          where l.id is not null
+        )::int as contribution_count,
+      coalesce(
+        sum(l.amount_cents),
+        0
+      )::int as net_cents
+    from sponsors sp
+    left join media_assets ma
+      on ma.id = sp.logo_asset_id
+    left join contributions c
+      on c.sponsor_id = sp.id
+    left join ledger_entries l
+      on l.contribution_id = c.id
+    where sp.id = ${id}
+    group by
+      sp.id,
+      ma.path
+    limit 1
+  `);
+
+  const row = rows(result)[0];
+
+  return row
+    ? adminSponsorFromRow(row)
+    : null;
+}
 
 export type PendingSponsor = {
   contributionId: string;
