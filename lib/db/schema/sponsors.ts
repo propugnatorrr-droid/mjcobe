@@ -21,8 +21,10 @@ export const sponsors = pgTable('sponsors', {
   website: text('website'),
   instagram: text('instagram'),
   shopUrl: text('shop_url'),
-  /** SVG required at upload; rendered monochrome knockout so brand palettes
-   *  cannot break the site palette. */
+  /**
+   * Approved PNG/WebP logo asset. Render with object-fit: contain.
+   * Never crop, stretch, or recolor a sponsor logo.
+   */
   logoAssetId: uuid('logo_asset_id').references(() => mediaAssets.id),
   categoryId: uuid('category_id').references(() => sponsorCategories.id),
   industry: text('industry'),
