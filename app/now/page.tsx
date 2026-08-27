@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { PlayCircle, ChevronRight, Flame, Trophy, Star, Crown, Music2 } from 'lucide-react';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
+import { MobileCta } from '@/components/MobileCta';
 import { ButtonLink } from '@/components/primitives/Button';
 import { LookbookImage } from '@/components/primitives/LookbookImage';
 import { PhotoTreatment } from '@/components/treatments/PhotoTreatment';
@@ -305,8 +306,8 @@ export default async function NowPage() {
           </Panel>
         </div>
       </div>
-
       <SiteFooter />
+      <MobileCta />
     </main>
   );
 }

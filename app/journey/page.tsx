@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Crown } from 'lucide-react';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
+import { MobileCta } from '@/components/MobileCta';
 import { formatDay } from '@/lib/song/queries';
 import { getGlobalJourney, journeyGroup, type JourneyFilter } from '@/lib/journey/queries';
 import { journeyIcon } from '@/lib/journey/icons';
@@ -154,8 +155,8 @@ export default async function JourneyPage({
         </div>
         <p className="mt-6 text-center font-serif text-xl italic text-[var(--text-dim)]">{sub}</p>
       </div>
-
       <SiteFooter />
+      <MobileCta />
     </main>
   );
 }

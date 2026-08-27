@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Users, Lock } from 'lucide-react';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
+import { MobileCta } from '@/components/MobileCta';
 import { SectionHeading } from '@/components/primitives/SectionHeading';
 import { StatusBadge } from '@/components/primitives/StatusBadge';
 import { StreamingLinks } from '@/components/song/StreamingLinks';
@@ -226,8 +227,8 @@ export default async function MusicPage() {
           <p className="py-16 text-body text-[var(--text-dim)]">{empty}</p>
         ) : null}
       </div>
-
       <SiteFooter />
+      <MobileCta />
     </main>
   );
 }

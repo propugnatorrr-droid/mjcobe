@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
+import { MobileCta } from '@/components/MobileCta';
 import { SectionHeading } from '@/components/primitives/SectionHeading';
 import { getSupporterProfile } from '@/lib/supporter/queries';
 import { badgeIcon } from '@/lib/supporter/badges';
@@ -188,8 +189,8 @@ export default async function SupporterProfilePage({
           </section>
         ) : null}
       </div>
-
       <SiteFooter />
+      <MobileCta />
     </main>
   );
 }

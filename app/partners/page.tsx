@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
+import { MobileCta } from '@/components/MobileCta';
 import { SectionHeading } from '@/components/primitives/SectionHeading';
 import { LookbookImage } from '@/components/primitives/LookbookImage';
 import { PhotoTreatment } from '@/components/treatments/PhotoTreatment';
@@ -268,8 +269,8 @@ export default async function PartnersPage() {
           </div>
         </section>
       ) : null}
-
       <SiteFooter />
+      <MobileCta />
     </main>
   );
 }

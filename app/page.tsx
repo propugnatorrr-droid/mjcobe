@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Play, ArrowRight, Users, Heart, Sparkles } from 'lucide-react';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
+import { MobileCta } from '@/components/MobileCta';
 import { LookbookImage } from '@/components/primitives/LookbookImage';
 import { PhotoTreatment } from '@/components/treatments/PhotoTreatment';
 import { ButtonLink } from '@/components/primitives/Button';
@@ -267,8 +268,8 @@ export default async function HomePage() {
           <p className="mt-6 text-body text-[var(--text-dim)]">{empty}</p>
         </section>
       )}
-
       <SiteFooter />
+      <MobileCta />
     </main>
   );
 }

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Globe, AtSign, ShoppingBag, Crown, Calendar, ArrowUpRight } from 'lucide-react';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
+import { MobileCta } from '@/components/MobileCta';
 import { SectionHeading } from '@/components/primitives/SectionHeading';
 import { getSponsorProfile } from '@/lib/sponsor/queries';
 import { text } from '@/lib/copy/site-copy';
@@ -233,8 +234,8 @@ export default async function SponsorProfilePage({ params }: Props) {
           ) : null}
         </aside>
       </div>
-
       <SiteFooter />
+      <MobileCta />
     </main>
   );
 }
