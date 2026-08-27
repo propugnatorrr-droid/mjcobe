@@ -307,6 +307,15 @@ const copyDefaults = {
   'partner.total_contribution': 'TOTAL CONTRIBUTION',
   'partner.brand_profile': 'BRAND PROFILE',
   'partner.official_partners': 'OFFICIAL SONG PARTNERS',
+  'partner.current_number_one': 'CURRENT #1 SPONSOR',
+  'partner.claim_number_one': 'CLAIM #1',
+  'partner.minimum_to_claim': 'MINIMUM TO CLAIM #1',
+  'partner.number_one_open': 'THE #1 POSITION IS OPEN',
+  'partner.challenge_heading': 'THE #1 CHALLENGE',
+  'partner.challenge_body':
+    'Take the leading position and become the most visible business backing this record. Standard sponsorship packages remain available without entering the competition.',
+  'partner.rank_label': '#{rank} OFFICIAL PARTNER',
+  'partner.all_partners': 'ALL OFFICIAL PARTNERS',
 
   // ---- /now (link-in-bio) page ----------------------------------------------
   'now.title': 'MJ COBE / RIGHT NOW',
