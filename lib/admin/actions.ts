@@ -671,6 +671,294 @@ export async function declineSponsor(
   });
 }
 
+function optionalPublicUrl(
+  value: FormDataEntryValue | null,
+): string | null {
+  const input = str(value, 500);
+
+  if (!input) {
+    return null;
+  }
+
+  const candidate =
+    input.startsWith('http://') ||
+    input.startsWith('https://')
+      ? input
+      : `https://${input}`;
+
+  try {
+    const url = new URL(candidate);
+
+    if (
+      url.protocol !== 'http:' &&
+      url.protocol !== 'https:'
+    ) {
+      return null;
+    }
+
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function instagramHandle(
+  value: FormDataEntryValue | null,
+): string | null {
+  const input = str(value, 100);
+
+  if (!input) {
+    return null;
+  }
+
+  const withoutUrl = input
+    .replace(
+      /^https?:\/\/(www\.)?instagram\.com\//i,
+      '',
+    )
+    .split(/[/?#]/)[0];
+
+  const normalized = withoutUrl
+    .replace(/^@/, '')
+    .replace(/[^a-zA-Z0-9._]/g, '')
+    .slice(0, 30);
+
+  return normalized || null;
+}
+
+export async function updateSponsorProfile(
+  formData: FormData,
+): Promise<void> {
+  const me = await requireAdmin();
+  const sponsorId = str(
+    formData.get('sponsorId'),
+  );
+  const businessName = str(
+    formData.get('businessName'),
+    120,
+  );
+
+  if (!sponsorId || !businessName) {
+    return;
+  }
+
+  const [before] = await db
+    .select()
+    .from(s.sponsors)
+    .where(
+      eq(s.sponsors.id, sponsorId),
+    )
+    .limit(1);
+
+  if (!before) {
+    return;
+  }
+
+  const patch = {
+    businessName,
+    repName: str(
+      formData.get('repName'),
+      120,
+    ),
+    email: str(
+      formData.get('email'),
+      254,
+    )?.toLowerCase() ?? null,
+    phone: str(
+      formData.get('phone'),
+      40,
+    ),
+    website: optionalPublicUrl(
+      formData.get('website'),
+    ),
+    instagram: instagramHandle(
+      formData.get('instagram'),
+    ),
+    shopUrl: optionalPublicUrl(
+      formData.get('shopUrl'),
+    ),
+    industry: str(
+      formData.get('industry'),
+      120,
+    ),
+    description: str(
+      formData.get('description'),
+      2000,
+    ),
+  };
+
+  await dbw
+    .update(s.sponsors)
+    .set(patch)
+    .where(
+      eq(s.sponsors.id, sponsorId),
+    );
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'sponsor.profile_update',
+    entity: 'sponsor',
+    entityId: sponsorId,
+    before: {
+      businessName: before.businessName,
+      repName: before.repName,
+      email: before.email,
+      phone: before.phone,
+      website: before.website,
+      instagram: before.instagram,
+      shopUrl: before.shopUrl,
+      industry: before.industry,
+      description: before.description,
+    },
+    after: patch,
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath('/admin/sponsors');
+  revalidatePath('/admin/sponsors/manage');
+  revalidatePath(
+    `/admin/sponsors/${sponsorId}`,
+  );
+  revalidatePath(
+    `/partner/${before.slug}`,
+  );
+  revalidatePath('/partners');
+  revalidatePath('/', 'layout');
+}
+
+export async function moderateSponsorVisibility(
+  formData: FormData,
+): Promise<void> {
+  const me = await requireAdmin();
+  const sponsorId = str(
+    formData.get('sponsorId'),
+  );
+  const action = str(
+    formData.get('action'),
+  );
+
+  if (
+    !sponsorId ||
+    (action !== 'hide' &&
+      action !== 'show')
+  ) {
+    return;
+  }
+
+  const [before] = await db
+    .select()
+    .from(s.sponsors)
+    .where(
+      eq(s.sponsors.id, sponsorId),
+    )
+    .limit(1);
+
+  if (!before) {
+    return;
+  }
+
+  if (
+    action === 'hide' &&
+    before.moderation !== 'approved'
+  ) {
+    return;
+  }
+
+  if (
+    action === 'show' &&
+    before.moderation !== 'hidden'
+  ) {
+    return;
+  }
+
+  const nextModeration =
+    action === 'hide'
+      ? 'hidden'
+      : 'approved';
+
+  await dbw.transaction(async (tx) => {
+    await tx
+      .update(s.sponsors)
+      .set({
+        moderation: nextModeration,
+        approvedAt:
+          action === 'show'
+            ? before.approvedAt ??
+              new Date()
+            : before.approvedAt,
+      })
+      .where(
+        eq(s.sponsors.id, sponsorId),
+      );
+
+    if (action === 'hide') {
+      await tx
+        .update(s.contributions)
+        .set({
+          leaderboardVisible: false,
+        })
+        .where(
+          and(
+            eq(
+              s.contributions.sponsorId,
+              sponsorId,
+            ),
+            eq(
+              s.contributions.supportType,
+              'business',
+            ),
+          ),
+        );
+    } else {
+      await tx
+        .update(s.contributions)
+        .set({
+          leaderboardVisible: true,
+        })
+        .where(
+          and(
+            eq(
+              s.contributions.sponsorId,
+              sponsorId,
+            ),
+            eq(
+              s.contributions.supportType,
+              'business',
+            ),
+            eq(
+              s.contributions.moderation,
+              'approved',
+            ),
+          ),
+        );
+    }
+  });
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: `sponsor.${action}`,
+    entity: 'sponsor',
+    entityId: sponsorId,
+    before: {
+      moderation: before.moderation,
+    },
+    after: {
+      moderation: nextModeration,
+    },
+    ipHash: await ipHash(),
+  });
+
+  revalidatePath('/admin/sponsors');
+  revalidatePath('/admin/sponsors/manage');
+  revalidatePath(
+    `/admin/sponsors/${sponsorId}`,
+  );
+  revalidatePath(
+    `/partner/${before.slug}`,
+  );
+  revalidatePath('/partners');
+  revalidatePath('/', 'layout');
+}
 
 // -------------------------------------------------------------- offline -----
 
