@@ -147,56 +147,107 @@ export async function listContributions(filter?: {
 export type PendingSponsor = {
   contributionId: string;
   transactionId: string | null;
+  transactionState: string;
   sponsorId: string | null;
   businessName: string;
   repName: string | null;
   email: string | null;
+  phone: string | null;
   website: string | null;
   instagram: string | null;
   industry: string | null;
   message: string | null;
+  logoPath: string | null;
   amountCents: number;
   songTitle: string;
   songSlug: string;
   submittedAt: Date;
 };
 
-export async function listPendingSponsors(): Promise<PendingSponsor[]> {
+export async function listPendingSponsors(): Promise<
+  PendingSponsor[]
+> {
   const result = await db.execute(sql`
     select
       c.id as contribution_id,
       t.id as transaction_id,
+      coalesce(t.state::text, 'initiated') as transaction_state,
       sp.id as sponsor_id,
       coalesce(sp.business_name, '') as business_name,
-      sp.rep_name, sp.email, sp.website, sp.instagram, sp.industry, sp.message,
-      c.amount_cents, c.created_at as submitted_at,
-      so.title as song_title, so.slug as song_slug
+      sp.rep_name,
+      sp.email,
+      sp.phone,
+      sp.website,
+      sp.instagram,
+      sp.industry,
+      sp.message,
+      ma.path as logo_path,
+      c.amount_cents,
+      c.created_at as submitted_at,
+      so.title as song_title,
+      so.slug as song_slug
     from contributions c
-    join songs so on so.id = c.song_id
-    left join transactions t on t.contribution_id = c.id
-    left join sponsors sp on sp.id = c.sponsor_id
-    left join ledger_entries l on l.contribution_id = c.id
-    where c.support_type = 'business' and l.id is null
+    join songs so
+      on so.id = c.song_id
+    left join transactions t
+      on t.contribution_id = c.id
+    left join sponsors sp
+      on sp.id = c.sponsor_id
+    left join media_assets ma
+      on ma.id = sp.logo_asset_id
+    left join ledger_entries l
+      on l.contribution_id = c.id
+    where c.support_type = 'business'
+      and l.id is null
+      and c.moderation not in ('blocked', 'hidden')
+      and (
+        t.state is null
+        or t.state in ('initiated', 'authorized')
+      )
     order by c.created_at asc
   `);
 
-  return rows(result).map((r) => ({
-    contributionId: String(r.contribution_id),
-    transactionId: r.transaction_id ? String(r.transaction_id) : null,
-    sponsorId: r.sponsor_id ? String(r.sponsor_id) : null,
-    businessName: String(r.business_name),
-    repName: r.rep_name ? String(r.rep_name) : null,
-    email: r.email ? String(r.email) : null,
-    website: r.website ? String(r.website) : null,
-    instagram: r.instagram ? String(r.instagram) : null,
-    industry: r.industry ? String(r.industry) : null,
-    message: r.message ? String(r.message) : null,
-    amountCents: num(r.amount_cents),
-    songTitle: String(r.song_title),
-    songSlug: String(r.song_slug),
-    submittedAt: new Date(String(r.submitted_at)),
+  return rows(result).map((row) => ({
+    contributionId: String(row.contribution_id),
+    transactionId: row.transaction_id
+      ? String(row.transaction_id)
+      : null,
+    transactionState: String(
+      row.transaction_state,
+    ),
+    sponsorId: row.sponsor_id
+      ? String(row.sponsor_id)
+      : null,
+    businessName: String(row.business_name),
+    repName: row.rep_name
+      ? String(row.rep_name)
+      : null,
+    email: row.email ? String(row.email) : null,
+    phone: row.phone ? String(row.phone) : null,
+    website: row.website
+      ? String(row.website)
+      : null,
+    instagram: row.instagram
+      ? String(row.instagram)
+      : null,
+    industry: row.industry
+      ? String(row.industry)
+      : null,
+    message: row.message
+      ? String(row.message)
+      : null,
+    logoPath: row.logo_path
+      ? String(row.logo_path)
+      : null,
+    amountCents: num(row.amount_cents),
+    songTitle: String(row.song_title),
+    songSlug: String(row.song_slug),
+    submittedAt: new Date(
+      String(row.submitted_at),
+    ),
   }));
 }
+
 
 export async function listRecentTransactions(limit = 10) {
   const result = await db.execute(sql`
