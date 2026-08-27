@@ -53,7 +53,7 @@ export type SponsorFormLabels = Record<
   | 'customSponsorship'
   | 'approvalHeading'
   | 'claimHeading'
-  | 'claimBody'
+  | 'claimBody',
   string
 >;
 
