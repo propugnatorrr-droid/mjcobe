@@ -226,7 +226,7 @@ export default async function SponsorReviewPage() {
 
                       <Detail
                         label={
-                          admin.table.email
+                          admin.email
                         }
                       >
                         {sponsor.email ? (
