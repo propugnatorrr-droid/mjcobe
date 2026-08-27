@@ -16,6 +16,7 @@ import { consentFor } from '@/lib/consent/text';
 import { createThanksToken } from './tokens';
 import { getTopSpot } from '@/lib/campaign/queries';
 import {
+  storePendingSponsorLogo,
   storeSponsorLogo,
   validateSponsorLogo,
 } from '@/lib/media/sponsor-logo';
@@ -264,9 +265,11 @@ export async function submitSponsorship(
     return { error: await text('checkout.error.blocked') };
   }
 
-  const logoValidation = validateSponsorLogo(
+const logoValidation =
+  await validateSponsorLogo(
     formData.get('logo'),
   );
+
 
   if (!logoValidation.ok) {
     return {
@@ -284,32 +287,56 @@ export async function submitSponsorship(
   let token: string;
 
   try {
-    let logoAssetId: string | null = null;
+// Reuse an existing sponsor record when the
+// same business returns, so subsequent support
+// remains attached to one public identity.
+const [existing] = await db
+  .select()
+  .from(s.sponsors)
+  .where(
+    or(
+      eq(s.sponsors.email, email),
+      eq(
+        s.sponsors.businessName,
+        businessName,
+      ),
+    ),
+  )
+  .limit(1);
 
-    if (logoValidation.file) {
-      try {
-        logoAssetId = await storeSponsorLogo(
+let sponsorId = existing?.id ?? null;
+let logoAssetId: string | null = null;
+
+if (logoValidation.file) {
+  try {
+    if (
+      existing &&
+      (
+        existing.moderation ===
+          'approved' ||
+        existing.moderation ===
+          'hidden'
+      )
+    ) {
+      await storePendingSponsorLogo(
+        logoValidation.file,
+        existing.id,
+      );
+    } else {
+      logoAssetId =
+        await storeSponsorLogo(
           logoValidation.file,
         );
-      } catch {
-        return {
-          error: await text(
-            'checkout.logo.error_upload',
-          ),
-        };
-      }
     }
+  } catch {
+    return {
+      error: await text(
+        'checkout.logo.error_upload',
+      ),
+    };
+  }
+}
 
-    // Reuse an existing sponsor record when the same business returns, so a
-
-    // second sponsorship tops up one identity instead of splitting the total.
-    const [existing] = await db
-      .select()
-      .from(s.sponsors)
-      .where(or(eq(s.sponsors.email, email), eq(s.sponsors.businessName, businessName)))
-      .limit(1);
-
-    let sponsorId = existing?.id ?? null;
     if (!sponsorId) {
       const [created] = await dbw
         .insert(s.sponsors)
@@ -336,16 +363,23 @@ export async function submitSponsorship(
         })
         .returning({ id: s.sponsors.id });
       sponsorId = created.id;
-    } else if (logoAssetId) {
-      await dbw
-        .update(s.sponsors)
-        .set({
-          logoAssetId,
-          moderation: 'pending',
-          approvedAt: null,
-        })
-        .where(eq(s.sponsors.id, sponsorId));
-    }
+} else if (
+  logoAssetId &&
+  existing?.moderation !== 'approved' &&
+  existing?.moderation !== 'hidden'
+) {
+  await dbw
+    .update(s.sponsors)
+    .set({
+      logoAssetId,
+    })
+    .where(
+      eq(
+        s.sponsors.id,
+        sponsorId,
+      ),
+    );
+}
 
     const created = await createContribution({
       campaignId: campaign.id,
