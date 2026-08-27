@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { PlayCircle, ExternalLink, Flame, Trophy } from 'lucide-react';
 import { SiteNav } from '@/components/SiteNav';
+import { SiteFooter } from '@/components/SiteFooter';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { ButtonLink } from '@/components/primitives/Button';
 import { AmountFigure } from '@/components/primitives/AmountFigure';
@@ -227,6 +228,7 @@ export default async function NowPage() {
           </p>
         </div>
       </section>
+      <SiteFooter />
     </main>
   );
 }

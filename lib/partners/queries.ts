@@ -13,6 +13,8 @@ export type AcceptingCampaign = {
   goalCents: number;
   raisedCents: number;
   percent: number;
+  coverPath: string | null;
+  objective: string | null;
 };
 
 export type SponsorPackage = typeof s.sponsorPackages.$inferSelect;
@@ -32,15 +34,18 @@ export type PartnersPageData = {
   sponsors: PartnerSponsor[];
   totalSponsorCents: number;
   totalSponsorCount: number;
+  totalSupporterCount: number;
+  totalSongCount: number;
 };
 
 export const getPartnersPage = cache(async (): Promise<PartnersPageData> => {
-  const [acceptingRows, totalRows, packages, sponsorRows] = await Promise.all([
+  const [acceptingRows, totalRows, reachRows, packages, sponsorRows] = await Promise.all([
     db.execute(sql`
-      select cp.id as campaign_id, cp.slug as campaign_slug,
-        so.title as song_title, so.slug as song_slug
+      select cp.id as campaign_id, cp.slug as campaign_slug, cp.objective,
+        so.title as song_title, so.slug as song_slug, ma.path as cover_path
       from campaigns cp
       join songs so on so.id = cp.song_id
+      left join media_assets ma on ma.id = so.cover_asset_id
       where cp.status = 'live' and cp.business_sponsorship_enabled = true
       order by cp.created_at desc
     `),
@@ -49,6 +54,13 @@ export const getPartnersPage = cache(async (): Promise<PartnersPageData> => {
       from ledger_entries l
       join contributions c on c.id = l.contribution_id
       where c.support_type = 'business'
+    `),
+    db.execute(sql`
+      select
+        count(distinct c.supporter_id)::int as supporters,
+        count(distinct c.song_id)::int as songs
+      from ledger_entries l
+      join contributions c on c.id = l.contribution_id
     `),
     db
       .select()
@@ -84,6 +96,8 @@ export const getPartnersPage = cache(async (): Promise<PartnersPageData> => {
         goalCents: totals.goalCents,
         raisedCents: totals.meterCents,
         percent: totals.percent,
+        coverPath: r.cover_path ? String(r.cover_path) : null,
+        objective: r.objective ? String(r.objective) : null,
       };
     }),
   );
@@ -92,11 +106,15 @@ export const getPartnersPage = cache(async (): Promise<PartnersPageData> => {
     ((totalRows as unknown as { rows: Record<string, unknown>[] }).rows[0]?.cents as number) ?? 0,
   );
 
+  const reach = (reachRows as unknown as { rows: Record<string, unknown>[] }).rows[0];
+
   return {
     accepting,
     packages,
     sponsors: sponsorRows,
     totalSponsorCents,
     totalSponsorCount: sponsorRows.length,
+    totalSupporterCount: Number(reach?.supporters ?? 0),
+    totalSongCount: Number(reach?.songs ?? 0),
   };
 });

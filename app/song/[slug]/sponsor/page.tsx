@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { SimulationRibbon } from '@/components/SimulationRibbon';
 import { SiteNav } from '@/components/SiteNav';
+import { SiteFooter } from '@/components/SiteFooter';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { Display } from '@/components/primitives/Display';
 import { Rule } from '@/components/primitives/Rule';
@@ -104,6 +105,7 @@ export default async function SponsorPage({ params }: Props) {
           }}
         />
       </div>
+      <SiteFooter />
     </main>
   );
 }

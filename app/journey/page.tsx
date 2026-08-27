@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { SiteNav } from '@/components/SiteNav';
+import { SiteFooter } from '@/components/SiteFooter';
 import { formatDay } from '@/lib/song/queries';
 import { getGlobalJourney, journeyGroup, type JourneyFilter } from '@/lib/journey/queries';
 import { journeyIcon } from '@/lib/journey/icons';
@@ -111,6 +112,7 @@ export default async function JourneyPage({
           </ol>
         )}
       </section>
+      <SiteFooter />
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { SiteNav } from '@/components/SiteNav';
+import { SiteFooter } from '@/components/SiteFooter';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { LeaderboardRow } from '@/components/primitives/LeaderboardRow';
 import { getSongPage } from '@/lib/song/queries';
@@ -54,6 +55,7 @@ export default async function AllSponsorsPage({ params }: Props) {
           )}
         </div>
       </section>
+      <SiteFooter />
     </main>
   );
 }

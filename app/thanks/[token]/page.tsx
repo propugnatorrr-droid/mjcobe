@@ -5,9 +5,9 @@ import { db } from '@/lib/db/client';
 import * as s from '@/lib/db/schema';
 import { SimulationRibbon } from '@/components/SimulationRibbon';
 import { SiteNav } from '@/components/SiteNav';
+import { SiteFooter } from '@/components/SiteFooter';
 import { Eyebrow } from '@/components/primitives/Eyebrow';
 import { Display } from '@/components/primitives/Display';
-import { Rule } from '@/components/primitives/Rule';
 import { ButtonLink } from '@/components/primitives/Button';
 import { ShareRow } from '@/components/checkout/ShareRow';
 import { resolveThanksToken } from '@/lib/checkout/tokens';
@@ -22,14 +22,6 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 type Props = { params: Promise<{ token: string }> };
 
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">{label}</span>
-      <span className="font-mono text-3xl text-[var(--text)] md:text-4xl">{children}</span>
-    </div>
-  );
-}
 
 export default async function ThanksPage({ params }: Props) {
   const { token } = await params;
@@ -108,14 +100,16 @@ export default async function ThanksPage({ params }: Props) {
   const pad = (n: number) => String(n).padStart(4, '0');
 
   return (
-    <main className="surface-ink min-h-screen pb-40">
+    <main className="surface-ink min-h-screen pb-24">
       <SimulationRibbon />
-      <SiteNav />
+      <SiteNav sub="SONG JOURNEY" />
 
-      <div className="mx-auto max-w-3xl px-6 pt-16 md:px-12 md:pt-24">
-        <Display>{await text('thanks.heading')}</Display>
+      <div className="mx-auto max-w-3xl px-6 py-14 text-center md:py-20">
+        <h1 className="font-display text-[clamp(2.25rem,6vw,4.5rem)] uppercase leading-[0.95] text-[var(--text)]">
+          {await text('thanks.heading')}
+        </h1>
 
-        <p className="mt-8 max-w-[62ch] text-body text-[var(--text-dim)]">
+        <p className="mt-5 text-body text-[var(--text-dim)]">
           {isBusiness && businessName
             ? await text('thanks.subhead_business', {
                 business: businessName,
@@ -124,46 +118,63 @@ export default async function ThanksPage({ params }: Props) {
             : await text('thanks.subhead', { song: song?.title ?? '' })}
         </p>
 
-        <div className="my-16">
-          <Rule />
-        </div>
+        {/* The number is the keepsake — the mockup lets it carry the page. */}
+        {supporterNumber ? (
+          <div className="mt-10">
+            <p className="font-display text-[clamp(3.5rem,14vw,9rem)] leading-none text-gold">
+              #{pad(supporterNumber)}
+            </p>
+            <div className="mt-4 flex items-center justify-center gap-5">
+              <span className="rule-gold h-px w-16 opacity-70" />
+              <span className="font-ui text-[0.625rem] uppercase tracking-[0.28em] text-[var(--text-dim)]">
+                {foundingNumber
+                  ? await text('thanks.founding_number')
+                  : await text('thanks.supporter_number')}
+              </span>
+              <span className="rule-gold h-px w-16 opacity-70" />
+            </div>
+          </div>
+        ) : null}
 
-        <div className="grid grid-cols-2 gap-x-8 gap-y-12">
-          <Stat label={await text('thanks.amount')}>
+        {rank ? (
+          <div className="mt-9">
+            <p className="font-ui text-[0.625rem] uppercase tracking-[0.28em] text-[var(--champagne)]">
+              {await text('thanks.rank')}
+            </p>
+            <p className="mt-2 font-display text-[clamp(2rem,5vw,3rem)] leading-none text-[var(--text)]">
+              #{rank}
+            </p>
+          </div>
+        ) : null}
+
+        <p className="mt-8 font-ui text-xs uppercase tracking-[0.2em] text-[var(--text-dim)]">
+          {await text('thanks.amount')}{' '}
+          <span className="font-mono text-[var(--champagne)]">
             {formatCents(cents(contribution.amountCents))}
-          </Stat>
-          {rank ? (
-            <Stat label={await text('thanks.rank')}>#{rank}</Stat>
-          ) : null}
-          {supporterNumber ? (
-            <Stat label={await text('thanks.supporter_number')}>#{pad(supporterNumber)}</Stat>
-          ) : null}
-          {foundingNumber ? (
-            <Stat label={await text('thanks.founding_number')}>#{pad(foundingNumber)}</Stat>
-          ) : null}
+          </span>
+        </p>
+
+        <div className="mt-12">
+          <ShareRow
+            shareUrlPath={`/s/${token}`}
+            imagePath={`/api/og/thanks/${token}`}
+            copyLabel={await text('thanks.copy_link')}
+            copiedLabel={await text('thanks.copied')}
+            downloadLabel={await text('thanks.download')}
+          />
         </div>
 
-        <div className="my-16">
-          <Rule />
-        </div>
-
-        <ShareRow
-          shareUrlPath={`/s/${token}`}
-          imagePath={`/api/og/thanks/${token}`}
-          copyLabel={await text('thanks.copy_link')}
-          copiedLabel={await text('thanks.copied')}
-          downloadLabel={await text('thanks.download')}
-        />
-
-        <div className="mt-12 flex flex-wrap gap-4">
-          <ButtonLink href={`/song/${song?.slug ?? ''}`} variant="primary">
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <ButtonLink href={`/song/${song?.slug ?? ''}`} variant="primary" glow className="!rounded-sm">
             {await text('thanks.view_song')}
           </ButtonLink>
-          <ButtonLink href="/back" variant="ghost">
+          <ButtonLink href="/back" variant="ghost" className="!rounded-sm">
             {await text('thanks.back_another')}
           </ButtonLink>
         </div>
       </div>
+
+      <SiteFooter />
     </main>
   );
 }

@@ -248,6 +248,17 @@ const copyDefaults = {
   'partners.package.visual': 'VISUAL PARTNER',
   'partners.package.presenting': 'PRESENTING PARTNER',
   'partners.empty': 'No campaigns are currently accepting sponsors.',
+  'partners.build_with': 'BUILD WITH',
+  'partners.view_packages': 'VIEW PACKAGES',
+  'partners.brand_packages': 'BRAND PACKAGES',
+  'partners.seeking_sponsors': 'SEEKING SPONSORS',
+  'partners.trusted_by': 'TRUSTED BY FORWARD-THINKING BRANDS',
+  'partners.growing': 'GROWING EVERY DAY. REAL PEOPLE. REAL IMPACT.',
+  'partners.stat.impressions': 'CAMPAIGN IMPRESSIONS',
+  'partners.stat.supporters': 'SUPPORTERS',
+  'partners.stat.songs': 'RECORDS BACKED',
+  'partners.most_popular': 'MOST POPULAR',
+  'partners.apply': 'APPLY TO PARTNER',
 
   // ---- Sponsor profile (/partner/[slug]) -------------------------------------
   'partner.official_supporter': 'OFFICIAL SUPPORTER OF',
@@ -257,6 +268,11 @@ const copyDefaults = {
   'partner.instagram': 'INSTAGRAM',
   'partner.shop': 'SHOP',
   'partner.not_found': 'That partner profile doesn’t exist or isn’t public.',
+  'partner.presenting': 'PRESENTING PARTNER',
+  'partner.visit': 'VISIT SPONSOR',
+  'partner.total_contribution': 'TOTAL CONTRIBUTION',
+  'partner.brand_profile': 'BRAND PROFILE',
+  'partner.official_partners': 'OFFICIAL SONG PARTNERS',
 
   // ---- /now (link-in-bio) page ----------------------------------------------
   'now.title': 'MJ COBE / RIGHT NOW',
@@ -294,6 +310,21 @@ const copyDefaults = {
   'supporter.not_found': 'That supporter profile doesn’t exist or isn’t public.',
   'supporter.no_badges': 'No badges earned yet.',
   'supporter.contributed': 'YOU CONTRIBUTED',
+  'supporter.view_all_badges': 'VIEW ALL BADGES',
+  'supporter.earned': 'EARNED',
+  'supporter.songs': 'SONGS',
+
+  // ---- Legal / contact ------------------------------------------------------
+  'legal.terms.title': 'TERMS',
+  'legal.privacy.title': 'PRIVACY',
+  'legal.contact.title': 'CONTACT',
+  'legal.contact.body':
+    'For partnerships, press and anything else, reach the team at hello@mjcobe.com.',
+  'legal.contact.partnerships': 'PARTNERSHIPS',
+  'legal.contact.press': 'PRESS',
+  'legal.contact.support': 'SUPPORT',
+  'legal.placeholder':
+    'This policy is being finalised with counsel and will be published here before the first live campaign closes.',
 } as const;
 
 export type CopyKey = keyof typeof copyDefaults;
