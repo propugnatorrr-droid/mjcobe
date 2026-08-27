@@ -129,6 +129,7 @@ const copyDefaults = {
   'checkout.step.identity': 'HOW YOU APPEAR',
   'checkout.step.business': 'YOUR BUSINESS',
   'checkout.step.payment': 'PAYMENT',
+  'checkout.step_label': 'STEP {number}',
   'checkout.custom_amount': 'OTHER AMOUNT',
   'checkout.custom_placeholder': 'Enter an amount',
   'checkout.submit.fan': 'COMPLETE SUPPORT',
