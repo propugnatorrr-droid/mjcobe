@@ -131,6 +131,16 @@ saveProfile: 'SAVE PROFILE',
 hideProfile: 'HIDE PUBLIC PROFILE',
 showProfile: 'RESTORE PUBLIC PROFILE',
 noSponsors: 'No sponsor profiles have been created.',
+    approvedLogo: 'CURRENT PUBLIC LOGO',
+pendingLogo: 'PENDING LOGO',
+pendingLogoHint:
+  'The current public logo remains visible until this replacement is approved.',
+uploadLogo: 'UPLOAD REPLACEMENT',
+chooseLogo: 'CHOOSE PNG OR WEBP',
+approveLogo: 'APPROVE LOGO',
+rejectLogo: 'REJECT LOGO',
+logoRequirements:
+  'PNG or WebP, maximum 2 MB. Files are checked by content, not only filename.',
   },
 
 
