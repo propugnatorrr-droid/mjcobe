@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createHash } from 'node:crypto';
 import { headers } from 'next/headers';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { dbw } from '@/lib/db/write';
 import * as s from '@/lib/db/schema';
@@ -17,9 +17,39 @@ import { createContribution } from '@/lib/ledger/contributions';
 import { bool, parseAmountCents, slugify, str } from '@/lib/checkout/validate';
 import type { RefundReasonCode } from '@/lib/payments';
 
-export type AdminState = { error?: string; ok?: string };
+export type AdminState = {
+  error?: string;
+  ok?: string;
+};
+
+const REFUND_REASONS = new Set<RefundReasonCode>([
+  'unverified_sponsor',
+  'fraud_risk',
+  'brand_safety',
+  'duplicate_payment',
+  'customer_request',
+  'other',
+]);
+
+function refundReason(
+  value: FormDataEntryValue | null,
+): RefundReasonCode {
+  const candidate = str(value);
+
+  if (
+    candidate &&
+    REFUND_REASONS.has(
+      candidate as RefundReasonCode,
+    )
+  ) {
+    return candidate as RefundReasonCode;
+  }
+
+  return 'other';
+}
 
 async function ipHash() {
+
   const h = await headers();
   const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim();
   return ip ? createHash('sha256').update(ip).digest('hex') : null;
@@ -216,7 +246,9 @@ export async function blockFromContribution(formData: FormData): Promise<void> {
 export async function issueRefund(_prev: AdminState, formData: FormData): Promise<AdminState> {
   const me = await requireAdmin();
   const transactionId = str(formData.get('transactionId'));
-  const reason = (str(formData.get('reason')) ?? 'other') as RefundReasonCode;
+  const reason = refundReason(
+    formData.get('reason'),
+  );
   if (!transactionId) return { error: 'missing' };
 
   const [tx] = await db
@@ -248,110 +280,453 @@ export async function issueRefund(_prev: AdminState, formData: FormData): Promis
 
 // ------------------------------------------------------------- sponsors -----
 
-export async function approveSponsor(formData: FormData): Promise<void> {
+export async function approveSponsor(
+  formData: FormData,
+): Promise<void> {
   const me = await requireAdmin();
-  const contributionId = str(formData.get('contributionId'));
-  const transactionId = str(formData.get('transactionId'));
-  const sponsorId = str(formData.get('sponsorId'));
-  const slug = str(formData.get('songSlug'));
-  if (!contributionId || !transactionId) return;
+  const contributionId = str(
+    formData.get('contributionId'),
+  );
 
-  const settled = await settleContribution(transactionId);
+  if (!contributionId) {
+    return;
+  }
+
+  const [contribution] = await db
+    .select()
+    .from(s.contributions)
+    .where(
+      eq(
+        s.contributions.id,
+        contributionId,
+      ),
+    )
+    .limit(1);
+
+  if (
+    !contribution ||
+    contribution.supportType !== 'business' ||
+    !contribution.sponsorId
+  ) {
+    await recordAudit({
+      adminUserId: me.id,
+      action: 'sponsor.approve_rejected',
+      entity: 'contribution',
+      entityId: contributionId,
+      reason: 'invalid_business_contribution',
+      ipHash: await ipHash(),
+    });
+
+    return;
+  }
+
+  const [transaction] = await db
+    .select()
+    .from(s.transactions)
+    .where(
+      eq(
+        s.transactions.contributionId,
+        contribution.id,
+      ),
+    )
+    .limit(1);
+
+  const [sponsor, song] = await Promise.all([
+    db
+      .select()
+      .from(s.sponsors)
+      .where(
+        eq(
+          s.sponsors.id,
+          contribution.sponsorId,
+        ),
+      )
+      .limit(1)
+      .then((result) => result[0] ?? null),
+    db
+      .select({
+        slug: s.songs.slug,
+      })
+      .from(s.songs)
+      .where(
+        eq(s.songs.id, contribution.songId),
+      )
+      .limit(1)
+      .then((result) => result[0] ?? null),
+  ]);
+
+  if (!transaction || !sponsor) {
+    await recordAudit({
+      adminUserId: me.id,
+      action: 'sponsor.approve_rejected',
+      entity: 'contribution',
+      entityId: contributionId,
+      reason: 'missing_transaction_or_sponsor',
+      ipHash: await ipHash(),
+    });
+
+    return;
+  }
+
+  const settled = await settleContribution(
+    transaction.id,
+  );
+
   if (!settled.ok) {
     await recordAudit({
       adminUserId: me.id,
       action: 'sponsor.approve_failed',
       entity: 'contribution',
       entityId: contributionId,
-      after: { code: settled.code },
+      before: {
+        transactionState: transaction.state,
+        sponsorModeration: sponsor.moderation,
+      },
+      after: {
+        code: settled.code,
+      },
+      reason: settled.message,
       ipHash: await ipHash(),
     });
+
     return;
   }
 
   const now = new Date();
-  if (sponsorId) {
-    await dbw
-      .update(s.sponsors)
-      .set({ moderation: 'approved', approvedAt: now, supportedSince: now })
-      .where(eq(s.sponsors.id, sponsorId));
-  }
 
-  await dbw
-    .update(s.contributions)
-    .set({ moderation: 'approved' })
-    .where(eq(s.contributions.id, contributionId));
+  await dbw.transaction(async (tx) => {
+    await tx
+      .update(s.sponsors)
+      .set({
+        moderation: 'approved',
+        approvedAt: now,
+        supportedSince:
+          sponsor.supportedSince ?? now,
+      })
+      .where(
+        eq(s.sponsors.id, sponsor.id),
+      );
+
+    await tx
+      .update(s.contributions)
+      .set({
+        moderation: 'approved',
+        leaderboardVisible: true,
+      })
+      .where(
+        eq(
+          s.contributions.id,
+          contribution.id,
+        ),
+      );
+  });
 
   await recordAudit({
     adminUserId: me.id,
     action: 'sponsor.approve',
     entity: 'contribution',
-    entityId: contributionId,
-    after: { sponsorId, transactionId },
+    entityId: contribution.id,
+    before: {
+      transactionState: transaction.state,
+      contributionModeration:
+        contribution.moderation,
+      sponsorModeration: sponsor.moderation,
+    },
+    after: {
+      transactionState: 'settled',
+      contributionModeration: 'approved',
+      sponsorModeration: 'approved',
+      sponsorId: sponsor.id,
+    },
     ipHash: await ipHash(),
   });
 
+  revalidatePath('/admin');
   revalidatePath('/admin/sponsors');
-  if (slug) revalidatePath(`/song/${slug}`);
+  revalidatePath('/admin/contributions');
+
+  if (song) {
+    revalidatePath(`/song/${song.slug}`);
+    revalidatePath(
+      `/song/${song.slug}/sponsors`,
+    );
+  }
+
+  revalidatePath(`/partner/${sponsor.slug}`);
   revalidatePath('/', 'layout');
 }
+
 
 /**
  * Declining cancels rather than refunds when nothing was captured — there is
  * no money to send back, and a phantom refund row would misstate the books.
  */
-export async function declineSponsor(formData: FormData): Promise<void> {
+export async function declineSponsor(
+  formData: FormData,
+): Promise<void> {
   const me = await requireAdmin();
-  const contributionId = str(formData.get('contributionId'));
-  const transactionId = str(formData.get('transactionId'));
-  const sponsorId = str(formData.get('sponsorId'));
-  const reason = (str(formData.get('reason')) ?? 'unverified_sponsor') as RefundReasonCode;
-  if (!contributionId) return;
+  const contributionId = str(
+    formData.get('contributionId'),
+  );
+  const reason = refundReason(
+    formData.get('reason'),
+  );
 
-  if (transactionId) {
-    const [tx] = await db
-      .select()
-      .from(s.transactions)
-      .where(eq(s.transactions.id, transactionId))
-      .limit(1);
+  if (!contributionId) {
+    return;
+  }
 
-    if (tx?.state === 'settled' || tx?.state === 'partially_refunded') {
-      await refundContribution({
-        transactionId,
-        amountCents: tx.amountCents,
-        reason,
-        adminUserId: me.id,
-      });
-    } else if (tx) {
+  const [contribution] = await db
+    .select()
+    .from(s.contributions)
+    .where(
+      eq(
+        s.contributions.id,
+        contributionId,
+      ),
+    )
+    .limit(1);
+
+  if (
+    !contribution ||
+    contribution.supportType !== 'business'
+  ) {
+    await recordAudit({
+      adminUserId: me.id,
+      action: 'sponsor.decline_rejected',
+      entity: 'contribution',
+      entityId: contributionId,
+      reason: 'invalid_business_contribution',
+      ipHash: await ipHash(),
+    });
+
+    return;
+  }
+
+  const [transaction, sponsor, song] =
+    await Promise.all([
+      db
+        .select()
+        .from(s.transactions)
+        .where(
+          eq(
+            s.transactions.contributionId,
+            contribution.id,
+          ),
+        )
+        .limit(1)
+        .then(
+          (result) => result[0] ?? null,
+        ),
+      contribution.sponsorId
+        ? db
+            .select()
+            .from(s.sponsors)
+            .where(
+              eq(
+                s.sponsors.id,
+                contribution.sponsorId,
+              ),
+            )
+            .limit(1)
+            .then(
+              (result) =>
+                result[0] ?? null,
+            )
+        : Promise.resolve(null),
+      db
+        .select({
+          slug: s.songs.slug,
+        })
+        .from(s.songs)
+        .where(
+          eq(
+            s.songs.id,
+            contribution.songId,
+          ),
+        )
+        .limit(1)
+        .then(
+          (result) =>
+            result[0] ?? null,
+        ),
+    ]);
+
+  if (transaction) {
+    if (
+      transaction.state === 'settled' ||
+      transaction.state ===
+        'partially_refunded'
+    ) {
+      const [balance] = await db
+        .select({
+          remainingCents: sql<number>`
+            coalesce(
+              sum(${s.ledgerEntries.amountCents}),
+              0
+            )::int
+          `,
+        })
+        .from(s.ledgerEntries)
+        .where(
+          eq(
+            s.ledgerEntries.transactionId,
+            transaction.id,
+          ),
+        );
+
+      const remainingCents = Number(
+        balance?.remainingCents ?? 0,
+      );
+
+      if (remainingCents > 0) {
+        const refund = await refundContribution({
+          transactionId: transaction.id,
+          amountCents: remainingCents,
+          reason,
+          adminUserId: me.id,
+        });
+
+        if (!refund.ok) {
+          await recordAudit({
+            adminUserId: me.id,
+            action: 'sponsor.decline_failed',
+            entity: 'contribution',
+            entityId: contribution.id,
+            before: {
+              transactionState:
+                transaction.state,
+              remainingCents,
+            },
+            reason:
+              refund.message ??
+              'refund_failed',
+            ipHash: await ipHash(),
+          });
+
+          return;
+        }
+      }
+    } else if (
+      transaction.state === 'initiated' ||
+      transaction.state === 'authorized'
+    ) {
       await dbw
         .update(s.transactions)
-        .set({ state: 'canceled', updatedAt: new Date() })
-        .where(eq(s.transactions.id, transactionId));
+        .set({
+          state: 'canceled',
+          updatedAt: new Date(),
+        })
+        .where(
+          eq(
+            s.transactions.id,
+            transaction.id,
+          ),
+        );
     }
   }
 
   await dbw
     .update(s.contributions)
-    .set({ moderation: 'blocked', leaderboardVisible: false })
-    .where(eq(s.contributions.id, contributionId));
+    .set({
+      moderation: 'blocked',
+      leaderboardVisible: false,
+    })
+    .where(
+      eq(
+        s.contributions.id,
+        contribution.id,
+      ),
+    );
 
-  if (sponsorId) {
+  let remainingSponsorBalance = 0;
+
+  if (sponsor) {
+    const [balance] = await db
+      .select({
+        total: sql<number>`
+          coalesce(
+            sum(${s.ledgerEntries.amountCents}),
+            0
+          )::int
+        `,
+      })
+      .from(s.ledgerEntries)
+      .where(
+        eq(
+          s.ledgerEntries.sponsorId,
+          sponsor.id,
+        ),
+      );
+
+    remainingSponsorBalance = Number(
+      balance?.total ?? 0,
+    );
+
     await dbw
       .update(s.sponsors)
-      .set({ moderation: 'blocked' })
-      .where(eq(s.sponsors.id, sponsorId));
+      .set({
+        moderation:
+          remainingSponsorBalance > 0
+            ? 'approved'
+            : 'blocked',
+      })
+      .where(
+        eq(s.sponsors.id, sponsor.id),
+      );
   }
 
   await recordAudit({
     adminUserId: me.id,
     action: 'sponsor.decline',
     entity: 'contribution',
-    entityId: contributionId,
+    entityId: contribution.id,
+    before: {
+      contributionModeration:
+        contribution.moderation,
+      transactionState:
+        transaction?.state ?? null,
+      sponsorModeration:
+        sponsor?.moderation ?? null,
+    },
+    after: {
+      contributionModeration: 'blocked',
+      transactionState:
+        transaction?.state === 'settled' ||
+        transaction?.state ===
+          'partially_refunded'
+          ? 'refunded'
+          : transaction
+            ? 'canceled'
+            : null,
+      sponsorModeration:
+        sponsor
+          ? remainingSponsorBalance > 0
+            ? 'approved'
+            : 'blocked'
+          : null,
+    },
     reason,
     ipHash: await ipHash(),
   });
 
+  revalidatePath('/admin');
   revalidatePath('/admin/sponsors');
+  revalidatePath('/admin/contributions');
+
+  if (song) {
+    revalidatePath(`/song/${song.slug}`);
+    revalidatePath(
+      `/song/${song.slug}/sponsors`,
+    );
+  }
+
+  if (sponsor) {
+    revalidatePath(
+      `/partner/${sponsor.slug}`,
+    );
+  }
+
   revalidatePath('/', 'layout');
 }
 
