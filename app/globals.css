@@ -420,3 +420,58 @@ a {
     transition-duration: 0.01ms !important;
   }
 }
+/* -------------------------------------------------------------------------- */
+/* Homepage art direction                                                      */
+/* -------------------------------------------------------------------------- */
+
+.home-hero-image {
+  object-position: 50% 20%;
+  filter: saturate(0.92) contrast(1.04);
+}
+
+.home-hero-scrim {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10, 10, 11, 0.14) 0%,
+      rgba(10, 10, 11, 0.18) 30%,
+      rgba(10, 10, 11, 0.72) 67%,
+      var(--ink) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(10, 10, 11, 0.32) 0%,
+      rgba(10, 10, 11, 0.08) 100%
+    );
+}
+
+@media (min-width: 768px) {
+  .home-hero-image {
+    object-position: 50% 18%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-hero-image {
+    object-position: 50% 22%;
+  }
+
+  .home-hero-scrim {
+    background:
+      linear-gradient(
+        90deg,
+        var(--ink) 0%,
+        var(--ink) 24%,
+        rgba(10, 10, 11, 0.94) 36%,
+        rgba(10, 10, 11, 0.68) 52%,
+        rgba(10, 10, 11, 0.2) 76%,
+        rgba(10, 10, 11, 0.1) 100%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(10, 10, 11, 0.12) 0%,
+        transparent 62%,
+        var(--ink) 100%
+      );
+  }
+}
