@@ -87,7 +87,7 @@ export function SupportBar({
               hasSecondary ? 'grid-cols-2' : 'grid-cols-1',
             ].join(' ')}
           >
-            {hasSecondary ? (
+            {secondaryLabel && secondaryHref ? (
               <Link
                 href={secondaryHref}
                 className={[
