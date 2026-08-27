@@ -213,8 +213,8 @@ export default async function SponsorReviewPage() {
 
                       <Detail
                         label={
-                          admin.table
-                            .paymentState
+admin.sponsors
+  .paymentState
                         }
                       >
                         <span className="uppercase">
