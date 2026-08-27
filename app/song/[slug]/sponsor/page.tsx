@@ -298,12 +298,6 @@ export default async function SponsorPage({
             claimBody: await text(
               'checkout.business.claim_body',
             ),
-            minimumToLead: await text(
-              'checkout.minimum_to_lead',
-              {
-                amount: minimumToLeadLabel,
-              },
-            ),
           }}
         />
       </div>
