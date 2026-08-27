@@ -22,14 +22,18 @@ export function PhotoTreatment({
   vignette = true,
   grain = true,
   duotone = false,
+  fill = false,
 }: {
   children: React.ReactNode;
   vignette?: boolean;
   grain?: boolean;
   duotone?: boolean;
+  /** Set when the treated image is absolutely positioned and the wrapper
+   * therefore has to be told to occupy its parent rather than hug content. */
+  fill?: boolean;
 }) {
   return (
-    <div className="relative overflow-hidden">
+    <div className={`relative overflow-hidden ${fill ? 'h-full w-full' : ''}`}>
       {children}
 
       {grain && (

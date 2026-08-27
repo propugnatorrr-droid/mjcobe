@@ -1,29 +1,33 @@
-import { FundingMeter } from '@/components/primitives/FundingMeter';
 import { CountUp } from '@/components/primitives/CountUp';
-import { AmountFigure } from '@/components/primitives/AmountFigure';
-import { cents } from '@/lib/money/cents';
-import { formatCents } from '@/lib/money/cents';
+import { cents, formatCents } from '@/lib/money/cents';
 import { text } from '@/lib/copy/site-copy';
 import type { SongPageData } from '@/lib/song/queries';
 
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
-        {label}
-      </span>
-      <span className="font-mono text-2xl text-[var(--text)] md:text-3xl">
-        {children}
-      </span>
-    </div>
-  );
-}
-
+/**
+ * The money moment. The mockups give this its own full-width band: the raised
+ * figure and supporter count on the left, the meter running across, and the
+ * funded percentage anchoring the right.
+ */
 export async function FundingPanel({
   totals,
   daysLeft,
   isAcceptingSupport,
-}: Pick<SongPageData, 'totals' | 'daysLeft' | 'isAcceptingSupport'>) {
+  objective,
+}: Pick<SongPageData, 'totals' | 'daysLeft' | 'isAcceptingSupport'> & {
+  objective?: string | null;
+}) {
+  const [backed, supportersLabel, ofGoal, goalLabel, sponsorNote] = await Promise.all([
+    text('song.backed'),
+    text('song.meter.supporters'),
+    text('song.of_goal'),
+    text('song.campaign_goal'),
+    totals.sponsorCents > 0
+      ? text('song.meter.sponsorship_note', {
+          amount: formatCents(cents(totals.sponsorCents)),
+        })
+      : Promise.resolve(''),
+  ]);
+
   const timeLabel = !isAcceptingSupport
     ? await text('song.meter.closed')
     : daysLeft === null
@@ -33,34 +37,77 @@ export async function FundingPanel({
         : await text('song.meter.days_left');
 
   const timeValue =
-    !isAcceptingSupport || daysLeft === null || daysLeft === 0
-      ? '—'
-      : String(daysLeft);
+    !isAcceptingSupport || daysLeft === null || daysLeft === 0 ? null : String(daysLeft);
 
   return (
-    <section className="py-16 md:py-24">
-      <div className="mb-12 grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-4">
-        <Stat label={await text('song.meter.raised')}>
-          <CountUp cents={cents(totals.meterCents)} />
-        </Stat>
-        <Stat label={await text('song.meter.goal')}>
-          <AmountFigure cents={cents(totals.goalCents)} />
-        </Stat>
-        <Stat label={await text('song.meter.supporters')}>
-          <CountUp value={totals.supporterCount} />
-        </Stat>
-        <Stat label={timeLabel}>{timeValue}</Stat>
+    <section
+      className="border-y py-10"
+      style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
+    >
+      <div className="mx-auto max-w-[92rem] px-6 md:px-10">
+        <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[auto_auto_1fr_auto]">
+          <div>
+            <p className="font-serif text-[clamp(2.25rem,5vw,3.5rem)] leading-none text-gold">
+              {formatCents(cents(totals.meterCents))}
+            </p>
+            <p className="mt-2 font-ui text-[0.625rem] uppercase tracking-[0.28em] text-[var(--text-dim)]">
+              {backed}
+            </p>
+          </div>
+
+          <div className="lg:pl-6">
+            <p className="font-serif text-[clamp(1.75rem,3.6vw,2.5rem)] leading-none text-[var(--text)]">
+              <CountUp value={totals.supporterCount} />
+            </p>
+            <p className="mt-2 font-ui text-[0.625rem] uppercase tracking-[0.28em] text-[var(--text-dim)]">
+              {supportersLabel}
+            </p>
+          </div>
+
+          <div className="lg:px-6">
+            <div
+              className="h-2.5 w-full overflow-hidden rounded-full"
+              style={{ background: 'var(--line)' }}
+            >
+              <div
+                className="bg-gold h-full rounded-full"
+                style={{
+                  width: `${Math.min(100, totals.percent)}%`,
+                  transition: 'width var(--duration-signature) var(--ease-signature)',
+                }}
+              />
+            </div>
+            <p className="mt-3 font-ui text-[0.625rem] uppercase tracking-[0.2em] text-[var(--text-dim)]">
+              {goalLabel}: <span className="font-mono">{formatCents(cents(totals.goalCents))}</span>
+              {timeValue ? (
+                <>
+                  {' · '}
+                  <span className="font-mono">{timeValue}</span> {timeLabel}
+                </>
+              ) : (
+                <> · {timeLabel}</>
+              )}
+            </p>
+          </div>
+
+          <div className="lg:text-right">
+            <p className="font-serif text-[clamp(2rem,4.5vw,3rem)] leading-none text-gold">
+              {totals.percent}%
+            </p>
+            <p className="mt-2 font-ui text-[0.625rem] uppercase tracking-[0.28em] text-[var(--text-dim)]">
+              {ofGoal}
+            </p>
+          </div>
+        </div>
+
+        {objective ? (
+          <p className="mt-8 max-w-[76ch] text-body text-[var(--text-dim)]">{objective}</p>
+        ) : null}
+
+        {sponsorNote ? (
+          <p className="mt-3 max-w-[76ch] font-ui text-xs text-[var(--text-faint)]">{sponsorNote}</p>
+        ) : null}
       </div>
-
-      <FundingMeter percent={totals.percent} />
-
-      {totals.sponsorCents > 0 ? (
-        <p className="mt-6 max-w-[62ch] text-body text-[var(--text-dim)]">
-          {await text('song.meter.sponsorship_note', {
-            amount: formatCents(cents(totals.sponsorCents)),
-          })}
-        </p>
-      ) : null}
     </section>
   );
 }

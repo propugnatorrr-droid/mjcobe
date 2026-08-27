@@ -80,6 +80,7 @@
      UI and numerals/labels (tabular-nums verified to work on it — it just
      isn't a monospace family). */
   --font-display: var(--font-tanker-loader), ui-sans-serif, sans-serif;
+  --font-serif: var(--font-zodiak-loader), ui-serif, Georgia, serif;
   --font-ui: var(--font-switzer-loader), ui-sans-serif, sans-serif;
   --font-mono: var(--font-switzer-loader), ui-sans-serif, sans-serif;
 
@@ -111,6 +112,13 @@
      8px for cards/panels/inputs; buttons/tags/the meter use rounded-full
      directly (a built-in Tailwind utility, no token needed). */
   --radius-panel: 0.5rem;
+
+  /* Wordmark / editorial serif scale — the mockups set song titles and the
+     MJ COBE wordmark in a high-contrast serif, distinct from the condensed
+     poster face used for full-bleed statements. */
+  --text-serif-display: clamp(2.5rem, 7vw, 5.5rem);
+  --text-serif-display--line-height: 1.02;
+  --text-serif-display--letter-spacing: 0.005em;
 }
 
 /* Capped glow — one definition, reused. Only the primary hero CTA and the
@@ -118,6 +126,45 @@
    Never on hover-only states, never on more than one element per view. */
 :root {
   --glow-champagne: 0 0 24px 0 rgba(201, 162, 39, 0.35);
+
+  /* Metallic gold. The mockups never use flat #C9A227 on a large surface —
+     gold reads as brushed metal: a light band through the middle, darker at
+     the edges. One definition, reused by .text-gold and .bg-gold. */
+  --gold-gradient: linear-gradient(
+    180deg,
+    #8a6b16 0%,
+    #d8b34a 28%,
+    #f4e3a8 50%,
+    #d8b34a 72%,
+    #8a6b16 100%
+  );
+  --gold-gradient-flat: linear-gradient(180deg, #e0be55 0%, #c9a227 55%, #9a7a1c 100%);
+}
+
+/* Gold as a paint, not a color value. Applied to text via background-clip so
+   the metal band follows the glyphs. */
+@layer utilities {
+  .text-gold {
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .bg-gold {
+    background: var(--gold-gradient-flat);
+  }
+
+  /* Hairline gold rule with the fade-to-nothing ends the mockups use to
+     flank section headings. */
+  .rule-gold {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--champagne) 50%,
+      transparent 100%
+    );
+  }
 }
 
 /* Baked into the font token itself so no call site can forget it: every
