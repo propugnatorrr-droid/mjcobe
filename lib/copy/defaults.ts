@@ -168,6 +168,8 @@ const copyDefaults = {
   'checkout.error.declined': 'That payment was declined. No charge was made.',
   'checkout.error.generic': 'Something went wrong. No charge was made.',
   'checkout.error.blocked': 'This submission cannot be accepted.',
+  'checkout.error.minimum_to_lead':
+    'The #1 position has changed. Enter at least {amount} to claim it.',
 
   'checkout.choose_song': 'CHOOSE A RECORD',
   'checkout.no_open_campaigns': 'No campaigns are open right now.',
