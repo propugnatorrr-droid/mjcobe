@@ -1,40 +1,127 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { Check, ShieldCheck, Users, Building2 } from 'lucide-react';
-import { submitFanContribution, type CheckoutState } from '@/lib/checkout/actions';
-import { AmountChooser, type AmountOption } from './AmountChooser';
-import { Field, CheckField } from '@/components/primitives/Field';
-import { SubmitRow } from './SubmitRow';
+import {
+  Building2,
+  Check,
+  ShieldCheck,
+  Users,
+} from 'lucide-react';
+import {
+  submitFanContribution,
+  type CheckoutState,
+} from '@/lib/checkout/actions';
+import {
+  AmountChooser,
+  type AmountOption,
+} from '@/components/checkout/AmountChooser';
+import {
+  Field,
+  CheckField,
+} from '@/components/primitives/Field';
+import { SubmitRow } from '@/components/checkout/SubmitRow';
+import { interpolate } from '@/lib/copy/defaults';
 
 export type FanFormLabels = Record<
-  | 'amount' | 'identity' | 'payment' | 'custom' | 'customPlaceholder'
-  | 'email' | 'displayName' | 'instagram' | 'city' | 'optional'
-  | 'anonymous' | 'hideAmount' | 'consentBody' | 'consentCheckbox'
-  | 'submit' | 'working' | 'chooseRole' | 'fanRole' | 'fanRoleSub'
-  | 'businessRole' | 'businessRoleSub' | 'yourSelection' | 'tierBenefits'
-  | 'secure' | 'secureSub',
+  | 'amount'
+  | 'identity'
+  | 'payment'
+  | 'custom'
+  | 'customPlaceholder'
+  | 'email'
+  | 'displayName'
+  | 'instagram'
+  | 'city'
+  | 'optional'
+  | 'anonymous'
+  | 'hideAmount'
+  | 'consentBody'
+  | 'consentCheckbox'
+  | 'submit'
+  | 'working'
+  | 'chooseRole'
+  | 'fanRole'
+  | 'fanRoleSub'
+  | 'businessRole'
+  | 'businessRoleSub'
+  | 'yourSelection'
+  | 'tierBenefits'
+  | 'secure'
+  | 'secureSub'
+  | 'stepLabel',
   string
 >;
 
-function Step({
-  n,
+function CheckoutStep({
+  number,
   title,
+  stepLabel,
   children,
 }: {
-  n: number;
+  number: number;
   title: string;
+  stepLabel: string;
   children: React.ReactNode;
 }) {
   return (
-    <fieldset>
-      <legend className="mb-6 font-ui text-[0.6875rem] uppercase tracking-[0.2em] text-[var(--text)]">
-        <span className="text-[var(--champagne)]">STEP {n}</span>
-        <span className="mx-2 text-[var(--line-strong)]">—</span>
-        {title}
+    <fieldset
+      className={[
+        'rounded-[var(--radius-panel)]',
+        'border border-[var(--line)]',
+        'bg-[var(--panel-soft)] p-5',
+        'sm:p-7 lg:p-8',
+      ].join(' ')}
+    >
+      <legend className="sr-only">
+        {interpolate(stepLabel, { number })}: {title}
       </legend>
+
+      <div
+        aria-hidden
+        className="mb-7 flex items-center gap-4"
+      >
+        <span
+          className={[
+            'numeric flex h-8 w-8 shrink-0 items-center justify-center',
+            'rounded-full border border-[var(--champagne)]',
+            'text-xs font-semibold text-[var(--champagne)]',
+          ].join(' ')}
+        >
+          {number}
+        </span>
+
+        <div className="min-w-0">
+          <p className="text-[0.5625rem] font-semibold uppercase tracking-[0.2em] text-[var(--champagne)]">
+            {interpolate(stepLabel, { number })}
+          </p>
+
+          <h2 className="mt-1 font-display text-xl uppercase tracking-[0.08em] text-[var(--text)] sm:text-2xl">
+            {title}
+          </h2>
+        </div>
+
+        <span className="rule-gold h-px flex-1 opacity-40" />
+      </div>
+
       {children}
     </fieldset>
+  );
+}
+
+function availableInitialId(
+  options: AmountOption[],
+  requestedId?: string,
+) {
+  const requested = options.find(
+    (option) =>
+      option.id === requestedId &&
+      !option.disabled,
+  );
+
+  return (
+    requested?.id ??
+    options.find((option) => !option.disabled)?.id ??
+    null
   );
 }
 
@@ -44,24 +131,54 @@ export function FanCheckoutForm({
   labels,
   currencySymbol,
   sponsorHref,
+  initialTierId,
 }: {
   campaignId: string;
   options: AmountOption[];
   labels: FanFormLabels;
   currencySymbol: string;
   sponsorHref: string | null;
+  initialTierId?: string;
 }) {
-  const [state, action] = useActionState<CheckoutState, FormData>(
-    submitFanContribution,
-    {},
+  const [state, action] = useActionState<
+    CheckoutState,
+    FormData
+  >(submitFanContribution, {});
+
+  const [selectedId, setSelectedId] = useState<string | null>(
+    availableInitialId(options, initialTierId),
   );
-  const [selectedId, setSelectedId] = useState<string | null>(options[0]?.id ?? null);
-  const selected = options.find((o) => o.id === selectedId) ?? null;
+
+  const [customAmount, setCustomAmount] = useState('');
+
+  const selected =
+    options.find((option) => option.id === selectedId) ??
+    null;
+
+  const selectedAmount = selected
+    ? selected.amountLabel
+    : customAmount
+      ? `${currencySymbol}${customAmount}`
+      : '—';
+
+  const selectedLabel =
+    selected?.label ?? labels.custom;
 
   return (
-    <form action={action} className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_21rem]">
-      <input type="hidden" name="campaignId" value={campaignId} />
-      {/* Honeypot. Hidden from people and from assistive technology. */}
+    <form
+      action={action}
+      className={[
+        'grid grid-cols-1 gap-8',
+        'lg:grid-cols-[minmax(0,1fr)_22rem]',
+        'lg:items-start lg:gap-10',
+      ].join(' ')}
+    >
+      <input
+        type="hidden"
+        name="campaignId"
+        value={campaignId}
+      />
+
       <input
         type="text"
         name="company_website_confirm"
@@ -71,46 +188,93 @@ export function FanCheckoutForm({
         className="absolute left-[-9999px] h-0 w-0 opacity-0"
       />
 
-      <div className="flex flex-col gap-12">
-        {/* Role: fan is already chosen by being here; business links away. */}
-        <Step n={1} title={labels.chooseRole}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="flex min-w-0 flex-col gap-6">
+        <CheckoutStep
+          number={1}
+          title={labels.chooseRole}
+          stepLabel={labels.stepLabel}
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div
-              className="relative flex flex-col items-center gap-2 rounded-[var(--radius-panel)] border p-6 text-center"
+              className={[
+                'relative flex min-h-36 flex-col items-center justify-center',
+                'rounded-[var(--radius-panel)] border',
+                'p-6 text-center',
+              ].join(' ')}
               style={{
                 borderColor: 'var(--champagne)',
-                background: 'var(--ink-2)',
-                boxShadow: 'var(--glow-champagne)',
+                background: 'rgba(201, 162, 39, 0.055)',
+                boxShadow:
+                  '0 0 24px rgba(201, 162, 39, 0.12)',
               }}
             >
               <span
-                className="absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full"
-                style={{ background: 'var(--champagne)' }}
+                aria-hidden
+                className={[
+                  'absolute right-3 top-3',
+                  'flex h-5 w-5 items-center justify-center',
+                  'rounded-full bg-[var(--champagne)]',
+                ].join(' ')}
               >
-                <Check aria-hidden size={12} color="var(--ink)" />
+                <Check
+                  size={12}
+                  strokeWidth={2.5}
+                  color="var(--ink)"
+                />
               </span>
-              <Users aria-hidden size={26} color="var(--champagne)" />
-              <p className="font-display text-base uppercase tracking-[0.08em] text-[var(--champagne)]">
+
+              <Users
+                aria-hidden
+                size={26}
+                strokeWidth={1.7}
+                color="var(--champagne)"
+              />
+
+              <p className="mt-3 font-display text-lg uppercase tracking-[0.08em] text-[var(--champagne)]">
                 {labels.fanRole}
               </p>
-              <p className="text-body text-[var(--text-dim)]">{labels.fanRoleSub}</p>
+
+              <p className="mt-2 max-w-[25ch] text-sm leading-6 text-[var(--text-dim)]">
+                {labels.fanRoleSub}
+              </p>
             </div>
 
             <a
               href={sponsorHref ?? '/partners'}
-              className="flex flex-col items-center gap-2 rounded-[var(--radius-panel)] border p-6 text-center transition-colors [transition-duration:var(--duration-signature)] hover:border-[var(--champagne)]"
-              style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
+              className={[
+                'flex min-h-36 flex-col items-center justify-center',
+                'rounded-[var(--radius-panel)]',
+                'border border-[var(--line)]',
+                'bg-[var(--ink-2)] p-6 text-center',
+                'transition-[border-color,background-color]',
+                '[transition-duration:var(--duration-signature)]',
+                'hover:border-[var(--champagne)]',
+                'hover:bg-[rgba(201,162,39,0.035)]',
+              ].join(' ')}
             >
-              <Building2 aria-hidden size={26} color="var(--text-dim)" />
-              <p className="font-display text-base uppercase tracking-[0.08em] text-[var(--text)]">
+              <Building2
+                aria-hidden
+                size={26}
+                strokeWidth={1.7}
+                color="var(--text-dim)"
+              />
+
+              <p className="mt-3 font-display text-lg uppercase tracking-[0.08em] text-[var(--text)]">
                 {labels.businessRole}
               </p>
-              <p className="text-body text-[var(--text-dim)]">{labels.businessRoleSub}</p>
+
+              <p className="mt-2 max-w-[25ch] text-sm leading-6 text-[var(--text-dim)]">
+                {labels.businessRoleSub}
+              </p>
             </a>
           </div>
-        </Step>
+        </CheckoutStep>
 
-        <Step n={2} title={labels.amount}>
+        <CheckoutStep
+          number={2}
+          title={labels.amount}
+          stepLabel={labels.stepLabel}
+        >
           <AmountChooser
             options={options}
             fieldName="tierId"
@@ -119,81 +283,153 @@ export function FanCheckoutForm({
             currencySymbol={currencySymbol}
             selectedId={selectedId}
             onSelect={setSelectedId}
+            onCustomAmountChange={setCustomAmount}
             showSummary={false}
           />
-        </Step>
+        </CheckoutStep>
 
-        <Step n={3} title={labels.identity}>
-          <div className="flex flex-col gap-8">
-            <Field label={labels.email} name="email" type="email" required inputMode="email" />
-            <div className="grid gap-8 md:grid-cols-2">
+        <CheckoutStep
+          number={3}
+          title={labels.identity}
+          stepLabel={labels.stepLabel}
+        >
+          <div className="flex flex-col gap-6">
+            <Field
+              label={labels.email}
+              name="email"
+              type="email"
+              required
+              inputMode="email"
+              autoComplete="email"
+            />
+
+            <div className="grid gap-6 md:grid-cols-2">
               <Field
                 label={labels.displayName}
                 name="displayName"
                 optionalLabel={labels.optional}
+                autoComplete="nickname"
               />
-              <Field label={labels.instagram} name="instagram" optionalLabel={labels.optional} />
+
+              <Field
+                label={labels.instagram}
+                name="instagram"
+                optionalLabel={labels.optional}
+                autoComplete="off"
+              />
             </div>
-            <Field label={labels.city} name="city" optionalLabel={labels.optional} />
-            <div className="flex flex-col gap-4">
-              <CheckField label={labels.anonymous} name="anonymous" />
-              <CheckField label={labels.hideAmount} name="hideAmount" />
+
+            <Field
+              label={labels.city}
+              name="city"
+              optionalLabel={labels.optional}
+              autoComplete="address-level2"
+            />
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <CheckField
+                label={labels.anonymous}
+                name="anonymous"
+              />
+
+              <CheckField
+                label={labels.hideAmount}
+                name="hideAmount"
+              />
             </div>
           </div>
-        </Step>
+        </CheckoutStep>
 
-        <Step n={4} title={labels.payment}>
-          <p className="mb-7 max-w-[62ch] text-body text-[var(--text-dim)]">
+        <CheckoutStep
+          number={4}
+          title={labels.payment}
+          stepLabel={labels.stepLabel}
+        >
+          <p className="mb-6 max-w-[62ch] text-sm leading-7 text-[var(--text-dim)]">
             {labels.consentBody}
           </p>
-          <div className="mb-8">
-            <CheckField label={labels.consentCheckbox} name="consent" />
+
+          <div className="mb-6">
+            <CheckField
+              label={labels.consentCheckbox}
+              name="consent"
+              required
+            />
           </div>
-          <SubmitRow label={labels.submit} workingLabel={labels.working} error={state.error} />
-        </Step>
+
+          <SubmitRow
+            label={labels.submit}
+            workingLabel={labels.working}
+            error={state.error}
+          />
+        </CheckoutStep>
       </div>
 
-      {/* Live selection sidebar */}
-      <aside className="lg:sticky lg:top-6 lg:h-fit">
+      <aside className="order-first lg:sticky lg:top-[calc(var(--header-height-desktop)+1.5rem)] lg:order-none">
         <div
-          className="rounded-[var(--radius-panel)] border p-6"
-          style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
+          className={[
+            'overflow-hidden rounded-[var(--radius-panel)]',
+            'border border-[rgba(201,162,39,0.42)]',
+            'bg-[var(--ink-2)]',
+            'shadow-[var(--shadow-panel)]',
+          ].join(' ')}
         >
-          <p className="font-ui text-[0.625rem] uppercase tracking-[0.24em] text-[var(--text-dim)]">
-            {labels.yourSelection}
-          </p>
-
-          <div className="mt-5 flex items-baseline justify-between gap-4">
-            <p className="font-display text-lg uppercase tracking-[0.06em] text-[var(--champagne)]">
-              {selected?.label ?? labels.custom}
+          <div className="border-b border-[var(--line)] p-6">
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-dim)]">
+              {labels.yourSelection}
             </p>
-            <p className="font-serif text-2xl text-gold">{selected?.amountLabel ?? '—'}</p>
+
+            <div className="mt-5 flex items-end justify-between gap-4">
+              <p className="font-display text-xl uppercase tracking-[0.06em] text-[var(--champagne)]">
+                {selectedLabel}
+              </p>
+
+              <p className="numeric font-serif text-3xl leading-none text-gold">
+                {selectedAmount}
+              </p>
+            </div>
           </div>
 
           {selected?.benefits?.length ? (
-            <>
-              <span className="rule-gold my-5 block h-px w-full opacity-40" />
-              <p className="font-ui text-[0.625rem] uppercase tracking-[0.24em] text-[var(--text-dim)]">
+            <div className="border-b border-[var(--line)] p-6">
+              <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-[var(--text-dim)]">
                 {labels.tierBenefits}
               </p>
+
               <ul className="mt-4 flex flex-col gap-3">
-                {selected.benefits.map((b) => (
-                  <li key={b} className="flex items-start gap-2.5 text-body text-[var(--text-dim)]">
-                    <Check aria-hidden size={15} color="var(--champagne)" className="mt-1 shrink-0" />
-                    {b}
+                {selected.benefits.map((benefit) => (
+                  <li
+                    key={benefit}
+                    className="flex items-start gap-3 text-sm leading-6 text-[var(--text-dim)]"
+                  >
+                    <Check
+                      aria-hidden
+                      size={15}
+                      color="var(--champagne)"
+                      className="mt-1 shrink-0"
+                    />
+                    {benefit}
                   </li>
                 ))}
               </ul>
-            </>
+            </div>
           ) : null}
 
-          <span className="rule-gold my-5 block h-px w-full opacity-40" />
+          <div className="p-6">
+            <p className="flex items-center gap-2 text-sm font-medium text-[var(--text)]">
+              <ShieldCheck
+                aria-hidden
+                size={17}
+                strokeWidth={1.8}
+                color="var(--champagne)"
+              />
+              {labels.secure}
+            </p>
 
-          <p className="flex items-center gap-2 font-ui text-xs text-[var(--text)]">
-            <ShieldCheck aria-hidden size={15} color="var(--champagne)" />
-            {labels.secure}
-          </p>
-          <p className="mt-2 text-body text-[var(--text-dim)]">{labels.secureSub}</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--text-dim)]">
+              {labels.secureSub}
+            </p>
+          </div>
         </div>
       </aside>
     </form>
