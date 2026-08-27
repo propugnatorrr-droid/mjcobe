@@ -71,6 +71,7 @@ export default async function AllSponsorsPage({
     challengeBody,
     claimLabel,
     allPartnersLabel,
+   officialPartnersBody,
   ] = await Promise.all([
     getLeaderboard(data.campaign.id, 'business'),
     getTopSpot(data.campaign.id, 'business'),
@@ -87,6 +88,7 @@ export default async function AllSponsorsPage({
     text('partner.challenge_body'),
     text('partner.claim_number_one'),
     text('partner.all_partners'),
+    text('partner.official_partners_body'),
   ]);
 
   const [presentingPartner, ...rankedPartners] =
@@ -113,9 +115,7 @@ export default async function AllSponsorsPage({
               </h1>
 
               <p className="mt-5 max-w-[58ch] text-sm leading-6 text-[var(--text-dim)] sm:text-base">
-                Businesses helping build the visual,
-                marketing and cultural rollout behind this
-                record.
+                {officialPartnersBody}
               </p>
             </div>
 
