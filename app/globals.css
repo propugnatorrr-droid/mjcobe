@@ -180,3 +180,243 @@ body {
   color: var(--text);
   font-family: var(--font-ui);
 }
+/* -------------------------------------------------------------------------- */
+/* Global interaction, accessibility, and layout foundation                    */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  --header-height-mobile: 4.5rem;
+  --header-height-desktop: 5.25rem;
+
+  --content-wide: 92rem;
+  --content-standard: 78rem;
+  --content-reading: 48rem;
+
+  --page-gutter-mobile: 1.25rem;
+  --page-gutter-tablet: 2rem;
+  --page-gutter-desktop: 2.5rem;
+
+  --panel-raised: #121214;
+  --panel-soft: #0e0e10;
+  --field-bg: #0e0e10;
+
+  --gold-dark: #8a6b16;
+  --gold-mid: #c9a227;
+  --gold-light: #f4e3a8;
+
+  --status-success: #7fa47c;
+  --status-danger: #c65d62;
+  --status-info: #7895b8;
+
+  --shadow-panel:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 18px 50px rgba(0, 0, 0, 0.24);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 20rem;
+  background: var(--ink);
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-width: 20rem;
+  min-height: 100%;
+  overflow-wrap: break-word;
+}
+
+::selection {
+  background: var(--champagne);
+  color: var(--ink);
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+select,
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+a {
+  text-underline-offset: 0.2em;
+}
+
+:where(
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: 2px solid var(--champagne);
+  outline-offset: 3px;
+}
+
+:where(input, select, textarea)::placeholder {
+  color: var(--text-faint);
+  opacity: 1;
+}
+
+:where(input, select, textarea):disabled {
+  opacity: 0.55;
+}
+
+:where(input, select, textarea)[aria-invalid="true"] {
+  border-color: var(--status-danger);
+}
+
+.site-shell {
+  width: min(
+    calc(100% - (var(--page-gutter-mobile) * 2)),
+    var(--content-wide)
+  );
+  margin-inline: auto;
+}
+
+.site-shell-standard {
+  width: min(
+    calc(100% - (var(--page-gutter-mobile) * 2)),
+    var(--content-standard)
+  );
+  margin-inline: auto;
+}
+
+.reading-shell {
+  width: min(
+    calc(100% - (var(--page-gutter-mobile) * 2)),
+    var(--content-reading)
+  );
+  margin-inline: auto;
+}
+
+.section-space {
+  padding-block: clamp(4.5rem, 9vw, 8.5rem);
+}
+
+.section-space-compact {
+  padding-block: clamp(3rem, 6vw, 5.5rem);
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--panel-raised);
+  box-shadow: var(--shadow-panel);
+}
+
+.panel-interactive {
+  transition:
+    border-color var(--duration-signature) var(--ease-signature),
+    background-color var(--duration-signature) var(--ease-signature),
+    color var(--duration-signature) var(--ease-signature),
+    transform var(--duration-signature) var(--ease-signature);
+}
+
+.panel-interactive:hover {
+  border-color: var(--line-strong);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.gold-border {
+  border-color: rgba(201, 162, 39, 0.48);
+}
+
+.safe-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .site-shell,
+  .site-shell-standard,
+  .reading-shell {
+    width: min(
+      calc(100% - (var(--page-gutter-tablet) * 2)),
+      var(--content-wide)
+    );
+  }
+
+  .site-shell-standard {
+    max-width: var(--content-standard);
+  }
+
+  .reading-shell {
+    max-width: var(--content-reading);
+  }
+}
+
+@media (min-width: 1280px) {
+  .site-shell,
+  .site-shell-standard,
+  .reading-shell {
+    width: min(
+      calc(100% - (var(--page-gutter-desktop) * 2)),
+      var(--content-wide)
+    );
+  }
+
+  .site-shell-standard {
+    max-width: var(--content-standard);
+  }
+
+  .reading-shell {
+    max-width: var(--content-reading);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
