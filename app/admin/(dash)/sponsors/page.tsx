@@ -106,9 +106,23 @@ export default async function SponsorReviewPage() {
         {admin.sponsors.heading}
       </AdminHeading>
 
-      <AdminHint>
-        {admin.sponsors.approveHint}
-      </AdminHint>
+<AdminHint>
+  {admin.sponsors.approveHint}
+</AdminHint>
+
+<div className="mb-8">
+  <Link
+    href="/admin/sponsors/manage"
+    className="inline-flex items-center gap-2 font-ui text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-[var(--champagne)] hover:underline"
+  >
+    {admin.sponsors.directory}
+    <ArrowUpRight
+      aria-hidden
+      size={14}
+    />
+  </Link>
+</div>
+
 
       {entries.length === 0 ? (
         <div
