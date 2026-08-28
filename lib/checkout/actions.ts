@@ -21,6 +21,9 @@ import {
   validateSponsorLogo,
 } from '@/lib/media/sponsor-logo';
 import { bool, EMAIL_RE, normalizeHandle, parseAmountCents, slugify, str } from './validate';
+import {
+  getSelectableTier,
+} from '@/lib/tiers/queries';
 
 export type CheckoutState = { error?: string };
 
@@ -84,16 +87,24 @@ export async function submitFanContribution(
   let tierId: string | null = null;
 
   if (presetId) {
-    const [tier] = await db
-      .select()
-      .from(s.supportTiers)
-      .where(and(eq(s.supportTiers.id, presetId), eq(s.supportTiers.campaignId, campaign.id)))
-      .limit(1);
-    if (tier) {
-      amountCents = tier.amountCents;
-      tierId = tier.id;
+    const tier =
+      await getSelectableTier(
+        campaign.id,
+        presetId,
+      );
+
+    if (!tier) {
+      return {
+        error: await text(
+          'checkout.error.closed',
+        ),
+      };
     }
+
+    amountCents = tier.amountCents;
+    tierId = tier.id;
   }
+
   if (amountCents === null) amountCents = parseAmountCents(formData.get('amount'));
 
   if (amountCents === null || amountCents < min || amountCents > max) {
