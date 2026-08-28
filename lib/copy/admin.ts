@@ -171,6 +171,40 @@ approveLogo: 'APPROVE LOGO',
 rejectLogo: 'REJECT LOGO',
 logoRequirements:
   'PNG or WebP, maximum 2 MB. Files are checked by content, not only filename.',
+contracts:
+  'SPONSOR CONTRACTS',
+contractsHint:
+  'Track contract documents and signing status. Contract documents are never shown on public sponsor pages.',
+contractsEmpty:
+  'No contracts have been recorded for this sponsor.',
+newContract:
+  'ADD CONTRACT',
+contractCampaign:
+  'CAMPAIGN',
+contractNoCampaign:
+  'General sponsor contract',
+contractDocument:
+  'SECURE DOCUMENT LOCATION',
+contractDocumentHint:
+  'Enter an HTTPS link from your private document provider or a protected same-site path. Do not use a public Blob URL for confidential contracts.',
+contractSignedAt:
+  'SIGNED DATE AND TIME — UTC',
+contractSignedHint:
+  'Leave blank while the contract is unsigned.',
+createContract:
+  'CREATE CONTRACT',
+saveContract:
+  'SAVE CONTRACT',
+openContract:
+  'OPEN CONTRACT',
+contractSigned:
+  'SIGNED',
+contractUnsigned:
+  'UNSIGNED',
+contractCreated:
+  'CREATED',
+contractInvalid:
+  'CHECK THE CONTRACT FIELDS',
   },
 
 
