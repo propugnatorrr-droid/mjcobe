@@ -24,6 +24,9 @@ import {
   ShareRow,
 } from '@/components/checkout/ShareRow';
 import {
+  PaymentStatusRefresh,
+} from '@/components/checkout/PaymentStatusRefresh';
+import {
   getConfirmationData,
 } from '@/lib/checkout/confirmation';
 import {
@@ -72,37 +75,55 @@ export default async function ThanksPage({
   }
 
   if (!confirmation.settled) {
-    if (
-      confirmation.supportType !==
-      'business'
-    ) {
-      notFound();
-    }
+    const isBusiness =
+      confirmation.supportType ===
+      'business';
+
+    const isUnderReview =
+      isBusiness &&
+      confirmation.transactionState ===
+        'authorized';
 
     return (
       <main className="surface-ink min-h-screen">
         <SimulationRibbon />
         <SiteNav />
 
+        {!isUnderReview ? (
+          <PaymentStatusRefresh />
+        ) : null}
+
         <div className="mx-auto w-full max-w-5xl px-6 pt-16 md:px-12 md:pt-24">
           <Eyebrow>
-            {await text(
-              'checkout.business.heading',
-            )}
+            {isBusiness
+              ? await text(
+                  'checkout.business.heading',
+                )
+              : await text(
+                  'checkout.fan.heading',
+                )}
           </Eyebrow>
 
           <div className="mt-8">
             <Display>
-              {await text(
-                'thanks.pending.heading',
-              )}
+              {isUnderReview
+                ? await text(
+                    'thanks.pending.heading',
+                  )
+                : await text(
+                    'thanks.processing.heading',
+                  )}
             </Display>
           </div>
 
           <p className="mt-8 max-w-[62ch] text-body text-[var(--text-dim)]">
-            {await text(
-              'thanks.pending.body',
-            )}
+            {isUnderReview
+              ? await text(
+                  'thanks.pending.body',
+                )
+              : await text(
+                  'thanks.processing.body',
+                )}
           </p>
 
           <div className="mt-12">
@@ -121,6 +142,7 @@ export default async function ThanksPage({
       </main>
     );
   }
+
 
   const isBusiness =
     confirmation.supportType ===
