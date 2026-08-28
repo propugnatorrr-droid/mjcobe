@@ -11,6 +11,9 @@ import {
   getSponsorContracts,
 } from '@/lib/admin/contracts';
 import {
+  getSponsorInvoices,
+} from '@/lib/admin/invoices';
+import {
   approveSponsorLogo,
   moderateSponsorVisibility,
   rejectSponsorLogo,
@@ -27,6 +30,9 @@ import {
 import {
   SponsorContractPanel,
 } from '@/components/admin/SponsorContractPanel';
+import {
+  SponsorInvoicePanel,
+} from '@/components/admin/SponsorInvoicePanel';
 import { admin } from '@/lib/copy/admin';
 import {
   cents,
@@ -83,9 +89,11 @@ export default async function SponsorEditorPage({
   const [
     sponsor,
     contractData,
+    invoiceData,
   ] = await Promise.all([
     getAdminSponsor(id),
     getSponsorContracts(id),
+    getSponsorInvoices(id),
   ]);
 
   if (!sponsor) {
@@ -469,6 +477,20 @@ sponsor.pendingLogoAssetId ? (
         }
         campaigns={
           contractData.campaigns
+        }
+      />
+
+      <SponsorInvoicePanel
+        sponsorId={sponsor.id}
+        invoices={
+          invoiceData.invoices
+        }
+        contributions={
+          invoiceData.contributions
+        }
+        nextInvoiceNumber={
+          invoiceData
+            .nextInvoiceNumber
         }
       />
     </>
