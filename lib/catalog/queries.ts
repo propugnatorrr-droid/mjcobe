@@ -14,6 +14,7 @@ export type CatalogSong = {
   audioPath: string | null;
   previewStartMs: number;
   previewEndMs: number;
+  allowFullPlayback: boolean;
   spotifyUrl: string | null;
   appleMusicUrl: string | null;
   youtubeUrl: string | null;
@@ -24,6 +25,7 @@ export type CatalogSong = {
   supporterCount: number;
 };
 
+
 /** Every published song, with its live campaign's real totals if it has one.
  * One query, reused by the home page's featured card and the full /music
  * catalog. */
@@ -32,7 +34,10 @@ export const listCatalog = cache(async (): Promise<CatalogSong[]> => {
     select
       so.id, so.slug, so.title, so.status::text as status, so.description,
       ma.path as cover_path, ma.placeholder as cover_placeholder,
-      aa.path as audio_path, so.preview_start_ms, so.preview_end_ms,
+aa.path as audio_path,
+so.preview_start_ms,
+so.preview_end_ms,
+so.allow_full_playback,
       so.spotify_url, so.apple_music_url, so.youtube_url,
       cp.id as campaign_id,
       coalesce(fan.cents, 0)::int as raised_cents,
@@ -74,6 +79,8 @@ export const listCatalog = cache(async (): Promise<CatalogSong[]> => {
       audioPath: r.audio_path ? String(r.audio_path) : null,
       previewStartMs: Number(r.preview_start_ms ?? 0),
       previewEndMs: Number(r.preview_end_ms ?? 30_000),
+      allowFullPlayback:
+  r.allow_full_playback === true,
       spotifyUrl: r.spotify_url ? String(r.spotify_url) : null,
       appleMusicUrl: r.apple_music_url ? String(r.apple_music_url) : null,
       youtubeUrl: r.youtube_url ? String(r.youtube_url) : null,
