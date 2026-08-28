@@ -23,6 +23,9 @@ import {
 import {
   SongUpdatePanel,
 } from '@/components/admin/SongUpdatePanel';
+import {
+  SponsorPackagePanel,
+} from '@/components/admin/SponsorPackagePanel';
 import { admin } from '@/lib/copy/admin';
 
 export const dynamic =
@@ -50,6 +53,7 @@ export default async function EditSongPage({
     song,
     campaigns,
     tiers,
+    packages,
     updates,
     cover,
     audio,
@@ -126,6 +130,34 @@ export default async function EditSongPage({
                   tiers={tiers.filter(
                     (tier) =>
                       tier.campaignId ===
+                      campaign.id,
+                  )}
+                />
+              ),
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {campaigns.length > 0 ? (
+        <section className="mt-16">
+          <h2 className="mb-6 font-mono text-eyebrow uppercase tracking-[0.14em] text-[var(--text)]">
+            {
+              admin.songs
+                .sponsorPackages
+            }
+          </h2>
+
+          <div className="flex flex-col gap-6">
+            {campaigns.map(
+              (campaign) => (
+                <SponsorPackagePanel
+                  key={campaign.id}
+                  campaign={campaign}
+                  packages={packages.filter(
+                    (sponsorPackage) =>
+                      sponsorPackage
+                        .campaignId ===
                       campaign.id,
                   )}
                 />
