@@ -20,6 +20,9 @@ import { consentFor } from '@/lib/consent/text';
 import { createContribution } from '@/lib/ledger/contributions';
 import { bool, parseAmountCents, slugify, str } from '@/lib/checkout/validate';
 import {
+  retryNotification as retryNotificationDelivery,
+} from '@/lib/notifications/outbox';
+import {
   deleteUnreferencedLogoAsset,
   getPendingSponsorLogos,
   storePendingSponsorLogo,
@@ -1664,4 +1667,51 @@ export async function saveCopy(formData: FormData): Promise<void> {
 
   revalidatePath('/admin/copy');
   revalidatePath('/', 'layout');
+}
+// --------------------------------------------------------- notifications ----
+
+export async function retryNotification(
+  formData: FormData,
+): Promise<void> {
+  const me =
+    await requireAdmin();
+
+  const notificationId =
+    str(
+      formData.get(
+        'notificationId',
+      ),
+    );
+
+  if (!notificationId) {
+    return;
+  }
+
+  const result =
+    await retryNotificationDelivery(
+      notificationId,
+    );
+
+  await recordAudit({
+    adminUserId: me.id,
+    action:
+      result.ok
+        ? 'notification.retry'
+        : 'notification.retry_failed',
+    entity:
+      'notification',
+    entityId:
+      notificationId,
+    after: {
+      ok: result.ok,
+      error:
+        result.error ?? null,
+    },
+    ipHash:
+      await ipHash(),
+  });
+
+  revalidatePath(
+    '/admin/notifications',
+  );
 }
