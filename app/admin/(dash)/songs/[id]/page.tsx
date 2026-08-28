@@ -10,6 +10,9 @@ import {
   SongForm,
 } from '@/components/admin/SongForm';
 import {
+  SongMediaManager,
+} from '@/components/admin/SongMediaManager';
+import {
   CampaignForm,
 } from '@/components/admin/CampaignForm';
 import {
@@ -39,6 +42,8 @@ export default async function EditSongPage({
     song,
     campaigns,
     tiers,
+    cover,
+    audio,
   } = data;
 
   return (
@@ -49,6 +54,12 @@ export default async function EditSongPage({
       <AdminHint>{song.title}</AdminHint>
 
       <SongForm song={song} />
+
+      <SongMediaManager
+        song={song}
+        cover={cover}
+        audio={audio}
+      />
 
       <section className="mt-16">
         <h2 className="mb-6 font-mono text-eyebrow uppercase tracking-[0.14em] text-[var(--text)]">
