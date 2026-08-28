@@ -24,6 +24,10 @@ import {
 } from '@/components/primitives/Field';
 import { SubmitRow } from './SubmitRow';
 import { SponsorLogoUpload } from './SponsorLogoUpload';
+import {
+  StripePaymentStep,
+} from './StripePaymentStep';
+
 
 export type SponsorFormLabels = Record<
   | 'packages'
@@ -111,7 +115,32 @@ export function SponsorForm({
       ? `${currencySymbol}${customAmount}`
       : '—');
 
+  if (state.payment) {
+    return (
+      <StripePaymentStep
+        clientSecret={
+          state.payment
+            .clientSecret
+        }
+        returnPath={
+          state.payment
+            .returnPath
+        }
+        heading={
+          labels.payment
+        }
+        submitLabel={
+          labels.submit
+        }
+        workingLabel={
+          labels.working
+        }
+      />
+    );
+  }
+
   return (
+
     <form action={action}>
       <input
         type="hidden"
