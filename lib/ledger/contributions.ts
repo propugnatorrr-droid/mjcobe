@@ -213,15 +213,121 @@ if (tx.state === 'settled') {
   }
 
   return dbw.transaction(async (t) => {
+    /*
+     * Serialize final settlement by transaction ID.
+     * Stripe may retry a webhook while an admin
+     * capture or another webhook is still running.
+     */
+    await t.execute(sql`
+      select pg_advisory_xact_lock(
+        hashtextextended(
+          ${transactionId},
+          0
+        )
+      )
+    `);
+
+    const [current] =
+      await t
+        .select()
+        .from(s.transactions)
+        .where(
+          eq(
+            s.transactions.id,
+            transactionId,
+          ),
+        )
+        .limit(1);
+
+    if (!current) {
+      return {
+        ok: false as const,
+        code: 'not_found',
+        message:
+          'Transaction not found.',
+      };
+    }
+
+    if (
+      current.state ===
+      'settled'
+    ) {
+      const existingNumbers =
+        await t
+          .select({
+            seriesKey:
+              s.supporterNumbers
+                .seriesKey,
+            number:
+              s.supporterNumbers
+                .number,
+          })
+          .from(
+            s.supporterNumbers,
+          )
+          .where(
+            eq(
+              s.supporterNumbers
+                .contributionId,
+              current.contributionId,
+            ),
+          );
+
+      return {
+        ok: true as const,
+        supporterNumber:
+          existingNumbers.find(
+            (number) =>
+              number.seriesKey ===
+              'supporter',
+          )?.number ?? null,
+        foundingNumber:
+          existingNumbers.find(
+            (number) =>
+              number.seriesKey ===
+              'founding',
+          )?.number ?? null,
+      };
+    }
+
     const now = new Date();
 
-    await t.update(s.transactions).set({
-      state: 'settled', providerRef: outcome.providerRef,
-      capturedAt: now, settledAt: now, updatedAt: now,
-    }).where(eq(s.transactions.id, transactionId));
+    await t
+      .update(s.transactions)
+      .set({
+        state: 'settled',
+        providerRef:
+          outcome.providerRef,
+        failureCode: null,
+        capturedAt: now,
+        settledAt: now,
+        updatedAt: now,
+      })
+      .where(
+        eq(
+          s.transactions.id,
+          transactionId,
+        ),
+      );
 
-    const [contribution] = await t.select().from(s.contributions)
-      .where(eq(s.contributions.id, tx.contributionId)).limit(1);
+    const [contribution] =
+      await t
+        .select()
+        .from(s.contributions)
+        .where(
+          eq(
+            s.contributions.id,
+            current.contributionId,
+          ),
+        )
+        .limit(1);
+
+    if (!contribution) {
+      throw new Error(
+        'Contribution not found during settlement.',
+      );
+    }
+
 
     await t.insert(s.ledgerEntries).values({
       campaignId: contribution.campaignId,
