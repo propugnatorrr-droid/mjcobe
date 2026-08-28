@@ -1,6 +1,11 @@
 import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
-import { eq, sql } from 'drizzle-orm';
+import {
+  and,
+  eq,
+  inArray,
+  sql,
+} from 'drizzle-orm';
 import { dbw } from '@/lib/db/write';
 import * as s from '@/lib/db/schema';
 import { getProvider } from '@/lib/payments';
@@ -542,64 +547,1063 @@ const nextNumber = async (
   });
 }
 
-/**
- * Records a refund as a NEGATIVE ledger entry. The original entry is never
- * touched — that is what makes rankings recompute correctly rather than
- * approximately, and it leaves a real audit trail.
- */
-export async function refundContribution(args: {
-  transactionId: string;
-  amountCents: number;
-  reason: RefundReasonCode;
-  note?: string;
-  adminUserId?: string;
-}): Promise<{ ok: boolean; message?: string }> {
-  const [tx] = await dbw.select().from(s.transactions).where(eq(s.transactions.id, args.transactionId)).limit(1);
-  if (!tx) return { ok: false, message: 'Transaction not found.' };
-  if (tx.state !== 'settled' && tx.state !== 'partially_refunded') {
-    return { ok: false, message: `Cannot refund from ${tx.state}.` };
+const refundReasons:
+ReadonlySet<RefundReasonCode> =
+  new Set([
+    'unverified_sponsor',
+    'fraud_risk',
+    'brand_safety',
+    'duplicate_payment',
+    'customer_request',
+    'other',
+  ]);
+
+function validRefundReason(
+  value: string | undefined,
+): RefundReasonCode {
+  if (
+    value &&
+    refundReasons.has(
+      value as RefundReasonCode,
+    )
+  ) {
+    return value as RefundReasonCode;
   }
 
-  const [net] = await dbw.select({ total: sql<number>`coalesce(sum(${s.ledgerEntries.amountCents}), 0)::int` })
-    .from(s.ledgerEntries).where(eq(s.ledgerEntries.transactionId, args.transactionId));
-  if (args.amountCents > Number(net.total)) return { ok: false, message: 'Refund exceeds remaining balance.' };
+  return 'other';
+}
 
-  const provider = getProvider(tx.provider);
-  const outcome = await provider.refund(tx.providerRef ?? '', args.amountCents, args.reason);
-  if (outcome.status === 'failed') return { ok: false, message: outcome.message };
+async function updateTransactionFromLedger(
+  database:
+    Parameters<
+      Parameters<
+        typeof dbw.transaction
+      >[0]
+    >[0],
+  transactionId: string,
+  originalAmountCents: number,
+) {
+  const [balance] =
+    await database
+      .select({
+        total: sql<number>`
+          coalesce(
+            sum(
+              ${s.ledgerEntries.amountCents}
+            ),
+            0
+          )::int
+        `,
+      })
+      .from(s.ledgerEntries)
+      .where(
+        eq(
+          s.ledgerEntries.transactionId,
+          transactionId,
+        ),
+      );
 
-  await dbw.transaction(async (t) => {
-    const now = new Date();
-    const [contribution] = await t.select().from(s.contributions)
-      .where(eq(s.contributions.id, tx.contributionId)).limit(1);
+  const netCents =
+    Number(balance?.total ?? 0);
 
-    await t.insert(s.refunds).values({
-      transactionId: args.transactionId, amountCents: args.amountCents,
-      reason: args.reason, note: args.note ?? null,
-      adminUserId: args.adminUserId ?? null, providerRef: outcome.providerRef,
+  const state =
+    netCents <= 0
+      ? 'refunded'
+      : netCents <
+          originalAmountCents
+        ? 'partially_refunded'
+        : 'settled';
+
+  await database
+    .update(s.transactions)
+    .set({
+      state,
+      updatedAt: new Date(),
+    })
+    .where(
+      eq(
+        s.transactions.id,
+        transactionId,
+      ),
+    );
+
+  return {
+    netCents,
+    state,
+  };
+}
+
+export type ReconcileRefundInput = {
+  providerRef: string;
+  localRefundId?: string | null;
+  paymentIntentId?: string | null;
+  amountCents: number;
+  status: string;
+  failureReason?: string | null;
+  reason?: string;
+};
+
+/**
+ * Reconciles both application-created and
+ * Stripe-Dashboard-created refunds.
+ *
+ * A negative ledger entry is written only
+ * after Stripe reports succeeded. Pending
+ * refunds reserve balance but do not change
+ * public totals. A later failure reverses any
+ * previously posted refund movement without
+ * deleting ledger history.
+ */
+export async function reconcileRefund(
+  input: ReconcileRefundInput,
+): Promise<{
+  ok: boolean;
+  message?: string;
+}> {
+  let [refund] =
+    await dbw
+      .select()
+      .from(s.refunds)
+      .where(
+        eq(
+          s.refunds.providerRef,
+          input.providerRef,
+        ),
+      )
+      .limit(1);
+
+  if (
+    !refund &&
+    input.localRefundId &&
+    /^[0-9a-f-]{36}$/i.test(
+      input.localRefundId,
+    )
+  ) {
+    [refund] =
+      await dbw
+        .select()
+        .from(s.refunds)
+        .where(
+          eq(
+            s.refunds.id,
+            input.localRefundId,
+          ),
+        )
+        .limit(1);
+  }
+
+  if (!refund) {
+    if (!input.paymentIntentId) {
+      return {
+        ok: false,
+        message:
+          'Refund has no PaymentIntent reference.',
+      };
+    }
+
+    const [transaction] =
+      await dbw
+        .select()
+        .from(s.transactions)
+        .where(
+          and(
+            eq(
+              s.transactions.provider,
+              'stripe',
+            ),
+            eq(
+              s.transactions.providerRef,
+              input.paymentIntentId,
+            ),
+          ),
+        )
+        .limit(1);
+
+    if (!transaction) {
+      return {
+        ok: false,
+        message:
+          'No local transaction matches the Stripe refund.',
+      };
+    }
+
+    const [created] =
+      await dbw
+        .insert(s.refunds)
+        .values({
+          transactionId:
+            transaction.id,
+          amountCents:
+            input.amountCents,
+          reason:
+            validRefundReason(
+              input.reason,
+            ),
+          note:
+            'Created directly in Stripe.',
+          providerRef:
+            input.providerRef,
+          status:
+            input.status,
+          failureReason:
+            input.failureReason ??
+            null,
+          updatedAt:
+            new Date(),
+        })
+        .onConflictDoNothing()
+        .returning();
+
+    if (created) {
+      refund = created;
+    } else {
+      [refund] =
+        await dbw
+          .select()
+          .from(s.refunds)
+          .where(
+            eq(
+              s.refunds.providerRef,
+              input.providerRef,
+            ),
+          )
+          .limit(1);
+    }
+  }
+
+  if (!refund) {
+    return {
+      ok: false,
+      message:
+        'Refund reconciliation failed.',
+    };
+  }
+
+  return dbw.transaction(
+    async (database) => {
+      await database.execute(sql`
+        select pg_advisory_xact_lock(
+          hashtextextended(
+            ${refund.id},
+            0
+          )
+        )
+      `);
+
+      const [currentRefund] =
+        await database
+          .select()
+          .from(s.refunds)
+          .where(
+            eq(
+              s.refunds.id,
+              refund.id,
+            ),
+          )
+          .limit(1);
+
+      if (!currentRefund) {
+        return {
+          ok: false,
+          message:
+            'Refund record disappeared during reconciliation.',
+        };
+      }
+
+      const [transaction] =
+        await database
+          .select()
+          .from(s.transactions)
+          .where(
+            eq(
+              s.transactions.id,
+              currentRefund.transactionId,
+            ),
+          )
+          .limit(1);
+
+      if (!transaction) {
+        return {
+          ok: false,
+          message:
+            'Refund transaction was not found.',
+        };
+      }
+
+      const [contribution] =
+        await database
+          .select()
+          .from(s.contributions)
+          .where(
+            eq(
+              s.contributions.id,
+              transaction.contributionId,
+            ),
+          )
+          .limit(1);
+
+      if (!contribution) {
+        return {
+          ok: false,
+          message:
+            'Refund contribution was not found.',
+        };
+      }
+
+      await database
+        .update(s.refunds)
+        .set({
+          providerRef:
+            input.providerRef,
+          amountCents:
+            input.amountCents,
+          status:
+            input.status,
+          failureReason:
+            input.failureReason ??
+            null,
+          updatedAt:
+            new Date(),
+        })
+        .where(
+          eq(
+            s.refunds.id,
+            currentRefund.id,
+          ),
+        );
+
+      const succeeded =
+        input.status ===
+        'succeeded';
+
+      const failed =
+        input.status ===
+          'failed' ||
+        input.status ===
+          'canceled';
+
+      if (succeeded) {
+        await database
+          .insert(
+            s.ledgerEntries,
+          )
+          .values({
+            campaignId:
+              contribution.campaignId,
+            contributionId:
+              contribution.id,
+            transactionId:
+              transaction.id,
+            refundId:
+              currentRefund.id,
+            supporterId:
+              contribution.supporterId,
+            sponsorId:
+              contribution.sponsorId,
+            kind: 'refund',
+            amountCents:
+              -input.amountCents,
+            note:
+              currentRefund.note,
+            externalRef:
+              `refund:${input.providerRef}:succeeded`,
+            occurredAt:
+              new Date(),
+          })
+          .onConflictDoNothing();
+
+        const updated =
+          await updateTransactionFromLedger(
+            database,
+            transaction.id,
+            transaction.amountCents,
+          );
+
+        await database
+          .insert(s.auditLog)
+          .values({
+            adminUserId:
+              currentRefund.adminUserId,
+            action:
+              'refund.succeeded',
+            entity:
+              'transaction',
+            entityId:
+              transaction.id,
+            before: {
+              refundStatus:
+                currentRefund.status,
+            },
+            after: {
+              refundStatus:
+                'succeeded',
+              netCents:
+                updated.netCents,
+              transactionState:
+                updated.state,
+            },
+            reason:
+              currentRefund.reason,
+          });
+      }
+
+      if (failed) {
+        const [posted] =
+          await database
+            .select({
+              total: sql<number>`
+                coalesce(
+                  sum(
+                    ${s.ledgerEntries.amountCents}
+                  ),
+                  0
+                )::int
+              `,
+            })
+            .from(
+              s.ledgerEntries,
+            )
+            .where(
+              eq(
+                s.ledgerEntries.refundId,
+                currentRefund.id,
+              ),
+            );
+
+        const postedCents =
+          Number(
+            posted?.total ?? 0,
+          );
+
+        if (postedCents < 0) {
+          await database
+            .insert(
+              s.ledgerEntries,
+            )
+            .values({
+              campaignId:
+                contribution.campaignId,
+              contributionId:
+                contribution.id,
+              transactionId:
+                transaction.id,
+              refundId:
+                currentRefund.id,
+              supporterId:
+                contribution.supporterId,
+              sponsorId:
+                contribution.sponsorId,
+              kind: 'adjustment',
+              amountCents:
+                -postedCents,
+              note:
+                `Refund failed: ${
+                  input.failureReason ??
+                  'unknown'
+                }`,
+              externalRef:
+                `refund:${input.providerRef}:failed`,
+              occurredAt:
+                new Date(),
+            })
+            .onConflictDoNothing();
+        }
+
+        const updated =
+          await updateTransactionFromLedger(
+            database,
+            transaction.id,
+            transaction.amountCents,
+          );
+
+        await database
+          .insert(s.auditLog)
+          .values({
+            adminUserId:
+              currentRefund.adminUserId,
+            action:
+              'refund.failed',
+            entity:
+              'transaction',
+            entityId:
+              transaction.id,
+            before: {
+              refundStatus:
+                currentRefund.status,
+            },
+            after: {
+              refundStatus:
+                input.status,
+              failureReason:
+                input.failureReason ??
+                null,
+              netCents:
+                updated.netCents,
+              transactionState:
+                updated.state,
+            },
+            reason:
+              currentRefund.reason,
+          });
+      }
+
+      return {
+        ok: true,
+      };
+    },
+  );
+}
+
+/**
+ * Reserves the requested balance before
+ * contacting the provider. This prevents two
+ * simultaneous administrators from refunding
+ * more than the remaining transaction balance.
+ */
+export async function refundContribution(
+  args: {
+    transactionId: string;
+    amountCents: number;
+    reason:
+      RefundReasonCode;
+    note?: string;
+    adminUserId?: string;
+  },
+): Promise<{
+  ok: boolean;
+  message?: string;
+}> {
+  if (
+    !Number.isInteger(
+      args.amountCents,
+    ) ||
+    args.amountCents <= 0
+  ) {
+    return {
+      ok: false,
+      message:
+        'Refund amount must be greater than zero.',
+    };
+  }
+
+  const reservation =
+    await dbw.transaction(
+      async (database) => {
+        await database.execute(sql`
+          select pg_advisory_xact_lock(
+            hashtextextended(
+              ${args.transactionId},
+              0
+            )
+          )
+        `);
+
+        const [transaction] =
+          await database
+            .select()
+            .from(s.transactions)
+            .where(
+              eq(
+                s.transactions.id,
+                args.transactionId,
+              ),
+            )
+            .limit(1);
+
+        if (!transaction) {
+          return {
+            ok: false as const,
+            message:
+              'Transaction not found.',
+          };
+        }
+
+        if (
+          transaction.state !==
+            'settled' &&
+          transaction.state !==
+            'partially_refunded'
+        ) {
+          return {
+            ok: false as const,
+            message:
+              `Cannot refund from ${transaction.state}.`,
+          };
+        }
+
+        const [net] =
+          await database
+            .select({
+              total: sql<number>`
+                coalesce(
+                  sum(
+                    ${s.ledgerEntries.amountCents}
+                  ),
+                  0
+                )::int
+              `,
+            })
+            .from(
+              s.ledgerEntries,
+            )
+            .where(
+              eq(
+                s.ledgerEntries.transactionId,
+                args.transactionId,
+              ),
+            );
+
+        const [reserved] =
+          await database
+            .select({
+              total: sql<number>`
+                coalesce(
+                  sum(
+                    ${s.refunds.amountCents}
+                  ),
+                  0
+                )::int
+              `,
+            })
+            .from(s.refunds)
+            .where(
+              and(
+                eq(
+                  s.refunds.transactionId,
+                  args.transactionId,
+                ),
+                inArray(
+                  s.refunds.status,
+                  [
+                    'creating',
+                    'pending',
+                    'requires_action',
+                  ],
+                ),
+              ),
+            );
+
+        const netCents =
+          Number(
+            net?.total ?? 0,
+          );
+
+        const reservedCents =
+          Number(
+            reserved?.total ?? 0,
+          );
+
+        const availableCents =
+          netCents -
+          reservedCents;
+
+        if (
+          args.amountCents >
+          availableCents
+        ) {
+          return {
+            ok: false as const,
+            message:
+              'Refund exceeds the remaining available balance.',
+          };
+        }
+
+        const [refund] =
+          await database
+            .insert(s.refunds)
+            .values({
+              transactionId:
+                transaction.id,
+              amountCents:
+                args.amountCents,
+              reason:
+                args.reason,
+              note:
+                args.note ??
+                null,
+              adminUserId:
+                args.adminUserId ??
+                null,
+              status:
+                'creating',
+              updatedAt:
+                new Date(),
+            })
+            .returning();
+
+        await database
+          .insert(s.auditLog)
+          .values({
+            adminUserId:
+              args.adminUserId ??
+              null,
+            action:
+              'refund.requested',
+            entity:
+              'transaction',
+            entityId:
+              transaction.id,
+            before: {
+              state:
+                transaction.state,
+              netCents,
+              reservedCents,
+            },
+            after: {
+              refundId:
+                refund.id,
+              amountCents:
+                args.amountCents,
+              status:
+                'creating',
+            },
+            reason:
+              args.reason,
+          });
+
+        return {
+          ok: true as const,
+          transaction,
+          refund,
+        };
+      },
+    );
+
+  if (!reservation.ok) {
+    return reservation;
+  }
+
+  const provider =
+    getProvider(
+      reservation
+        .transaction
+        .provider,
+    );
+
+  const outcome =
+    await provider.refund(
+      reservation
+        .transaction
+        .providerRef ??
+        '',
+      args.amountCents,
+      args.reason,
+      reservation.refund.id,
+    );
+
+  if (
+    outcome.status ===
+    'failed'
+  ) {
+    await dbw
+      .update(s.refunds)
+      .set({
+        providerRef:
+          outcome.providerRef,
+        status: 'failed',
+        failureReason:
+          outcome.code,
+        updatedAt:
+          new Date(),
+      })
+      .where(
+        eq(
+          s.refunds.id,
+          reservation.refund.id,
+        ),
+      );
+
+    return {
+      ok: false,
+      message:
+        outcome.message,
+    };
+  }
+
+  const reconciled =
+    await reconcileRefund({
+      providerRef:
+        outcome.providerRef,
+      localRefundId:
+        reservation.refund.id,
+      paymentIntentId:
+        reservation
+          .transaction
+          .providerRef,
+      amountCents:
+        args.amountCents,
+      status:
+        outcome.status ===
+        'succeeded'
+          ? 'succeeded'
+          : 'pending',
+      reason:
+        args.reason,
     });
 
-    await t.insert(s.ledgerEntries).values({
-      campaignId: contribution.campaignId, contributionId: contribution.id,
-      transactionId: args.transactionId, supporterId: contribution.supporterId,
-      sponsorId: contribution.sponsorId, kind: 'refund',
-      amountCents: -args.amountCents, occurredAt: now,
-      note: args.note ?? null,
-    });
+  if (!reconciled.ok) {
+    return reconciled;
+  }
 
-    const remaining = Number(net.total) - args.amountCents;
-    await t.update(s.transactions)
-      .set({ state: remaining <= 0 ? 'refunded' : 'partially_refunded', updatedAt: now })
-      .where(eq(s.transactions.id, args.transactionId));
+  if (
+    outcome.status ===
+    'pending'
+  ) {
+    return {
+      ok: true,
+      message:
+        'Refund submitted and awaiting provider confirmation.',
+    };
+  }
 
-    await t.insert(s.auditLog).values({
-      adminUserId: args.adminUserId ?? null,
-      action: 'refund', entity: 'transaction', entityId: args.transactionId,
-      before: { state: tx.state, netCents: Number(net.total) },
-      after: { state: remaining <= 0 ? 'refunded' : 'partially_refunded', netCents: remaining },
-      reason: args.reason,
-    });
-  });
+  return {
+    ok: true,
+  };
+}
 
-  return { ok: true };
+export type ReconcileDisputeInput = {
+  providerRef: string;
+  paymentIntentId: string;
+  amountCents: number;
+  state: string;
+  movement:
+    | 'none'
+    | 'withdrawn'
+    | 'reinstated';
+};
+
+/**
+ * Records Stripe disputes and uses
+ * append-only ledger movements when Stripe
+ * withdraws or reinstates the disputed funds.
+ */
+export async function reconcileDispute(
+  input: ReconcileDisputeInput,
+): Promise<{
+  ok: boolean;
+  message?: string;
+}> {
+  const [transaction] =
+    await dbw
+      .select()
+      .from(s.transactions)
+      .where(
+        and(
+          eq(
+            s.transactions.provider,
+            'stripe',
+          ),
+          eq(
+            s.transactions.providerRef,
+            input.paymentIntentId,
+          ),
+        ),
+      )
+      .limit(1);
+
+  if (!transaction) {
+    return {
+      ok: false,
+      message:
+        'No local transaction matches the Stripe dispute.',
+    };
+  }
+
+  return dbw.transaction(
+    async (database) => {
+      await database.execute(sql`
+        select pg_advisory_xact_lock(
+          hashtextextended(
+            ${transaction.id},
+            0
+          )
+        )
+      `);
+
+      const [contribution] =
+        await database
+          .select()
+          .from(s.contributions)
+          .where(
+            eq(
+              s.contributions.id,
+              transaction.contributionId,
+            ),
+          )
+          .limit(1);
+
+      if (!contribution) {
+        return {
+          ok: false,
+          message:
+            'Disputed contribution was not found.',
+        };
+      }
+
+      const resolvedAt =
+        input.state === 'won' ||
+        input.state === 'lost'
+          ? new Date()
+          : null;
+
+      const [existing] =
+        await database
+          .select()
+          .from(s.disputes)
+          .where(
+            eq(
+              s.disputes.providerRef,
+              input.providerRef,
+            ),
+          )
+          .limit(1);
+
+      if (existing) {
+        await database
+          .update(s.disputes)
+          .set({
+            amountCents:
+              input.amountCents,
+            state:
+              input.state,
+            resolvedAt,
+          })
+          .where(
+            eq(
+              s.disputes.id,
+              existing.id,
+            ),
+          );
+      } else {
+        await database
+          .insert(s.disputes)
+          .values({
+            transactionId:
+              transaction.id,
+            providerRef:
+              input.providerRef,
+            amountCents:
+              input.amountCents,
+            state:
+              input.state,
+            resolvedAt,
+          })
+          .onConflictDoNothing();
+      }
+
+      if (
+        input.movement ===
+        'withdrawn'
+      ) {
+        await database
+          .insert(
+            s.ledgerEntries,
+          )
+          .values({
+            campaignId:
+              contribution.campaignId,
+            contributionId:
+              contribution.id,
+            transactionId:
+              transaction.id,
+            supporterId:
+              contribution.supporterId,
+            sponsorId:
+              contribution.sponsorId,
+            kind:
+              'chargeback',
+            amountCents:
+              -input.amountCents,
+            note:
+              'Stripe dispute funds withdrawn.',
+            externalRef:
+              `dispute:${input.providerRef}:withdrawn`,
+            occurredAt:
+              new Date(),
+          })
+          .onConflictDoNothing();
+      }
+
+      if (
+        input.movement ===
+        'reinstated'
+      ) {
+        await database
+          .insert(
+            s.ledgerEntries,
+          )
+          .values({
+            campaignId:
+              contribution.campaignId,
+            contributionId:
+              contribution.id,
+            transactionId:
+              transaction.id,
+            supporterId:
+              contribution.supporterId,
+            sponsorId:
+              contribution.sponsorId,
+            kind:
+              'adjustment',
+            amountCents:
+              input.amountCents,
+            note:
+              'Stripe dispute funds reinstated.',
+            externalRef:
+              `dispute:${input.providerRef}:reinstated`,
+            occurredAt:
+              new Date(),
+          })
+          .onConflictDoNothing();
+      }
+
+      if (
+        input.movement ===
+        'withdrawn'
+      ) {
+        await database
+          .update(s.transactions)
+          .set({
+            state:
+              'charged_back',
+            updatedAt:
+              new Date(),
+          })
+          .where(
+            eq(
+              s.transactions.id,
+              transaction.id,
+            ),
+          );
+      } else if (
+        input.movement ===
+        'reinstated'
+      ) {
+        await updateTransactionFromLedger(
+          database,
+          transaction.id,
+          transaction.amountCents,
+        );
+      } else {
+        await database
+          .update(s.transactions)
+          .set({
+            state:
+              'disputed',
+            updatedAt:
+              new Date(),
+          })
+          .where(
+            eq(
+              s.transactions.id,
+              transaction.id,
+            ),
+          );
+      }
+
+      return {
+        ok: true,
+      };
+    },
+  );
 }
