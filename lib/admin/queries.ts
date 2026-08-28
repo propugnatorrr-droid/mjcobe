@@ -550,3 +550,53 @@ export async function hasUnsettledLedger(contributionId: string) {
 }
 
 export { isNull };
+export type AdminNotification = {
+  id: string;
+  kind: string;
+  recipientEmail: string | null;
+  deliveryStatus: string;
+  attemptCount: number;
+  providerMessageId: string | null;
+  lastError: string | null;
+  scheduledAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  sentAt: Date | null;
+};
+
+export async function listNotifications(
+  limit = 100,
+): Promise<AdminNotification[]> {
+  return db
+    .select({
+      id:
+        s.notifications.id,
+      kind:
+        s.notifications.kind,
+      recipientEmail:
+        s.notifications.recipientEmail,
+      deliveryStatus:
+        s.notifications.deliveryStatus,
+      attemptCount:
+        s.notifications.attemptCount,
+      providerMessageId:
+        s.notifications.providerMessageId,
+      lastError:
+        s.notifications.lastError,
+      scheduledAt:
+        s.notifications.scheduledAt,
+      createdAt:
+        s.notifications.createdAt,
+      updatedAt:
+        s.notifications.updatedAt,
+      sentAt:
+        s.notifications.sentAt,
+    })
+    .from(s.notifications)
+    .orderBy(
+      desc(
+        s.notifications.createdAt,
+      ),
+    )
+    .limit(limit);
+}
