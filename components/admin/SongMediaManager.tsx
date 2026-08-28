@@ -9,15 +9,23 @@ import {
 import {
   SongPlaybackForm,
 } from './SongPlaybackForm';
+import {
+  MediaLibraryPicker,
+} from './MediaLibraryPicker';
 
 export function SongMediaManager({
   song,
   cover,
   audio,
+  mediaLibrary,
 }: {
   song: AdminSongRow;
-  cover: AdminMediaAssetRow | null;
-  audio: AdminMediaAssetRow | null;
+  cover:
+    AdminMediaAssetRow | null;
+  audio:
+    AdminMediaAssetRow | null;
+  mediaLibrary:
+    AdminMediaAssetRow[];
 }) {
   return (
     <section className="mt-16">
@@ -30,20 +38,48 @@ export function SongMediaManager({
       </p>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <SongMediaUpload
-          songId={song.id}
-          kind="cover"
-          asset={cover}
-        />
+        <div>
+          <SongMediaUpload
+            songId={song.id}
+            kind="cover"
+            asset={cover}
+          />
 
-        <SongMediaUpload
-          songId={song.id}
-          kind="audio"
-          asset={audio}
-        />
+          <MediaLibraryPicker
+            songId={song.id}
+            assignment="cover"
+            assets={
+              mediaLibrary
+            }
+            currentAssetId={
+              song.coverAssetId
+            }
+          />
+        </div>
+
+        <div>
+          <SongMediaUpload
+            songId={song.id}
+            kind="audio"
+            asset={audio}
+          />
+
+          <MediaLibraryPicker
+            songId={song.id}
+            assignment="audio"
+            assets={
+              mediaLibrary
+            }
+            currentAssetId={
+              song.audioAssetId
+            }
+          />
+        </div>
       </div>
 
-      <SongPlaybackForm song={song} />
+      <SongPlaybackForm
+        song={song}
+      />
     </section>
   );
 }
