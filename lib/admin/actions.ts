@@ -268,10 +268,55 @@ export async function issueRefund(_prev: AdminState, formData: FormData): Promis
     .limit(1);
   if (!tx) return { error: 'missing' };
 
-  // Blank amount means the whole remaining balance, which is the common case
-  // and the one most likely to be fat-fingered if typed by hand.
-  const typed = parseAmountCents(formData.get('amount'));
-  const amountCents = typed ?? tx.amountCents;
+  /*
+   * Blank amount means the actual remaining
+   * ledger balance, not the original payment
+   * amount. This matters after a partial
+   * refund.
+   */
+  const typed =
+    parseAmountCents(
+      formData.get('amount'),
+    );
+
+  const [balance] =
+    await db
+      .select({
+        total: sql<number>`
+          coalesce(
+            sum(
+              ${s.ledgerEntries.amountCents}
+            ),
+            0
+          )::int
+        `,
+      })
+      .from(s.ledgerEntries)
+      .where(
+        eq(
+          s.ledgerEntries.transactionId,
+          transactionId,
+        ),
+      );
+
+  const amountCents =
+    typed ??
+    Number(
+      balance?.total ?? 0,
+    );
+
+  if (
+    !Number.isInteger(
+      amountCents,
+    ) ||
+    amountCents <= 0
+  ) {
+    return {
+      error:
+        'No refundable balance remains.',
+    };
+  }
+
 
   const result = await refundContribution({
     transactionId,
