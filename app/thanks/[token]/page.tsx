@@ -130,7 +130,62 @@ export default async function ThanksPage({
     confirmation.foundingNumber ??
     confirmation.supporterNumber;
 
+  const displayedAmount =
+    confirmation.hideAmount
+      ? await text(
+          'song.amount_hidden',
+        )
+      : formatCents(
+          cents(
+            confirmation.netAmountCents,
+          ),
+        );
+
+  const shareLabels = {
+    heading: await text(
+      'thanks.share',
+    ),
+    story: await text(
+      'thanks.share.story',
+    ),
+    feed: await text(
+      'thanks.share.feed',
+    ),
+    x: await text(
+      'thanks.share.x',
+    ),
+    share: await text(
+      'thanks.share.action',
+    ),
+    sharing: await text(
+      'thanks.share.sharing',
+    ),
+    download: await text(
+      'thanks.download',
+    ),
+    copy: await text(
+      'thanks.copy_link',
+    ),
+    copied: await text(
+      'thanks.copied',
+    ),
+    previewAlt: await text(
+      'thanks.share.preview_alt',
+    ),
+    shareTitle: await text(
+      'thanks.share.title',
+    ),
+    shareText: await text(
+      'thanks.share.text',
+      {
+        song:
+          confirmation.songTitle,
+      },
+    ),
+  };
+
   return (
+
     <main className="surface-ink min-h-screen pb-24">
       <SimulationRibbon />
 
@@ -211,28 +266,17 @@ export default async function ThanksPage({
           )}{' '}
 
           <span className="font-mono text-[var(--champagne)]">
-            {formatCents(
-              cents(
-                confirmation.amountCents,
-              ),
-            )}
+            {displayedAmount}
           </span>
         </p>
 
         <div className="mt-12">
           <ShareRow
+            token={token}
             shareUrlPath={`/s/${token}`}
-            imagePath={`/api/og/thanks/${token}`}
-            copyLabel={await text(
-              'thanks.copy_link',
-            )}
-            copiedLabel={await text(
-              'thanks.copied',
-            )}
-            downloadLabel={await text(
-              'thanks.download',
-            )}
+            labels={shareLabels}
           />
+
         </div>
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
