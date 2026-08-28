@@ -155,10 +155,20 @@ export async function SongHero({
           <div className="mt-8 max-w-[46rem]">
             <AudioPreview
               src={audio?.path ?? null}
-              previewStartMs={song.previewStartMs}
-              previewEndMs={song.previewEndMs}
-              comingSoonLabel={comingSoonLabel}
+              previewStartMs={
+                song.previewStartMs
+              }
+              previewEndMs={
+                song.previewEndMs
+              }
+              allowFullPlayback={
+                song.allowFullPlayback
+              }
+              comingSoonLabel={
+                comingSoonLabel
+              }
             />
+
 
             <p className="mt-3 text-center font-ui text-[0.625rem] font-medium uppercase tracking-[0.22em] text-[var(--text-faint)]">
               {previewLabel}
