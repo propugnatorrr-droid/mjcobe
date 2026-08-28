@@ -24,6 +24,10 @@ import { bool, EMAIL_RE, normalizeHandle, parseAmountCents, slugify, str } from 
 import {
   getSelectableTier,
 } from '@/lib/tiers/queries';
+import {
+  grantSupporterAccess,
+} from '@/lib/supporter/access';
+
 
 export type CheckoutState = { error?: string };
 
@@ -197,9 +201,22 @@ export async function submitFanContribution(
       };
     }
 
-    revalidatePath(`/song/${slug}`);
+    await grantSupporterAccess({
+      campaignId:
+        campaign.id,
+      contributionId:
+        created.contributionId,
+    });
+
+    revalidatePath(
+      `/song/${slug}`,
+    );
   } catch {
-    return { error: await text('checkout.error.generic') };
+    return {
+      error: await text(
+        'checkout.error.generic',
+      ),
+    };
   }
 
   redirect(`/thanks/${token}`);
