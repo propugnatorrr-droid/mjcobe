@@ -49,47 +49,175 @@ export const transactions = pgTable('transactions', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index('transactions_state_idx').on(t.state)]);
 
-/**
- * Append-only. Never UPDATE or DELETE a row here. Every total in the product
- * is SUM(amount_cents) over this table — which is what makes a refund
- * recompute rankings correctly instead of approximately.
- */
-export const ledgerEntries = pgTable('ledger_entries', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  campaignId: uuid('campaign_id').references(() => campaigns.id, { onDelete: 'cascade' }).notNull(),
-  contributionId: uuid('contribution_id').references(() => contributions.id, { onDelete: 'cascade' }).notNull(),
-  transactionId: uuid('transaction_id').references(() => transactions.id, { onDelete: 'set null' }),
-  supporterId: uuid('supporter_id').references(() => supporters.id, { onDelete: 'set null' }),
-  sponsorId: uuid('sponsor_id'),
-  kind: ledgerKind('kind').notNull(),
-  /** Signed: contributions positive, refunds and chargebacks negative. */
-  amountCents: integer('amount_cents').notNull(),
-  note: text('note'),
-  occurredAt: timestamp('occurred_at', { withTimezone: true }).defaultNow().notNull(),
-}, (t) => [
-  index('ledger_campaign_idx').on(t.campaignId),
-  index('ledger_supporter_idx').on(t.supporterId),
-]);
-
 export const refunds = pgTable('refunds', {
   id: uuid('id').primaryKey().defaultRandom(),
-  transactionId: uuid('transaction_id').references(() => transactions.id, { onDelete: 'cascade' }).notNull(),
-  amountCents: integer('amount_cents').notNull(),
-  reason: refundReason('reason').notNull(),
+  transactionId: uuid('transaction_id')
+    .references(
+      () => transactions.id,
+      {
+        onDelete: 'cascade',
+      },
+    )
+    .notNull(),
+  amountCents: integer('amount_cents')
+    .notNull(),
+  reason: refundReason('reason')
+    .notNull(),
   note: text('note'),
   adminUserId: uuid('admin_user_id'),
   providerRef: text('provider_ref'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+  status: text('status')
+    .default('succeeded')
+    .notNull(),
+  failureReason:
+    text('failure_reason'),
+  createdAt: timestamp(
+    'created_at',
+    {
+      withTimezone: true,
+    },
+  )
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp(
+    'updated_at',
+    {
+      withTimezone: true,
+    },
+  )
+    .defaultNow()
+    .notNull(),
+}, (t) => [
+  uniqueIndex(
+    'refunds_provider_ref_unique_idx',
+  ).on(t.providerRef),
+]);
+
+/**
+ * Append-only. Never UPDATE or DELETE a
+ * row here. Every total in the product is
+ * SUM(amount_cents) over this table.
+ */
+export const ledgerEntries = pgTable('ledger_entries', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  campaignId: uuid('campaign_id')
+    .references(
+      () => campaigns.id,
+      {
+        onDelete: 'cascade',
+      },
+    )
+    .notNull(),
+  contributionId: uuid('contribution_id')
+    .references(
+      () => contributions.id,
+      {
+        onDelete: 'cascade',
+      },
+    )
+    .notNull(),
+  transactionId: uuid('transaction_id')
+    .references(
+      () => transactions.id,
+      {
+        onDelete: 'set null',
+      },
+    ),
+  refundId: uuid('refund_id')
+    .references(
+      () => refunds.id,
+      {
+        onDelete: 'set null',
+      },
+    ),
+  supporterId: uuid('supporter_id')
+    .references(
+      () => supporters.id,
+      {
+        onDelete: 'set null',
+      },
+    ),
+  sponsorId: uuid('sponsor_id'),
+
+  /**
+   * Contributions are positive. Refunds
+   * and chargebacks are negative.
+   * Reinstatements are positive
+   * adjustments.
+   */
+  kind: ledgerKind('kind').notNull(),
+  amountCents:
+    integer('amount_cents').notNull(),
+  note: text('note'),
+
+  /**
+   * Deterministic provider movement key.
+   * This prevents duplicate refund or
+   * dispute ledger entries during webhook
+   * retries.
+   */
+  externalRef: text('external_ref'),
+
+  occurredAt: timestamp(
+    'occurred_at',
+    {
+      withTimezone: true,
+    },
+  )
+    .defaultNow()
+    .notNull(),
+}, (t) => [
+  index(
+    'ledger_campaign_idx',
+  ).on(t.campaignId),
+
+  index(
+    'ledger_supporter_idx',
+  ).on(t.supporterId),
+
+  index(
+    'ledger_refund_idx',
+  ).on(t.refundId),
+
+  uniqueIndex(
+    'ledger_external_ref_unique_idx',
+  ).on(t.externalRef),
+]);
 
 export const disputes = pgTable('disputes', {
   id: uuid('id').primaryKey().defaultRandom(),
-  transactionId: uuid('transaction_id').references(() => transactions.id, { onDelete: 'cascade' }).notNull(),
-  amountCents: integer('amount_cents').notNull(),
+  transactionId: uuid('transaction_id')
+    .references(
+      () => transactions.id,
+      {
+        onDelete: 'cascade',
+      },
+    )
+    .notNull(),
+  providerRef: text('provider_ref'),
+  amountCents:
+    integer('amount_cents').notNull(),
   state: text('state').notNull(),
-  openedAt: timestamp('opened_at', { withTimezone: true }).defaultNow().notNull(),
-  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
-});
+  openedAt: timestamp(
+    'opened_at',
+    {
+      withTimezone: true,
+    },
+  )
+    .defaultNow()
+    .notNull(),
+  resolvedAt: timestamp(
+    'resolved_at',
+    {
+      withTimezone: true,
+    },
+  ),
+}, (t) => [
+  uniqueIndex(
+    'disputes_provider_ref_unique_idx',
+  ).on(t.providerRef),
+]);
+
 
 /**
  * The exact disclaimer text a person agreed to, hashed and versioned. This
