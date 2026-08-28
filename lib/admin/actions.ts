@@ -11,7 +11,11 @@ import * as s from '@/lib/db/schema';
 import { requireAdmin } from './guard';
 import { endSession, passwordMatches, startSession } from './session';
 import { recordAudit } from '@/lib/audit/log';
-import { refundContribution, settleContribution } from '@/lib/ledger/contributions';
+import {
+  cancelContribution,
+  refundContribution,
+  settleContribution,
+} from '@/lib/ledger/contributions';
 import { consentFor } from '@/lib/consent/text';
 import { createContribution } from '@/lib/ledger/contributions';
 import { bool, parseAmountCents, slugify, str } from '@/lib/checkout/validate';
@@ -404,6 +408,35 @@ export async function approveSponsor(
     return;
   }
 
+  /*
+   * Stripe manual-capture payments become
+   * authorized only after the customer has
+   * completed payment confirmation. Never
+   * attempt approval while checkout is still
+   * incomplete.
+   */
+  if (
+    review.transaction.state !==
+    'authorized'
+  ) {
+    await recordAudit({
+      adminUserId: me.id,
+      action:
+        'sponsor.approve_not_authorized',
+      entity: 'contribution',
+      entityId: contributionId,
+      after: {
+        transactionId:
+          review.transaction.id,
+        transactionState:
+          review.transaction.state,
+      },
+      ipHash: await ipHash(),
+    });
+
+    return;
+  }
+
   const before = {
     contributionModeration:
       review.contribution.moderation,
@@ -578,26 +611,34 @@ export async function declineSponsor(
     review.transaction.state ===
       'initiated' ||
     review.transaction.state ===
-      'authorized'
+      'authorized' ||
+    review.transaction.state ===
+      'failed'
   ) {
-    await dbw
-      .update(s.transactions)
-      .set({
-        state: 'canceled',
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(
-            s.transactions.id,
-            review.transaction.id,
-          ),
-          eq(
-            s.transactions.state,
-            review.transaction.state,
-          ),
-        ),
+    const canceled =
+      await cancelContribution(
+        review.transaction.id,
       );
+
+    if (!canceled.ok) {
+      await recordAudit({
+        adminUserId: me.id,
+        action:
+          'sponsor.decline_failed',
+        entity: 'contribution',
+        entityId: contributionId,
+        before,
+        after: {
+          code: canceled.code,
+          message:
+            canceled.message,
+        },
+        reason,
+        ipHash: await ipHash(),
+      });
+
+      return;
+    }
   }
 
   await dbw
