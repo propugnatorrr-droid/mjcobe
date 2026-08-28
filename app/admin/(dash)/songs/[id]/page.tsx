@@ -57,6 +57,7 @@ export default async function EditSongPage({
     updates,
     cover,
     audio,
+    mediaLibrary,
   } = data;
 
   return (
@@ -75,6 +76,9 @@ export default async function EditSongPage({
         song={song}
         cover={cover}
         audio={audio}
+        mediaLibrary={
+          mediaLibrary
+        }
       />
 
       <section className="mt-16">
