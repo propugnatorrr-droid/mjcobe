@@ -185,7 +185,6 @@ export default async function ThanksPage({
   };
 
   return (
-
     <main className="surface-ink min-h-screen pb-24">
       <SimulationRibbon />
 
