@@ -160,6 +160,26 @@ logoRequirements:
     youtubeUrl: 'YOUTUBE URL',
     musicVideoUrl: 'MUSIC VIDEO URL',
     published: 'Published (visible on the public site)',
+    media: 'SONG MEDIA',
+    mediaHint:
+      'Upload the permanent cover artwork and playable audio source for this record.',
+    coverArt: 'COVER ART',
+    audioPreview: 'AUDIO',
+    noMedia: 'No file assigned.',
+    uploadMedia: 'UPLOAD + ASSIGN',
+    replaceMedia: 'REPLACE FILE',
+    uploading: 'UPLOADING',
+    uploadFailed:
+      'The upload could not be completed. Check the file type, size and Blob configuration.',
+    playbackSettings: 'PLAYBACK SETTINGS',
+    previewStart: 'PREVIEW START — SECONDS',
+    previewEnd: 'PREVIEW END — SECONDS',
+    fullPlayback:
+      'Allow the entire audio file to play publicly',
+    savePlayback:
+      'SAVE PLAYBACK SETTINGS',
+    previewTooLong:
+      'Preview windows may not exceed 60 seconds unless full playback is enabled.',
     create: 'CREATE SONG',
     save: 'SAVE SONG',
     campaigns: 'CAMPAIGNS',
