@@ -201,6 +201,10 @@ const copyDefaults = {
   'thanks.pending.heading': 'SUBMITTED FOR REVIEW.',
   'thanks.pending.body':
     'Your sponsorship is with MJ COBE Management. You will hear back by email, and nothing appears publicly until it is approved.',
+  'thanks.processing.heading':
+    'PAYMENT PROCESSING.',
+  'thanks.processing.body':
+    'Stripe is confirming your payment. This page will update automatically. Please do not submit another contribution.',
   'thanks.share': 'SHARE MY SUPPORT',
   'thanks.view_song': 'VIEW SONG JOURNEY',
   'thanks.back_another': 'BACK ANOTHER RECORD',
