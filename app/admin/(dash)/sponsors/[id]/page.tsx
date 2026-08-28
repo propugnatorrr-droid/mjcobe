@@ -8,6 +8,9 @@ import {
   getAdminSponsor,
 } from '@/lib/admin/queries';
 import {
+  getSponsorContracts,
+} from '@/lib/admin/contracts';
+import {
   approveSponsorLogo,
   moderateSponsorVisibility,
   rejectSponsorLogo,
@@ -21,6 +24,9 @@ import {
 import {
   SponsorLogo,
 } from '@/components/sponsor/SponsorLogo';
+import {
+  SponsorContractPanel,
+} from '@/components/admin/SponsorContractPanel';
 import { admin } from '@/lib/copy/admin';
 import {
   cents,
@@ -74,8 +80,13 @@ export default async function SponsorEditorPage({
   params,
 }: Props) {
   const { id } = await params;
-  const sponsor =
-    await getAdminSponsor(id);
+  const [
+    sponsor,
+    contractData,
+  ] = await Promise.all([
+    getAdminSponsor(id),
+    getSponsorContracts(id),
+  ]);
 
   if (!sponsor) {
     notFound();
@@ -450,6 +461,16 @@ sponsor.pendingLogoAssetId ? (
           ) : null}
         </aside>
       </div>
+
+      <SponsorContractPanel
+        sponsorId={sponsor.id}
+        contracts={
+          contractData.contracts
+        }
+        campaigns={
+          contractData.campaigns
+        }
+      />
     </>
   );
 }
