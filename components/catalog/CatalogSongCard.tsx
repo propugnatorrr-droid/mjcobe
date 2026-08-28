@@ -107,12 +107,13 @@ export function CatalogSongCard({
         ) : null}
 
         <div className="mt-5">
-          <AudioPreview
-            src={song.audioPath}
-            previewStartMs={song.previewStartMs}
-            previewEndMs={song.previewEndMs}
-            comingSoonLabel={labels.previewComingSoon}
-          />
+<AudioPreview
+  src={song.audioPath}
+  previewStartMs={song.previewStartMs}
+  previewEndMs={song.previewEndMs}
+  allowFullPlayback={song.allowFullPlayback}
+  comingSoonLabel={labels.previewComingSoon}
+/>
         </div>
 
         <div className="mt-5">
