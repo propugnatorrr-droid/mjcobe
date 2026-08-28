@@ -14,6 +14,7 @@ export const admin = {
   nav: {
     overview: 'OVERVIEW',
     songs: 'SONG MANAGEMENT',
+    media: 'MEDIA LIBRARY',
     journey: 'JOURNEY',
     contributions: 'CONTRIBUTIONS',
     sponsors: 'SPONSORS',
@@ -24,6 +25,34 @@ export const admin = {
     blocklist: 'BLOCKLIST',
     referrals: 'REFERRAL LINKS',
     sponsorProfiles: 'PARTNER PROFILES',
+  },
+
+  media: {
+    heading: 'MEDIA LIBRARY',
+    hint:
+      'Review every uploaded image and audio file. Existing files can be assigned from each song management page without uploading duplicates.',
+    empty:
+      'No media files have been uploaded.',
+    chooseExisting:
+      'CHOOSE FROM MEDIA LIBRARY',
+    selectAsset:
+      'Select an existing file',
+    noneForType:
+      'No matching files are available.',
+    assignCover:
+      'ASSIGN COVER',
+    assignAudio:
+      'ASSIGN AUDIO',
+    openFile:
+      'OPEN FILE',
+    fileSize:
+      'FILE SIZE',
+    duration:
+      'DURATION',
+    dimensions:
+      'DIMENSIONS',
+    uploaded:
+      'UPLOADED',
   },
 
   overview: {
