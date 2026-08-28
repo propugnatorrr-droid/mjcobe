@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
-import { SiteNav } from '@/components/SiteNav';
-import { SiteFooter } from '@/components/SiteFooter';
-import { MobileCta } from '@/components/MobileCta';
-import { HomeHero } from '@/components/home/HomeHero';
 import { FeaturedCampaign } from '@/components/home/FeaturedCampaign';
+import { HomeHero } from '@/components/home/HomeHero';
+import { MobileCta } from '@/components/MobileCta';
 import { SectionHeading } from '@/components/primitives/SectionHeading';
-import { getLookbookImage } from '@/lib/lookbook/manifest';
-import { listCatalog } from '@/lib/catalog/queries';
+import { SiteFooter } from '@/components/SiteFooter';
+import { SiteNav } from '@/components/SiteNav';
 import { getLeaderboard } from '@/lib/campaign/queries';
+import { listCatalog } from '@/lib/catalog/queries';
 import { text } from '@/lib/copy/site-copy';
 
 export const metadata: Metadata = {
@@ -19,24 +18,33 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [hero, catalog] = await Promise.all([
-    Promise.resolve(getLookbookImage('hero')),
-    listCatalog(),
-  ]);
+  const catalog = await listCatalog();
 
-  const featured = catalog.find((song) => song.status === 'building') ?? null;
+  const featured =
+    catalog.find((song) => song.status === 'building') ??
+    null;
 
-  const [fanLeaderboard, sponsorLeaderboard] = featured?.campaignId
-    ? await Promise.all([
-        getLeaderboard(featured.campaignId, 'fan', 1),
-        getLeaderboard(featured.campaignId, 'business', 1),
-      ])
-    : [null, null];
+  const [fanLeaderboard, sponsorLeaderboard] =
+    featured?.campaignId
+      ? await Promise.all([
+          getLeaderboard(
+            featured.campaignId,
+            'fan',
+            1,
+          ),
+          getLeaderboard(
+            featured.campaignId,
+            'business',
+            1,
+          ),
+        ])
+      : [null, null];
 
   const [
     artistName,
     tagline,
     subcopy,
+    heroAlt,
     listenLabel,
     ctaLabel,
     currentlyBuilding,
@@ -53,6 +61,7 @@ export default async function HomePage() {
     text('hero.artist_name'),
     text('hero.tagline'),
     text('hero.subcopy'),
+    text('lookbook.hero_alt'),
     text('home.listen'),
     text('nav.cta'),
     text('home.currently_building'),
@@ -75,7 +84,7 @@ export default async function HomePage() {
       <SiteNav />
 
       <HomeHero
-        image={hero}
+        imageAlt={heroAlt}
         artistName={artistName}
         tagline={tagline}
         subcopy={subcopy}
@@ -101,9 +110,11 @@ export default async function HomePage() {
           }}
         />
       ) : (
-        <section className="section-space-compact">
+        <section className="home-campaign-section">
           <div className="site-shell">
-            <SectionHeading>{currentlyBuilding}</SectionHeading>
+            <SectionHeading>
+              {currentlyBuilding}
+            </SectionHeading>
 
             <div className="panel mt-7 p-8 sm:p-10">
               <p className="max-w-[52ch] text-base leading-7 text-[var(--text-dim)]">
