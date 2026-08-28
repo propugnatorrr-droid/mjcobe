@@ -21,6 +21,9 @@ export type AdminCampaignRow =
 export type AdminSupportTierRow =
   typeof s.supportTiers.$inferSelect;
 
+export type AdminSponsorPackageRow =
+  typeof s.sponsorPackages.$inferSelect;
+
 export type AdminMediaAssetRow =
   typeof s.mediaAssets.$inferSelect;
 
@@ -62,6 +65,7 @@ export async function getSongAdmin(
   song: AdminSongRow;
   campaigns: AdminCampaignRow[];
   tiers: AdminSupportTierRow[];
+  packages: AdminSponsorPackageRow[];
   updates: AdminSongUpdateRow[];
   cover: AdminMediaAssetRow | null;
   audio: AdminMediaAssetRow | null;
@@ -129,8 +133,14 @@ export async function getSongAdmin(
     ),
   ]);
 
+  const campaignIds =
+    campaigns.map(
+      (campaign) =>
+        campaign.id,
+    );
+
   const tiers =
-    campaigns.length === 0
+    campaignIds.length === 0
       ? []
       : await db
           .select()
@@ -138,10 +148,7 @@ export async function getSongAdmin(
           .where(
             inArray(
               s.supportTiers.campaignId,
-              campaigns.map(
-                (campaign) =>
-                  campaign.id,
-              ),
+              campaignIds,
             ),
           )
           .orderBy(
@@ -153,10 +160,32 @@ export async function getSongAdmin(
             ),
           );
 
+  const packages =
+    campaignIds.length === 0
+      ? []
+      : await db
+          .select()
+          .from(s.sponsorPackages)
+          .where(
+            inArray(
+              s.sponsorPackages.campaignId,
+              campaignIds,
+            ),
+          )
+          .orderBy(
+            asc(
+              s.sponsorPackages.sortIndex,
+            ),
+            asc(
+              s.sponsorPackages.priceCents,
+            ),
+          );
+
   return {
     song,
     campaigns,
     tiers,
+    packages,
     updates,
     cover,
     audio,
