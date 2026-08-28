@@ -20,7 +20,7 @@ const PRIVATE_HEADERS = {
     'private, no-store, max-age=0',
   'X-Robots-Tag':
     'noindex, nofollow, noarchive',
-  Referrer-Policy:
+  'Referrer-Policy':
     'no-referrer',
 };
 
