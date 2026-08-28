@@ -1,13 +1,8 @@
-import { ArrowRight, Play } from 'lucide-react';
-import { LookbookImage } from '@/components/primitives/LookbookImage';
+import { ArrowRight, Play, Sparkles } from 'lucide-react';
 import { ButtonLink } from '@/components/primitives/Button';
-import { PhotoTreatment } from '@/components/treatments/PhotoTreatment';
-import { getLookbookImage } from '@/lib/lookbook/manifest';
-
-type HeroImage = ReturnType<typeof getLookbookImage>;
 
 type HomeHeroProps = {
-  image: HeroImage;
+  imageAlt: string;
   artistName: string;
   tagline: string;
   subcopy: string;
@@ -16,7 +11,7 @@ type HomeHeroProps = {
 };
 
 export function HomeHero({
-  image,
+  imageAlt,
   artistName,
   tagline,
   subcopy,
@@ -26,96 +21,100 @@ export function HomeHero({
   return (
     <section
       aria-labelledby="home-hero-heading"
-      className={[
-        'relative isolate overflow-hidden',
-        'min-h-[calc(100svh-var(--header-height-mobile))]',
-        'lg:min-h-[calc(100svh-var(--header-height-desktop))]',
-        'lg:max-h-[58rem]',
-      ].join(' ')}
+      className="home-v2-hero"
     >
-      <div className="absolute inset-0 -z-20 bg-[var(--ink)]">
-        <div className="absolute inset-0 lg:left-auto lg:w-[62%] xl:w-[58%]">
-          <PhotoTreatment vignette grain fill>
-            <LookbookImage
-              asset={image}
-              sizes="(min-width: 1280px) 58vw, (min-width: 1024px) 62vw, 100vw"
-              priority
-              className="home-hero-image absolute inset-0 h-full w-full object-cover"
-              objectPosition="50% 22%"
-            />
-          </PhotoTreatment>
-        </div>
-      </div>
+      <picture className="home-v2-hero-media">
+        <source
+          media="(min-width: 768px)"
+          srcSet="/media/home-hero-desktop.webp"
+        />
+
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/media/home-hero-mobile.webp"
+          alt={imageAlt}
+          width={1200}
+          height={1500}
+          fetchPriority="high"
+          className="home-v2-hero-image"
+        />
+      </picture>
 
       <div
         aria-hidden
-        className="home-hero-scrim pointer-events-none absolute inset-0 -z-10"
+        className="home-v2-hero-treatment"
       />
 
-      <div
-        className={[
-          'site-shell flex min-h-[calc(100svh-var(--header-height-mobile))]',
-          'items-end pb-16 pt-28',
-          'sm:pb-20',
-          'lg:min-h-[calc(100svh-var(--header-height-desktop))]',
-          'lg:items-center lg:pb-20 lg:pt-20',
-        ].join(' ')}
-      >
-        <div className="w-full max-w-[54rem]">
-          <p className="mb-5 font-ui text-[0.6875rem] font-medium uppercase tracking-[0.28em] text-[var(--champagne)]">
-            {artistName}
-          </p>
+      <div className="site-shell home-v2-hero-shell">
+        <div className="home-v2-hero-copy">
+          <div className="home-v2-eyebrow">
+            <Sparkles
+              aria-hidden
+              size={14}
+              strokeWidth={1.6}
+            />
+
+            <span>{artistName}</span>
+
+            <span
+              aria-hidden
+              className="home-v2-eyebrow-line"
+            />
+          </div>
 
           <h1
             id="home-hero-heading"
-            className={[
-              'max-w-[11ch] font-display uppercase',
-              'text-[clamp(4rem,15vw,7rem)]',
-              'leading-[0.86] tracking-[-0.025em]',
-              'text-[var(--text)]',
-              'lg:text-[clamp(5.5rem,9vw,9.5rem)]',
-            ].join(' ')}
+            className="home-v2-title"
           >
             {tagline}
           </h1>
 
-          <p
-            className={[
-              'mt-7 max-w-[36rem]',
-              'font-ui text-base leading-7 text-[var(--text-dim)]',
-              'sm:text-lg sm:leading-8',
-            ].join(' ')}
-          >
+          <p className="home-v2-subcopy">
             {subcopy}
           </p>
 
-          <div className="mt-9 flex flex-col gap-3 min-[420px]:flex-row min-[420px]:flex-wrap">
-            <ButtonLink
-              href="/music"
-              variant="quiet"
-              className="w-full min-[420px]:w-auto"
-            >
-              <Play aria-hidden size={15} fill="currentColor" />
-              {listenLabel}
-            </ButtonLink>
-
+          <div className="home-v2-actions">
             <ButtonLink
               href="/back"
               variant="primary"
               glow
-              className="w-full min-[420px]:w-auto"
+              className="home-v2-primary-action"
             >
               {ctaLabel}
-              <ArrowRight aria-hidden size={16} />
+
+              <ArrowRight
+                aria-hidden
+                size={17}
+                strokeWidth={1.8}
+              />
+            </ButtonLink>
+
+            <ButtonLink
+              href="/music"
+              variant="quiet"
+              className="home-v2-secondary-action"
+            >
+              <Play
+                aria-hidden
+                size={15}
+                strokeWidth={1.8}
+                fill="currentColor"
+              />
+
+              {listenLabel}
             </ButtonLink>
           </div>
         </div>
-      </div>
 
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[var(--line)]"
-      />
+        <div
+          aria-hidden
+          className="home-v2-index"
+        >
+          <span>01</span>
+          <span className="home-v2-index-line" />
+          <span>MJ COBE</span>
+        </div>
+      </div>
     </section>
   );
 }
