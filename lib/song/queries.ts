@@ -1,6 +1,14 @@
 import 'server-only';
 import { cache } from 'react';
-import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  isNotNull,
+  lte,
+  sql,
+} from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import * as s from '@/lib/db/schema';
 import { setting } from '@/lib/config/settings';
@@ -129,7 +137,12 @@ export const getSongPage = cache(async (slug: string): Promise<SongPageData | nu
         .where(and(
           eq(s.songUpdates.songId, song.id),
           eq(s.songUpdates.isVisible, true),
+          eq(s.songUpdates.minTierCents, 0),
           isNotNull(s.songUpdates.publishedAt),
+          lte(
+            s.songUpdates.publishedAt,
+            new Date(),
+          ),
         ))
         .orderBy(desc(s.songUpdates.publishedAt))
         .limit(updatesCount),
