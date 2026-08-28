@@ -1,4 +1,6 @@
-import { notFound } from 'next/navigation';
+import {
+  notFound,
+} from 'next/navigation';
 import {
   getSongAdmin,
 } from '@/lib/admin/songs';
@@ -18,12 +20,13 @@ import {
 import {
   SupportTierPanel,
 } from '@/components/admin/SupportTierPanel';
-import { admin } from '@/lib/copy/admin';
 import {
   SongUpdatePanel,
 } from '@/components/admin/SongUpdatePanel';
+import { admin } from '@/lib/copy/admin';
 
-export const dynamic = 'force-dynamic';
+export const dynamic =
+  'force-dynamic';
 
 type Props = {
   params: Promise<{
@@ -35,27 +38,32 @@ export default async function EditSongPage({
   params,
 }: Props) {
   const { id } = await params;
-  const data = await getSongAdmin(id);
+
+  const data =
+    await getSongAdmin(id);
 
   if (!data) {
     notFound();
   }
 
-const {
-  song,
-  campaigns,
-  tiers,
-  updates,
-  cover,
-  audio,
-} = data;
+  const {
+    song,
+    campaigns,
+    tiers,
+    updates,
+    cover,
+    audio,
+  } = data;
 
   return (
     <>
       <AdminHeading>
         {admin.songs.editHeading}
       </AdminHeading>
-      <AdminHint>{song.title}</AdminHint>
+
+      <AdminHint>
+        {song.title}
+      </AdminHint>
 
       <SongForm song={song} />
 
@@ -72,7 +80,10 @@ const {
 
         {campaigns.length === 0 ? (
           <p className="mb-8 text-body text-[var(--text-dim)]">
-            {admin.songs.campaignsEmpty}
+            {
+              admin.songs
+                .campaignsEmpty
+            }
           </p>
         ) : (
           <div className="mb-10 flex flex-col gap-6">
@@ -92,13 +103,18 @@ const {
           {admin.songs.newCampaign}
         </h3>
 
-        <CampaignForm songId={song.id} />
+        <CampaignForm
+          songId={song.id}
+        />
       </section>
 
       {campaigns.length > 0 ? (
         <section className="mt-16">
           <h2 className="mb-6 font-mono text-eyebrow uppercase tracking-[0.14em] text-[var(--text)]">
-            {admin.songs.supportTiers}
+            {
+              admin.songs
+                .supportTiers
+            }
           </h2>
 
           <div className="flex flex-col gap-6">
@@ -113,12 +129,17 @@ const {
                       campaign.id,
                   )}
                 />
-            
               ),
             )}
           </div>
         </section>
       ) : null}
+
+      <SongUpdatePanel
+        songId={song.id}
+        campaigns={campaigns}
+        updates={updates}
+      />
     </>
   );
 }
