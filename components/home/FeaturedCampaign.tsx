@@ -1,9 +1,14 @@
 import Link from 'next/link';
-import { ArrowRight, Crown, Heart, Users } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Crown,
+  Heart,
+  Users,
+} from 'lucide-react';
+import { CampaignLeader } from '@/components/home/CampaignLeader';
 import { ButtonLink } from '@/components/primitives/Button';
 import { FundingMeter } from '@/components/primitives/FundingMeter';
 import { SectionHeading } from '@/components/primitives/SectionHeading';
-import { SpotlightRow } from '@/components/home/SpotlightRow';
 import type { CatalogSong } from '@/lib/catalog/queries';
 import type { LeaderboardRowData } from '@/lib/campaign/queries';
 import { cents, formatCents } from '@/lib/money/cents';
@@ -32,215 +37,168 @@ export function FeaturedCampaign({
   copy,
 }: FeaturedCampaignProps) {
   const songHref = `/song/${song.slug}`;
-  const percent = Math.min(100, Math.max(0, song.percent));
+  const percent = Math.min(
+    100,
+    Math.max(0, song.percent),
+  );
 
   return (
     <section
       aria-labelledby="currently-building-heading"
-      className="section-space-compact"
+      className="home-campaign-section"
     >
       <div className="site-shell">
         <div id="currently-building-heading">
-          <SectionHeading>{copy.sectionHeading}</SectionHeading>
+          <SectionHeading sub={copy.newSingle}>
+            {copy.sectionHeading}
+          </SectionHeading>
         </div>
 
-        <article
-          className={[
-            'panel mt-7 overflow-hidden',
-            'grid grid-cols-1',
-            'lg:grid-cols-[minmax(15rem,19rem)_minmax(0,1fr)_minmax(15rem,18rem)]',
-          ].join(' ')}
-        >
+        <article className="home-campaign">
           <Link
             href={songHref}
             aria-label={song.title}
-            className={[
-              'group relative block overflow-hidden',
-              'border-b border-[var(--line)]',
-              'lg:border-b-0 lg:border-r',
-            ].join(' ')}
+            className="home-campaign-art-link"
           >
             {song.coverPath ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={song.coverPath}
                 alt=""
-                width={608}
-                height={608}
-                className={[
-                  'aspect-square h-full w-full object-cover',
-                  'transition-[filter,transform]',
-                  '[transition-duration:var(--duration-signature)]',
-                  '[transition-timing-function:var(--ease-signature)]',
-                  'group-hover:brightness-110',
-                ].join(' ')}
-                style={{
-                  backgroundColor: 'var(--ink)',
-                }}
+                width={800}
+                height={800}
+                loading="lazy"
+                className="home-campaign-art"
               />
             ) : (
               <span
                 aria-hidden
-                className="block aspect-square h-full w-full bg-[var(--ink)]"
+                className="home-campaign-art-placeholder"
               />
             )}
 
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 border border-transparent transition-colors group-hover:border-[rgba(201,162,39,0.45)]"
+              className="home-campaign-art-treatment"
             />
+
+            <span className="home-campaign-art-label">
+              {copy.newSingle}
+            </span>
+
+            <span
+              aria-hidden
+              className="home-campaign-art-action"
+            >
+              <ArrowUpRight
+                size={19}
+                strokeWidth={1.7}
+              />
+            </span>
           </Link>
 
-          <div className="flex min-w-0 flex-col justify-center p-6 sm:p-8 lg:p-10">
-            <p className="font-ui text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-[var(--champagne)]">
-              {copy.newSingle}
-            </p>
-
-            <h3
-              className={[
-                'mt-3 max-w-[16ch]',
-                'font-serif text-[clamp(2rem,4.2vw,4rem)]',
-                'leading-[0.98] tracking-[-0.02em]',
-                'text-[var(--text)]',
-              ].join(' ')}
-            >
-              <Link
-                href={songHref}
-                className="transition-colors hover:text-[var(--champagne)]"
-              >
-                {song.title}
-              </Link>
-            </h3>
-
-            {song.description ? (
-              <p className="mt-5 max-w-[52ch] text-sm leading-6 text-[var(--text-dim)] sm:text-base sm:leading-7">
-                {song.description}
+          <div className="home-campaign-content">
+            <div>
+              <p className="home-campaign-kicker">
+                {copy.sectionHeading}
               </p>
-            ) : null}
 
-            <div className="mt-8">
+              <h2 className="home-campaign-title">
+                <Link href={songHref}>
+                  {song.title}
+                </Link>
+              </h2>
+
+              {song.description ? (
+                <p className="home-campaign-description">
+                  {song.description}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="home-campaign-progress">
+              <div className="home-campaign-progress-heading">
+                <span>{copy.raisedToward}</span>
+
+                <span className="numeric">
+                  {formatCents(cents(song.goalCents))}
+                </span>
+              </div>
+
               <FundingMeter percent={percent} />
-            </div>
 
-            <div className="mt-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
-              <div>
-                <p className="numeric font-serif text-3xl leading-none text-gold sm:text-4xl">
-                  {formatCents(cents(song.raisedCents))}
-                </p>
+              <div className="home-campaign-stat-grid">
+                <div>
+                  <p className="home-campaign-stat-value text-gold">
+                    {formatCents(cents(song.raisedCents))}
+                  </p>
 
-                <p className="mt-2 text-xs leading-5 text-[var(--text-dim)]">
-                  {copy.raisedToward}{' '}
-                  <span className="numeric text-[var(--text)]">
-                    {formatCents(cents(song.goalCents))}
-                  </span>
-                </p>
-              </div>
-
-              <div>
-                <p className="flex items-center gap-2.5">
-                  <Users
-                    aria-hidden
-                    size={18}
-                    strokeWidth={1.7}
-                    color="var(--champagne)"
-                  />
-
-                  <span className="numeric font-serif text-3xl leading-none text-[var(--text)]">
-                    {song.supporterCount}
-                  </span>
-                </p>
-
-                <p className="mt-2 text-[0.625rem] font-medium uppercase tracking-[0.2em] text-[var(--text-dim)]">
-                  {copy.supporters}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-8 border-t border-[var(--line)] pt-6">
-              <ButtonLink
-                href={songHref}
-                variant="ghost"
-                className="w-full sm:w-auto"
-              >
-                {copy.viewProject}
-                <ArrowRight aria-hidden size={15} />
-              </ButtonLink>
-            </div>
-          </div>
-
-          <aside
-            aria-label={`${copy.topFan} / ${copy.topSponsor}`}
-            className={[
-              'flex flex-col justify-center gap-7',
-              'border-t border-[var(--line)] p-6',
-              'sm:p-8',
-              'lg:border-l lg:border-t-0',
-            ].join(' ')}
-          >
-            {topFan ? (
-              <SpotlightRow
-                label={copy.topFan}
-                row={topFan}
-                anonymousLabel={copy.anonymous}
-                hiddenAmountLabel={copy.hiddenAmount}
-                icon={Heart}
-              />
-            ) : null}
-
-            {topFan && topSponsor ? (
-              <div aria-hidden className="h-px bg-[var(--line)]" />
-            ) : null}
-
-            {topSponsor ? (
-              <div
-                className={[
-                  'rounded-[var(--radius-panel)]',
-                  'border border-[rgba(201,162,39,0.28)]',
-                  'bg-[rgba(201,162,39,0.035)] p-4',
-                ].join(' ')}
-                style={{
-                  boxShadow: '0 0 24px rgba(201, 162, 39, 0.08)',
-                }}
-              >
-                <div className="mb-3 flex items-center gap-2">
-                  <Crown
-                    aria-hidden
-                    size={15}
-                    strokeWidth={1.8}
-                    color="var(--champagne)"
-                  />
-                  <span className="numeric text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-[var(--champagne)]">
-                    #1
-                  </span>
+                  <p className="home-campaign-stat-label">
+                    {copy.raisedToward}
+                  </p>
                 </div>
 
-                <SpotlightRow
+                <div>
+                  <p className="home-campaign-stat-value">
+                    <Users
+                      aria-hidden
+                      size={20}
+                      strokeWidth={1.6}
+                    />
+
+                    <span className="numeric">
+                      {song.supporterCount}
+                    </span>
+                  </p>
+
+                  <p className="home-campaign-stat-label">
+                    {copy.supporters}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <ButtonLink
+              href={songHref}
+              variant="ghost"
+              className="w-full sm:w-fit"
+            >
+              {copy.viewProject}
+
+              <ArrowUpRight
+                aria-hidden
+                size={16}
+                strokeWidth={1.8}
+              />
+            </ButtonLink>
+          </div>
+
+          {topFan || topSponsor ? (
+            <aside className="home-campaign-leaders">
+              {topFan ? (
+                <CampaignLeader
+                  label={copy.topFan}
+                  row={topFan}
+                  anonymousLabel={copy.anonymous}
+                  hiddenAmountLabel={copy.hiddenAmount}
+                  icon={Heart}
+                />
+              ) : null}
+
+              {topSponsor ? (
+                <CampaignLeader
                   label={copy.topSponsor}
                   row={topSponsor}
                   anonymousLabel={copy.anonymous}
                   hiddenAmountLabel={copy.hiddenAmount}
                   icon={Crown}
+                  featured
                   logo
                 />
-              </div>
-            ) : null}
-          </aside>
+              ) : null}
+            </aside>
+          ) : null}
         </article>
-
-        <div className="mt-8 flex items-center justify-center gap-3 text-center">
-          <span
-            aria-hidden
-            className="h-px w-8 bg-[var(--champagne)] opacity-60"
-          />
-          <p className="font-serif text-base italic text-[var(--text-dim)] sm:text-lg">
-            {song.supporterCount}{' '}
-            {copy.supporters.toLowerCase()}
-          </p>
-          <span
-            aria-hidden
-            className="h-px w-8 bg-[var(--champagne)] opacity-60"
-          />
-        </div>
       </div>
     </section>
   );
