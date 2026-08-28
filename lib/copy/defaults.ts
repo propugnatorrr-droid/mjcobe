@@ -87,6 +87,7 @@ const copyDefaults = {
 
   'song.updates.locked': 'Unlocks at {amount} support.',
   'song.updates.locked_label': 'SUPPORTER ONLY',
+  'song.updates.unlocked_label': 'SUPPORTER ACCESS',
 
   'song.empty.supporters': 'No supporters yet. The first name here is permanent.',
   'song.empty.partners':
