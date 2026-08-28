@@ -56,17 +56,26 @@ export async function createContribution(
   const existing = await dbw.select().from(s.idempotencyKeys).where(eq(s.idempotencyKeys.key, key)).limit(1);
   if (existing.length) return existing[0].result as unknown as CreateContributionResult;
 
-  const intent = await provider.createIntent({
-    amountCents: input.amountCents,
-    currency: 'USD',
-    simulateCard: input.simulateCard,
-    metadata: {
-      campaign_id: input.campaignId,
-      song_id: input.songId,
-      support_type: input.supportType,
-      tier: input.tierId ?? '',
-    },
-  });
+  const intent =
+    await provider.createIntent({
+      amountCents:
+        input.amountCents,
+      currency: 'USD',
+      simulateCard:
+        input.simulateCard,
+      idempotencyKey: key,
+      metadata: {
+        campaign_id:
+          input.campaignId,
+        song_id:
+          input.songId,
+        support_type:
+          input.supportType,
+        tier:
+          input.tierId ?? '',
+      },
+    });
+
 
   const result = await dbw.transaction(async (tx) => {
     let supporterId: string | null = null;
