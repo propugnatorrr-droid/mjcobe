@@ -90,11 +90,10 @@ export async function SiteNav({ sub }: { sub?: string }) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-3">
-          <ButtonLink
-            href="/back"
-            variant="primary"
-            glow
-            className={[
+<ButtonLink
+  href="/back"
+  variant="primary"
+  className={[
               '!hidden !min-h-10 !px-5 !py-2',
               '!text-[0.625rem] !tracking-[0.14em]',
               'sm:!inline-flex',
