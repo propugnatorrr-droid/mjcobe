@@ -27,6 +27,11 @@ export type CreateContributionInput = {
   referralLinkId?: string | null;
   providerId?: ProviderId;
   simulateCard?: string;
+  customerEmail?: string;
+  description?: string;
+  captureMethod?:
+    | 'automatic'
+    | 'manual';
   idempotencyKey?: string;
 };
 
@@ -63,6 +68,12 @@ export async function createContribution(
       currency: 'USD',
       simulateCard:
         input.simulateCard,
+      customerEmail:
+        input.customerEmail,
+      description:
+        input.description,
+      captureMethod:
+        input.captureMethod,
       idempotencyKey: key,
       metadata: {
         campaign_id:
