@@ -14,6 +14,9 @@ import { JourneyList } from '@/components/song/JourneyList';
 import { SupportBar } from '@/components/song/SupportBar';
 import { ButtonLink } from '@/components/primitives/Button';
 import { getSongPage } from '@/lib/song/queries';
+import {
+  supporterAccessForCampaign,
+} from '@/lib/supporter/access';
 import { text } from '@/lib/copy/site-copy';
 import { cents, formatCents } from '@/lib/money/cents';
 
@@ -62,6 +65,13 @@ export default async function SongPage({ params }: Props) {
     business,
     crown,
   } = data;
+
+  const unlockedUpdateCents =
+    campaign
+      ? await supporterAccessForCampaign(
+          campaign.id,
+        )
+      : 0;
 
   const supportEnabled =
     data.isAcceptingSupport &&
@@ -245,8 +255,12 @@ export default async function SongPage({ params }: Props) {
           isAcceptingSupport={supportEnabled}
         />
 
-        <UpdateList updates={data.updates} />
-
+        <UpdateList
+          updates={data.updates}
+          unlockedAmountCents={
+            unlockedUpdateCents
+          }
+        />
         <JourneyList journey={data.journey} />
       </div>
 
