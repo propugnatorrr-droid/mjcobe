@@ -62,44 +62,72 @@ export async function getSongAdmin(
   song: AdminSongRow;
   campaigns: AdminCampaignRow[];
   tiers: AdminSupportTierRow[];
+  updates: AdminSongUpdateRow[];
   cover: AdminMediaAssetRow | null;
   audio: AdminMediaAssetRow | null;
-  updates: AdminSongUpdateRow[];
 } | null> {
   const [song] = await db
     .select()
     .from(s.songs)
-    .where(eq(s.songs.id, id))
+    .where(
+      eq(
+        s.songs.id,
+        id,
+      ),
+    )
     .limit(1);
 
   if (!song) {
     return null;
   }
 
-const [
-  campaigns,
-  updates,
-  cover,
-  audio,
-] = await Promise.all([
-  db
-    .select()
-    .from(s.campaigns)
-    .where(eq(s.campaigns.songId, id))
-    .orderBy(desc(s.campaigns.createdAt)),
+  const [
+    campaigns,
+    updates,
+    cover,
+    audio,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(s.campaigns)
+      .where(
+        eq(
+          s.campaigns.songId,
+          id,
+        ),
+      )
+      .orderBy(
+        desc(
+          s.campaigns.createdAt,
+        ),
+      ),
 
-  db
-    .select()
-    .from(s.songUpdates)
-    .where(eq(s.songUpdates.songId, id))
-    .orderBy(
-      desc(s.songUpdates.publishedAt),
-      desc(s.songUpdates.id),
+    db
+      .select()
+      .from(s.songUpdates)
+      .where(
+        eq(
+          s.songUpdates.songId,
+          id,
+        ),
+      )
+      .orderBy(
+        desc(
+          s.songUpdates.publishedAt,
+        ),
+        desc(
+          s.songUpdates.id,
+        ),
+      ),
+
+    mediaAsset(
+      song.coverAssetId,
     ),
 
-  mediaAsset(song.coverAssetId),
-  mediaAsset(song.audioAssetId),
-]);
+    mediaAsset(
+      song.audioAssetId,
+    ),
+  ]);
 
   const tiers =
     campaigns.length === 0
@@ -125,12 +153,12 @@ const [
             ),
           );
 
-return {
-  song,
-  campaigns,
-  tiers,
-  updates,
-  cover,
-  audio,
-};
+  return {
+    song,
+    campaigns,
+    tiers,
+    updates,
+    cover,
+    audio,
+  };
 }
