@@ -39,8 +39,28 @@ async function requestFingerprint() {
 async function loadPayableCampaign(campaignId: string, scope: 'fan' | 'business') {
   const [row] = await db.select().from(s.campaigns).where(eq(s.campaigns.id, campaignId)).limit(1);
   if (!row) return null;
-  if (row.status !== 'live' || !row.acceptSupport) return null;
-  if (row.endsAt && row.endsAt.getTime() <= Date.now()) return null;
+  if (
+    row.status !== 'live' ||
+    !row.acceptSupport
+  ) {
+    return null;
+  }
+
+  const now = Date.now();
+
+  if (
+    row.startsAt &&
+    row.startsAt.getTime() > now
+  ) {
+    return null;
+  }
+
+  if (
+    row.endsAt &&
+    row.endsAt.getTime() <= now
+  ) {
+    return null;
+  }
   if (scope === 'fan' && !row.fanSupportEnabled) return null;
   if (scope === 'business' && !row.businessSponsorshipEnabled) return null;
   return row;
