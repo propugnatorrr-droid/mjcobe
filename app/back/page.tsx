@@ -91,9 +91,7 @@ export default async function BackPage({
     benefits: tier.benefits,
     iconKey: tier.badgeKey,
     note: tier.description,
-    disabled:
-      tier.quantityLimit !== null &&
-      tier.quantityLimit <= 0,
+    disabled: !tier.isAvailable,
   }));
 
   const [locale, currency] = await Promise.all([
