@@ -99,14 +99,83 @@ export const assetAccessLog = pgTable('asset_access_log', {
 
 export const notifications = pgTable('notifications', {
   id: uuid('id').primaryKey().defaultRandom(),
-  supporterId: uuid('supporter_id').references(() => supporters.id, { onDelete: 'cascade' }),
+
+  supporterId: uuid('supporter_id').references(
+    () => supporters.id,
+    { onDelete: 'cascade' },
+  ),
+
   sponsorId: uuid('sponsor_id'),
-  kind: text('kind').notNull(),                    // 'outbid' | 'milestone' | 'top_ten' | 'release'
-  payload: jsonb('payload').$type<Record<string, unknown>>().default({}).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  sentAt: timestamp('sent_at', { withTimezone: true }),
-  readAt: timestamp('read_at', { withTimezone: true }),
-});
+
+  kind: text('kind').notNull(),
+
+  dedupeKey: text('dedupe_key').notNull(),
+
+  recipientEmail: text('recipient_email'),
+
+  payload: jsonb('payload')
+    .$type<Record<string, unknown>>()
+    .default({})
+    .notNull(),
+
+  deliveryStatus: text('delivery_status')
+    .default('pending')
+    .notNull(),
+
+  attemptCount: integer('attempt_count')
+    .default(0)
+    .notNull(),
+
+  providerMessageId: text('provider_message_id'),
+
+  lastError: text('last_error'),
+
+  scheduledAt: timestamp('scheduled_at', {
+    withTimezone: true,
+  })
+    .defaultNow()
+    .notNull(),
+
+  createdAt: timestamp('created_at', {
+    withTimezone: true,
+  })
+    .defaultNow()
+    .notNull(),
+
+  updatedAt: timestamp('updated_at', {
+    withTimezone: true,
+  })
+    .defaultNow()
+    .notNull(),
+
+  sentAt: timestamp('sent_at', {
+    withTimezone: true,
+  }),
+
+  readAt: timestamp('read_at', {
+    withTimezone: true,
+  }),
+}, (t) => [
+  uniqueIndex(
+    'notifications_dedupe_key_unique_idx',
+  ).on(t.dedupeKey),
+
+  index(
+    'notifications_delivery_queue_idx',
+  ).on(
+    t.deliveryStatus,
+    t.scheduledAt,
+  ),
+
+  index(
+    'notifications_supporter_idx',
+  ).on(t.supporterId),
+
+  index(
+    'notifications_sponsor_idx',
+  ).on(t.sponsorId),
+]);
+
 
 /** Guardrails against the outbid loop becoming compulsive. */
 export const notificationPrefs = pgTable('notification_prefs', {
