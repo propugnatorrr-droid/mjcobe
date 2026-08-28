@@ -216,6 +216,42 @@ logoRequirements:
     deactivateTier: 'DEACTIVATE TIER',
     active: 'Active',
     inactive: 'Inactive',
+    updates: 'CAMPAIGN UPDATES',
+    updatesHint:
+      'Create announcements, production notes and progress reports for this song.',
+    updatesEmpty:
+      'No campaign updates have been created.',
+    newUpdate: 'CREATE UPDATE',
+    updateTitle: 'UPDATE TITLE',
+    updateBody: 'UPDATE BODY',
+    updateCampaign: 'CAMPAIGN',
+    noUpdateCampaign:
+      'Song update — no specific campaign',
+    updateMinimumTier:
+      'MINIMUM SUPPORT AMOUNT',
+    updateMinimumTierHint:
+      'Leave blank for a public update.',
+    updatePublishedAt:
+      'PUBLICATION DATE AND TIME',
+    updateTimeHint:
+      'Times are entered and displayed in UTC.',
+    updateVisible:
+      'Visible on the public song page',
+    createUpdate: 'CREATE UPDATE',
+    saveUpdate: 'SAVE UPDATE',
+    editUpdate: 'EDIT UPDATE',
+    publishUpdate: 'PUBLISH NOW',
+    unpublishUpdate:
+      'RETURN TO DRAFT',
+    showUpdate: 'SHOW UPDATE',
+    hideUpdate: 'HIDE UPDATE',
+    updateDraft: 'Draft',
+    updateScheduled: 'Scheduled',
+    updatePublished: 'Published',
+    updatePublic: 'Public',
+    updateGated: 'Supporter only',
+    updateVisibleState: 'Visible',
+    updateHiddenState: 'Hidden',
     tierBadges: {
       supporter: 'Supporter',
       day_one: 'Day One',
