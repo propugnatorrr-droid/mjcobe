@@ -164,6 +164,120 @@ export type SettleResult =
   | { ok: true; supporterNumber: number | null; foundingNumber: number | null }
   | { ok: false; code: string; message: string };
 
+export type CancelResult =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      code: string;
+      message: string;
+    };
+
+/**
+ * Cancels an initiated or authorized payment with the provider before marking
+ * the local transaction as canceled. This is especially important for Stripe
+ * manual-capture sponsorships because changing only the database would leave
+ * the customer's authorization open.
+ */
+export async function cancelContribution(
+  transactionId: string,
+): Promise<CancelResult> {
+  const [transaction] = await dbw
+    .select()
+    .from(s.transactions)
+    .where(
+      eq(
+        s.transactions.id,
+        transactionId,
+      ),
+    )
+    .limit(1);
+
+  if (!transaction) {
+    return {
+      ok: false,
+      code: 'not_found',
+      message: 'Transaction not found.',
+    };
+  }
+
+  if (
+    transaction.state === 'canceled'
+  ) {
+    return {
+      ok: true,
+    };
+  }
+
+  if (
+    transaction.state !== 'initiated' &&
+    transaction.state !== 'authorized' &&
+    transaction.state !== 'failed'
+  ) {
+    return {
+      ok: false,
+      code: 'not_cancelable',
+      message:
+        `Cannot cancel a transaction in ${transaction.state}.`,
+    };
+  }
+
+  if (!transaction.providerRef) {
+    return {
+      ok: false,
+      code: 'missing_provider_reference',
+      message:
+        'The transaction has no payment provider reference.',
+    };
+  }
+
+  const provider = getProvider(
+    transaction.provider,
+  );
+
+  const outcome = await provider.cancel(
+    transaction.providerRef,
+  );
+
+  if (outcome.status === 'failed') {
+    return {
+      ok: false,
+      code: outcome.code,
+      message: outcome.message,
+    };
+  }
+
+  if (outcome.status === 'pending') {
+    return {
+      ok: false,
+      code: 'pending',
+      message:
+        'Payment cancellation is still processing.',
+    };
+  }
+
+  await dbw
+    .update(s.transactions)
+    .set({
+      state: 'canceled',
+      providerRef:
+        outcome.providerRef,
+      failureCode: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      eq(
+        s.transactions.id,
+        transactionId,
+      ),
+    );
+
+  return {
+    ok: true,
+  };
+}
+
 /**
  * Captures the payment and, only on success, writes the ledger entry and
  * issues supporter numbers. Idempotent by transaction id — a webhook retry
