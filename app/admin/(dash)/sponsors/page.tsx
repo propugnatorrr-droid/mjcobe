@@ -397,21 +397,28 @@ admin.sponsors
 
                       <button
                         type="submit"
+                        disabled={
+                          sponsor.transactionState !==
+                          'authorized'
+                        }
                         className={[
                           'bg-gold',
                           'inline-flex min-h-12 w-full items-center justify-center',
                           'rounded-full px-5 py-3',
                           'font-ui text-[0.625rem] font-semibold uppercase',
                           'tracking-[0.14em] text-[var(--ink)]',
-                          'transition-[filter,transform]',
+                          'transition-[filter,transform,opacity]',
                           'hover:brightness-110',
                           'active:translate-y-px',
+                          'disabled:cursor-not-allowed',
+                          'disabled:opacity-40',
+                          'disabled:hover:brightness-100',
                         ].join(' ')}
                       >
-                        {
-                          admin.actions
-                            .approve
-                        }
+                        {sponsor.transactionState ===
+                        'authorized'
+                          ? admin.actions.approve
+                          : 'WAITING FOR AUTHORIZATION'}
                       </button>
                     </form>
 
