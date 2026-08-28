@@ -41,7 +41,6 @@ export async function MobileCta({ href = '/back' }: { href?: string }) {
             'focus-visible:outline-offset-2',
             'focus-visible:outline-[var(--champagne)]',
           ].join(' ')}
-          style={{ boxShadow: 'var(--glow-champagne)' }}
         >
           <Disc3 aria-hidden size={18} strokeWidth={1.8} />
           <span>{label}</span>
