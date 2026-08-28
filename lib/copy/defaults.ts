@@ -207,6 +207,21 @@ const copyDefaults = {
   'thanks.copied': 'COPIED',
   'thanks.download': 'DOWNLOAD GRAPHIC',
   'thanks.og.line': 'I BACKED MJ COBE',
+  'thanks.share.story': 'STORY',
+  'thanks.share.feed': 'FEED',
+  'thanks.share.x': 'X',
+  'thanks.share.action': 'SHARE GRAPHIC',
+  'thanks.share.sharing': 'PREPARING',
+  'thanks.share.preview_alt':
+    'Preview of the selected MJ COBE support graphic.',
+  'thanks.share.title':
+    'I backed MJ COBE',
+  'thanks.share.text':
+    'I helped build “{song}” by MJ COBE.',
+  'thanks.share.fan_headline':
+    'I’M PART OF THE JOURNEY',
+  'thanks.share.partner_headline':
+    'OFFICIAL SONG PARTNER',
 
   // ---- Nav ---------------------------------------------------------------
   'nav.home': 'HOME',
