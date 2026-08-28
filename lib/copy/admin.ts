@@ -190,6 +190,26 @@ logoRequirements:
     campaignGoal: 'GOAL',
     campaignObjective: 'OBJECTIVE',
     campaignStatus: 'STATUS',
+    campaignStartsAt:
+      'CAMPAIGN START — UTC',
+    campaignEndsAt:
+      'CAMPAIGN END — UTC',
+    campaignTimeHint:
+      'Leave either date blank when no automatic start or end is required. End must be after start.',
+    acceptSupport:
+      'Accept new support',
+    campaignControls:
+      'CAMPAIGN CONTROLS',
+    launchCampaign:
+      'LAUNCH CAMPAIGN',
+    pauseCampaign:
+      'PAUSE SUPPORT',
+    resumeCampaign:
+      'RESUME SUPPORT',
+    closeCampaign:
+      'CLOSE CAMPAIGN',
+    campaignInvalid:
+      'CHECK THE CAMPAIGN FIELDS AND DATES',
     fanSupport: 'Fan support enabled',
     businessSponsorship: 'Business sponsorship enabled',
     createCampaign: 'CREATE CAMPAIGN',
