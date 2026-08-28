@@ -19,6 +19,9 @@ import {
   SupportTierPanel,
 } from '@/components/admin/SupportTierPanel';
 import { admin } from '@/lib/copy/admin';
+import {
+  SongUpdatePanel,
+} from '@/components/admin/SongUpdatePanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,13 +41,14 @@ export default async function EditSongPage({
     notFound();
   }
 
-  const {
-    song,
-    campaigns,
-    tiers,
-    cover,
-    audio,
-  } = data;
+const {
+  song,
+  campaigns,
+  tiers,
+  updates,
+  cover,
+  audio,
+} = data;
 
   return (
     <>
