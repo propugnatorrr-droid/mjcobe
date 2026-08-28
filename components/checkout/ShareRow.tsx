@@ -63,6 +63,11 @@ export function ShareRow({
     setSharing,
   ] = useState(false);
 
+  const [
+    downloading,
+    setDownloading,
+  ] = useState(false);
+
   const format =
     SHARE_FORMATS[selected];
 
@@ -70,28 +75,83 @@ export function ShareRow({
     `/api/share/thanks/${token}/${selected}`;
 
   function absoluteUrl(
-    path: string,
+    value: string,
   ): string {
     return new URL(
-      path,
+      value,
       window.location.origin,
     ).toString();
   }
 
-  function downloadSelected() {
-    const anchor =
-      document.createElement('a');
-
-    anchor.href = imagePath;
-    anchor.download =
-      fileName(selected);
-
-    document.body.appendChild(
-      anchor,
+  async function loadImageFile() {
+    const response = await fetch(
+      imagePath,
+      {
+        cache: 'no-store',
+      },
     );
 
-    anchor.click();
-    anchor.remove();
+    if (!response.ok) {
+      throw new Error(
+        'Share image unavailable',
+      );
+    }
+
+    const blob =
+      await response.blob();
+
+    return new File(
+      [blob],
+      fileName(selected),
+      {
+        type:
+          blob.type ||
+          'image/png',
+      },
+    );
+  }
+
+  async function downloadSelected() {
+    if (downloading) {
+      return;
+    }
+
+    setDownloading(true);
+
+    try {
+      const file =
+        await loadImageFile();
+
+      const objectUrl =
+        URL.createObjectURL(file);
+
+      const anchor =
+        document.createElement('a');
+
+      anchor.href = objectUrl;
+      anchor.download = file.name;
+
+      document.body.appendChild(
+        anchor,
+      );
+
+      anchor.click();
+      anchor.remove();
+
+      window.setTimeout(
+        () =>
+          URL.revokeObjectURL(
+            objectUrl,
+          ),
+        1000,
+      );
+    } catch {
+      window.location.assign(
+        imagePath,
+      );
+    } finally {
+      setDownloading(false);
+    }
   }
 
   async function copyLink() {
@@ -101,13 +161,6 @@ export function ShareRow({
     try {
       await navigator.clipboard.writeText(
         url,
-      );
-
-      setCopied(true);
-
-      window.setTimeout(
-        () => setCopied(false),
-        2000,
       );
     } catch {
       const field =
@@ -132,14 +185,14 @@ export function ShareRow({
       field.select();
       document.execCommand('copy');
       field.remove();
-
-      setCopied(true);
-
-      window.setTimeout(
-        () => setCopied(false),
-        2000,
-      );
     }
+
+    setCopied(true);
+
+    window.setTimeout(
+      () => setCopied(false),
+      2000,
+    );
   }
 
   async function shareSelected() {
@@ -154,34 +207,12 @@ export function ShareRow({
         typeof navigator.share !==
         'function'
       ) {
-        downloadSelected();
+        await downloadSelected();
         return;
       }
 
-      const response = await fetch(
-        imagePath,
-        {
-          cache: 'no-store',
-        },
-      );
-
-      if (!response.ok) {
-        downloadSelected();
-        return;
-      }
-
-      const blob =
-        await response.blob();
-
-      const file = new File(
-        [blob],
-        fileName(selected),
-        {
-          type:
-            blob.type ||
-            'image/png',
-        },
-      );
+      const file =
+        await loadImageFile();
 
       const canShareFile =
         typeof navigator.canShare ===
@@ -191,18 +222,18 @@ export function ShareRow({
         });
 
       if (!canShareFile) {
-        downloadSelected();
+        await downloadSelected();
         return;
       }
-
-      const link =
-        absoluteUrl(shareUrlPath);
 
       await navigator.share({
         files: [file],
         title: labels.shareTitle,
-        text:
-          `${labels.shareText} ${link}`,
+        text: `${
+          labels.shareText
+        } ${absoluteUrl(
+          shareUrlPath,
+        )}`,
       });
     } catch (error) {
       if (
@@ -212,7 +243,7 @@ export function ShareRow({
         return;
       }
 
-      downloadSelected();
+      await downloadSelected();
     } finally {
       setSharing(false);
     }
@@ -302,7 +333,9 @@ export function ShareRow({
         <button
           type="button"
           onClick={shareSelected}
-          disabled={sharing}
+          disabled={
+            sharing || downloading
+          }
           className="font-mono text-eyebrow uppercase text-[var(--text-dim)] transition-colors [transition-duration:var(--duration-signature)] hover:text-[var(--text)] disabled:cursor-wait disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
         >
           {sharing
@@ -312,12 +345,17 @@ export function ShareRow({
 
         <button
           type="button"
-          onClick={
-            downloadSelected
+          onClick={() => {
+            void downloadSelected();
+          }}
+          disabled={
+            sharing || downloading
           }
-          className="font-mono text-eyebrow uppercase text-[var(--text-dim)] transition-colors [transition-duration:var(--duration-signature)] hover:text-[var(--text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
+          className="font-mono text-eyebrow uppercase text-[var(--text-dim)] transition-colors [transition-duration:var(--duration-signature)] hover:text-[var(--text)] disabled:cursor-wait disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--champagne)]"
         >
-          {labels.download}
+          {downloading
+            ? labels.sharing
+            : labels.download}
         </button>
 
         <button
