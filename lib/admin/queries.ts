@@ -266,10 +266,21 @@ pma.path as pending_logo_path,
         0
       )::int as net_cents
     from sponsors sp
-    left join media_assets ma
-      on ma.id = sp.logo_asset_id
-    left join contributions c
-      on c.sponsor_id = sp.id
+left join media_assets ma
+  on ma.id = sp.logo_asset_id
+left join lateral (
+  select
+    pending.id,
+    pending.path
+  from media_assets pending
+  where pending.role = 'sponsor-logo-pending'
+    and pending.derivatives
+      ->> 'pendingSponsorId' = sp.id::text
+  order by pending.created_at desc
+  limit 1
+) pma on true
+left join contributions c
+  on c.sponsor_id = sp.id
     left join ledger_entries l
       on l.contribution_id = c.id
 group by
@@ -327,10 +338,6 @@ pma.path as pending_logo_path,
         0
       )::int as net_cents
     from sponsors sp
-    left join media_assets ma
-      on ma.id = sp.logo_asset_id
-    left join contributions c
-      on c.sponsor_id = sp.id
     left join ledger_entries l
       on l.contribution_id = c.id
     where sp.id = ${id}
