@@ -137,7 +137,6 @@ export const getSongPage = cache(async (slug: string): Promise<SongPageData | nu
         .where(and(
           eq(s.songUpdates.songId, song.id),
           eq(s.songUpdates.isVisible, true),
-          eq(s.songUpdates.minTierCents, 0),
           isNotNull(s.songUpdates.publishedAt),
           lte(
             s.songUpdates.publishedAt,
