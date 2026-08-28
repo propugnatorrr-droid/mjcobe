@@ -159,7 +159,16 @@ export const getSongPage = cache(async (slug: string): Promise<SongPageData | nu
     isAcceptingSupport:
       campaign.status === 'live' &&
       campaign.acceptSupport &&
-      (campaign.endsAt === null || campaign.endsAt.getTime() > Date.now()),
+      (
+        campaign.startsAt === null ||
+        campaign.startsAt.getTime() <=
+          Date.now()
+      ) &&
+      (
+        campaign.endsAt === null ||
+        campaign.endsAt.getTime() >
+          Date.now()
+      ),
   };
 });
 
