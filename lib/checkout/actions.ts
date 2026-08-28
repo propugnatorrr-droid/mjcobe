@@ -29,7 +29,13 @@ import {
 } from '@/lib/supporter/access';
 
 
-export type CheckoutState = { error?: string };
+export type CheckoutState = {
+  error?: string;
+  payment?: {
+    clientSecret: string;
+    returnPath: string;
+  };
+};
 
 const sha = (v: string) => createHash('sha256').update(v).digest('hex');
 
@@ -174,8 +180,24 @@ export async function submitFanContribution(
         instagram,
         city: str(formData.get('city'), 64),
       },
-      consent: { version: consent.version, text: consent.text, ipHash, userAgent },
-      simulateCard: str(formData.get('simulateCard'), 32) ?? undefined,
+      consent: {
+        version:
+          consent.version,
+        text:
+          consent.text,
+        ipHash,
+        userAgent,
+      },
+      customerEmail: email,
+      description:
+        `Fan support for ${campaign.id}`,
+      simulateCard:
+        str(
+          formData.get(
+            'simulateCard',
+          ),
+          32,
+        ) ?? undefined,
     });
 
     if (bool(formData.get('hideAmount'))) {
@@ -191,16 +213,12 @@ export async function submitFanContribution(
       targetPath: `/song/${slug}`,
     });
 
-    const settled = await settleContribution(created.transactionId);
-    if (!settled.ok) {
-      return {
-        error:
-          settled.code === 'pending'
-            ? await text('checkout.error.generic')
-            : await text('checkout.error.declined'),
-      };
-    }
-
+    /*
+     * Grant the browser an access token now.
+     * Access remains locked until a positive
+     * ledger balance exists, so an abandoned
+     * or failed payment unlocks nothing.
+     */
     await grantSupporterAccess({
       campaignId:
         campaign.id,
@@ -208,9 +226,42 @@ export async function submitFanContribution(
         created.contributionId,
     });
 
+    if (
+      created.clientSecret
+    ) {
+      return {
+        payment: {
+          clientSecret:
+            created.clientSecret,
+          returnPath:
+            `/thanks/${token}`,
+        },
+      };
+    }
+
+    const settled =
+      await settleContribution(
+        created.transactionId,
+      );
+
+    if (!settled.ok) {
+      return {
+        error:
+          settled.code ===
+          'pending'
+            ? await text(
+                'checkout.error.generic',
+              )
+            : await text(
+                'checkout.error.declined',
+              ),
+      };
+    }
+
     revalidatePath(
       `/song/${slug}`,
     );
+
   } catch {
     return {
       error: await text(
@@ -429,33 +480,101 @@ if (logoValidation.file) {
     );
 }
 
-    const created = await createContribution({
-      campaignId: campaign.id,
-      songId: campaign.songId,
-      supportType: 'business',
-      amountCents,
-      sponsorId,
-      consent: { version: consent.version, text: consent.text, ipHash, userAgent },
-      simulateCard: str(formData.get('simulateCard'), 32) ?? undefined,
-    });
-
-    const slug = await songSlugFor(campaign.songId);
-    token = await createThanksToken({
-      contributionId: created.contributionId,
-      targetPath: `/song/${slug}`,
-    });
-
     const threshold =
-      campaign.sponsorApprovalThresholdCents ??
-      (await setting('sponsorApprovalThresholdCents'));
-    const needsReview = !campaign.sponsorAutoApprove && amountCents >= threshold;
+      campaign
+        .sponsorApprovalThresholdCents ??
+      (await setting(
+        'sponsorApprovalThresholdCents',
+      ));
 
-    // Held sponsorships get no ledger entry, so they cannot reach the
-    // leaderboard before a human has looked at them (PRD §28).
+    const needsReview =
+      !campaign.sponsorAutoApprove &&
+      amountCents >= threshold;
+
+    const created =
+      await createContribution({
+        campaignId:
+          campaign.id,
+        songId:
+          campaign.songId,
+        supportType:
+          'business',
+        amountCents,
+        sponsorId,
+        consent: {
+          version:
+            consent.version,
+          text:
+            consent.text,
+          ipHash,
+          userAgent,
+        },
+        customerEmail:
+          email,
+        description:
+          `Sponsorship from ${businessName}`,
+        captureMethod:
+          needsReview
+            ? 'manual'
+            : 'automatic',
+        simulateCard:
+          str(
+            formData.get(
+              'simulateCard',
+            ),
+            32,
+          ) ?? undefined,
+      });
+
+    const slug =
+      await songSlugFor(
+        campaign.songId,
+      );
+
+    token =
+      await createThanksToken({
+        contributionId:
+          created.contributionId,
+        targetPath:
+          `/song/${slug}`,
+      });
+
+    if (
+      created.clientSecret
+    ) {
+      return {
+        payment: {
+          clientSecret:
+            created.clientSecret,
+          returnPath:
+            `/thanks/${token}`,
+        },
+      };
+    }
+
+    /*
+     * Held sponsorships get no ledger entry,
+     * so they cannot reach the leaderboard
+     * before management approval.
+     */
     if (!needsReview) {
-      const settled = await settleContribution(created.transactionId);
-      if (!settled.ok) return { error: await text('checkout.error.declined') };
-      revalidatePath(`/song/${slug}`);
+      const settled =
+        await settleContribution(
+          created.transactionId,
+        );
+
+      if (!settled.ok) {
+        return {
+          error:
+            await text(
+              'checkout.error.declined',
+            ),
+        };
+      }
+
+      revalidatePath(
+        `/song/${slug}`,
+      );
     }
   } catch {
     return { error: await text('checkout.error.generic') };
