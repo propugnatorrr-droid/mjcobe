@@ -27,7 +27,7 @@ export async function TierGrid({
       <div className="mt-10 flex flex-col gap-4">
         {tiers.map((tier) => {
           const exhausted =
-            tier.quantityLimit !== null && tier.quantityLimit <= 0;
+            !tier.isAvailable;
 
           return (
             <div
