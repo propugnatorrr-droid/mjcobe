@@ -25,6 +25,7 @@ export const admin = {
     blocklist: 'BLOCKLIST',
     referrals: 'REFERRAL LINKS',
     sponsorProfiles: 'PARTNER PROFILES',
+    notifications: 'EMAIL DELIVERY',
   },
 
   media: {
