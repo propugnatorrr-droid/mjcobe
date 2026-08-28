@@ -191,14 +191,8 @@ export function SongMediaUpload({
         ? await imageMetadata(file)
         : await audioMetadata(file);
 
-      const pathname = [
-        `songs/${songId}`,
-        `${kind}-${crypto.randomUUID()}`,
-        fileExtension(file),
-      ].join('.').replace(
-        `${songId}.`,
-        `${songId}/`,
-      );
+      const pathname =
+        `songs/${songId}/${kind}-${crypto.randomUUID()}.${fileExtension(file)}`;
 
       const blob = await upload(
         pathname,
