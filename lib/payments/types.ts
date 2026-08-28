@@ -108,6 +108,7 @@ export interface PaymentProvider {
     intentId: string,
     amountCents: number,
     reason: RefundReasonCode,
+    refundId?: string,
   ): Promise<ProviderOutcome>;
 }
 
