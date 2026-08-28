@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import {
+  Camera,
   Crown,
-  Instagram,
   Music2,
   Play,
+  SquarePlay,
   Video,
-  Youtube,
   type LucideIcon,
 } from 'lucide-react';
 import { setting } from '@/lib/config/settings';
@@ -28,13 +28,13 @@ const SOCIALS: SocialDefinition[] = [
     slug: 'instagram',
     settingKey: 'socialInstagramUrl',
     label: 'Instagram',
-    icon: Instagram,
+    icon: Camera,
   },
   {
     slug: 'youtube',
     settingKey: 'socialYoutubeUrl',
     label: 'YouTube',
-    icon: Youtube,
+    icon: SquarePlay,
   },
   {
     slug: 'tiktok',
