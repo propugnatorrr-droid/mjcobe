@@ -24,8 +24,8 @@ const copyDefaults = {
   'leaderboard.fan_heading': 'TOP FAN SUPPORTERS',
   'leaderboard.business_heading': 'OFFICIAL SONG PARTNERS',
 
-  'lookbook.hero_alt':
-    'MJ COBE in close chest-up view on a moonlit beach at night, wearing a striped beanie, glasses and a silver chain.',
+'lookbook.hero_alt':
+  'MJ COBE seated beneath a dramatic studio spotlight in a black leather jacket and dark sunglasses.',
   'cover.some_real_alt':
     'MJ COBE seated at a dim kitchen table at night, a glass of whisky in one hand.',
   'cover.night_shift_alt':
