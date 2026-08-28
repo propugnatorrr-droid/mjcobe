@@ -273,7 +273,13 @@ export async function createShareImage(
           >
             {!isBusiness &&
             displayedNumber ? (
-              <>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 14,
+                }}
+              >
                 <div
                   style={{
                     display: 'flex',
@@ -302,7 +308,7 @@ export async function createShareImage(
                     displayedNumber,
                   )}
                 </div>
-              </>
+              </div>
             ) : (
               <div
                 style={{
