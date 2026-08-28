@@ -46,7 +46,18 @@ export const getPartnersPage = cache(async (): Promise<PartnersPageData> => {
       from campaigns cp
       join songs so on so.id = cp.song_id
       left join media_assets ma on ma.id = so.cover_asset_id
-      where cp.status = 'live' and cp.business_sponsorship_enabled = true
+      where
+        cp.status = 'live'
+        and cp.accept_support = true
+        and cp.business_sponsorship_enabled = true
+        and (
+          cp.starts_at is null
+          or cp.starts_at <= now()
+        )
+        and (
+          cp.ends_at is null
+          or cp.ends_at > now()
+        )
       order by cp.created_at desc
     `),
     db.execute(sql`
