@@ -69,6 +69,7 @@ export async function getSongAdmin(
   updates: AdminSongUpdateRow[];
   cover: AdminMediaAssetRow | null;
   audio: AdminMediaAssetRow | null;
+  mediaLibrary: AdminMediaAssetRow[];
 } | null> {
   const [song] = await db
     .select()
@@ -90,6 +91,7 @@ export async function getSongAdmin(
     updates,
     cover,
     audio,
+    mediaLibrary,
   ] = await Promise.all([
     db
       .select()
@@ -131,7 +133,17 @@ export async function getSongAdmin(
     mediaAsset(
       song.audioAssetId,
     ),
+
+    db
+      .select()
+      .from(s.mediaAssets)
+      .orderBy(
+        desc(
+          s.mediaAssets.createdAt,
+        ),
+      ),
   ]);
+
 
   const campaignIds =
     campaigns.map(
@@ -189,5 +201,6 @@ export async function getSongAdmin(
     updates,
     cover,
     audio,
+    mediaLibrary,
   };
 }
