@@ -142,10 +142,17 @@ function stripeErrorOutcome(
 function refundMetadata(
   reason:
     RefundReasonCode,
+  refundId?: string,
 ): Record<string, string> {
   return {
     mj_cobe_refund_reason:
       reason,
+    ...(refundId
+      ? {
+          mj_cobe_refund_id:
+            refundId,
+        }
+      : {}),
   };
 }
 
@@ -361,6 +368,7 @@ async function refundIntent(
   amountCents: number,
   reason:
     RefundReasonCode,
+  refundId?: string,
 ): Promise<ProviderOutcome> {
   if (
     !Number.isInteger(
@@ -385,16 +393,25 @@ async function refundIntent(
   try {
     const refund =
       await stripe.refunds
-        .create({
-          payment_intent:
-            intentId,
-          amount:
-            amountCents,
-          metadata:
-            refundMetadata(
-              reason,
-            ),
-        });
+        .create(
+          {
+            payment_intent:
+              intentId,
+            amount:
+              amountCents,
+            metadata:
+              refundMetadata(
+                reason,
+                refundId,
+              ),
+          },
+          refundId
+            ? {
+                idempotencyKey:
+                  `mj-cobe-refund:${refundId}`,
+              }
+            : undefined,
+        );
 
     if (
       refund.status ===
@@ -437,6 +454,7 @@ async function refundIntent(
     );
   }
 }
+
 
 export const stripeProvider:
 PaymentProvider = {
