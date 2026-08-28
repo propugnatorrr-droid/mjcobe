@@ -15,6 +15,8 @@ import {
 } from '@/lib/db/write';
 import * as s from '@/lib/db/schema';
 import {
+  reconcileDispute,
+  reconcileRefund,
   settleContribution,
 } from '@/lib/ledger/contributions';
 import {
@@ -273,6 +275,112 @@ async function handleCanceled(
     );
 }
 
+function refundPaymentIntentId(
+  refund: Stripe.Refund,
+): string | null {
+  const paymentIntent =
+    refund.payment_intent;
+
+  if (
+    typeof paymentIntent ===
+    'string'
+  ) {
+    return paymentIntent;
+  }
+
+  return paymentIntent?.id ?? null;
+}
+
+async function handleRefund(
+  refund: Stripe.Refund,
+): Promise<void> {
+  const reconciled =
+    await reconcileRefund({
+      providerRef:
+        refund.id,
+      localRefundId:
+        refund.metadata
+          ?.mj_cobe_refund_id ??
+        null,
+      paymentIntentId:
+        refundPaymentIntentId(
+          refund,
+        ),
+      amountCents:
+        refund.amount,
+      status:
+        refund.status ??
+        'pending',
+      failureReason:
+        refund.failure_reason ??
+        null,
+      reason:
+        refund.metadata
+          ?.mj_cobe_refund_reason,
+    });
+
+  if (!reconciled.ok) {
+    throw new Error(
+      reconciled.message ??
+      `Could not reconcile refund ${refund.id}.`,
+    );
+  }
+}
+
+function disputePaymentIntentId(
+  dispute: Stripe.Dispute,
+): string | null {
+  const paymentIntent =
+    dispute.payment_intent;
+
+  if (
+    typeof paymentIntent ===
+    'string'
+  ) {
+    return paymentIntent;
+  }
+
+  return paymentIntent?.id ?? null;
+}
+
+async function handleDispute(
+  dispute: Stripe.Dispute,
+  movement:
+    | 'none'
+    | 'withdrawn'
+    | 'reinstated',
+): Promise<void> {
+  const paymentIntentId =
+    disputePaymentIntentId(
+      dispute,
+    );
+
+  if (!paymentIntentId) {
+    throw new Error(
+      `Stripe dispute ${dispute.id} has no PaymentIntent.`,
+    );
+  }
+
+  const reconciled =
+    await reconcileDispute({
+      providerRef:
+        dispute.id,
+      paymentIntentId,
+      amountCents:
+        dispute.amount,
+      state:
+        dispute.status,
+      movement,
+    });
+
+  if (!reconciled.ok) {
+    throw new Error(
+      reconciled.message ??
+      `Could not reconcile dispute ${dispute.id}.`,
+    );
+  }
+}
+
 async function processEvent(
   event: Stripe.Event,
 ): Promise<void> {
@@ -304,6 +412,37 @@ async function processEvent(
     case 'payment_intent.canceled':
       await handleCanceled(
         event.data.object,
+      );
+      return;
+
+    case 'refund.created':
+    case 'refund.updated':
+    case 'refund.failed':
+      await handleRefund(
+        event.data.object,
+      );
+      return;
+
+    case 'charge.dispute.created':
+    case 'charge.dispute.updated':
+    case 'charge.dispute.closed':
+      await handleDispute(
+        event.data.object,
+        'none',
+      );
+      return;
+
+    case 'charge.dispute.funds_withdrawn':
+      await handleDispute(
+        event.data.object,
+        'withdrawn',
+      );
+      return;
+
+    case 'charge.dispute.funds_reinstated':
+      await handleDispute(
+        event.data.object,
+        'reinstated',
       );
       return;
 
