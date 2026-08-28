@@ -205,6 +205,50 @@ contractCreated:
   'CREATED',
 contractInvalid:
   'CHECK THE CONTRACT FIELDS',
+invoices:
+  'SPONSOR INVOICES',
+invoicesHint:
+  'Track invoices and payment status. Invoice records are private and do not change contribution or ledger totals.',
+invoicesEmpty:
+  'No invoices have been recorded for this sponsor.',
+newInvoice:
+  'ADD INVOICE',
+invoiceNumber:
+  'INVOICE NUMBER',
+invoiceAmount:
+  'AMOUNT',
+invoiceContribution:
+  'RELATED CONTRIBUTION',
+invoiceNoContribution:
+  'No related contribution',
+invoiceStatus:
+  'STATUS',
+invoiceDocument:
+  'SECURE INVOICE LOCATION',
+invoiceDocumentHint:
+  'Enter an HTTPS link from your private document provider or a protected same-site path.',
+invoiceIssuedAt:
+  'ISSUED DATE AND TIME — UTC',
+invoiceIssuedHint:
+  'Issued and paid invoices require an issued date.',
+createInvoice:
+  'CREATE INVOICE',
+saveInvoice:
+  'SAVE INVOICE',
+openInvoice:
+  'OPEN INVOICE',
+invoiceCreated:
+  'CREATED',
+invoiceInvalid:
+  'CHECK THE INVOICE FIELDS',
+invoiceDuplicate:
+  'THAT INVOICE NUMBER IS ALREADY IN USE',
+invoiceStatuses: {
+  draft: 'DRAFT',
+  issued: 'ISSUED',
+  paid: 'PAID',
+  void: 'VOID',
+},
   },
 
 
