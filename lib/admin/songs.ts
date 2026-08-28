@@ -12,6 +12,9 @@ import * as s from '@/lib/db/schema';
 export type AdminSongRow =
   typeof s.songs.$inferSelect;
 
+export type AdminSongUpdateRow =
+  typeof s.songUpdates.$inferSelect;
+
 export type AdminCampaignRow =
   typeof s.campaigns.$inferSelect;
 
@@ -61,6 +64,7 @@ export async function getSongAdmin(
   tiers: AdminSupportTierRow[];
   cover: AdminMediaAssetRow | null;
   audio: AdminMediaAssetRow | null;
+  updates: AdminSongUpdateRow[];
 } | null> {
   const [song] = await db
     .select()
@@ -72,28 +76,30 @@ export async function getSongAdmin(
     return null;
   }
 
-  const [
-    campaigns,
-    cover,
-    audio,
-  ] = await Promise.all([
-    db
-      .select()
-      .from(s.campaigns)
-      .where(
-        eq(
-          s.campaigns.songId,
-          id,
-        ),
-      )
-      .orderBy(
-        desc(
-          s.campaigns.createdAt,
-        ),
-      ),
-    mediaAsset(song.coverAssetId),
-    mediaAsset(song.audioAssetId),
-  ]);
+const [
+  campaigns,
+  updates,
+  cover,
+  audio,
+] = await Promise.all([
+  db
+    .select()
+    .from(s.campaigns)
+    .where(eq(s.campaigns.songId, id))
+    .orderBy(desc(s.campaigns.createdAt)),
+
+  db
+    .select()
+    .from(s.songUpdates)
+    .where(eq(s.songUpdates.songId, id))
+    .orderBy(
+      desc(s.songUpdates.publishedAt),
+      desc(s.songUpdates.id),
+    ),
+
+  mediaAsset(song.coverAssetId),
+  mediaAsset(song.audioAssetId),
+]);
 
   const tiers =
     campaigns.length === 0
@@ -119,11 +125,12 @@ export async function getSongAdmin(
             ),
           );
 
-  return {
-    song,
-    campaigns,
-    tiers,
-    cover,
-    audio,
-  };
+return {
+  song,
+  campaigns,
+  tiers,
+  updates,
+  cover,
+  audio,
+};
 }
