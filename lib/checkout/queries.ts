@@ -31,6 +31,7 @@ export const getOpenCampaigns = cache(async (): Promise<OpenCampaign[]> => {
       goalCents: s.campaigns.goalCents,
       fanSupportEnabled: s.campaigns.fanSupportEnabled,
       businessSponsorshipEnabled: s.campaigns.businessSponsorshipEnabled,
+      startsAt: s.campaigns.startsAt,
       endsAt: s.campaigns.endsAt,
     })
     .from(s.campaigns)
@@ -45,9 +46,28 @@ export const getOpenCampaigns = cache(async (): Promise<OpenCampaign[]> => {
     .orderBy(asc(s.songs.sortIndex), desc(s.campaigns.createdAt));
 
   const now = Date.now();
+
   return rows
-    .filter((r) => r.endsAt === null || r.endsAt.getTime() > now)
-    .map(({ endsAt: _endsAt, ...rest }) => rest);
+    .filter(
+      (row) =>
+        (
+          row.startsAt === null ||
+          row.startsAt.getTime() <=
+            now
+        ) &&
+        (
+          row.endsAt === null ||
+          row.endsAt.getTime() >
+            now
+        ),
+    )
+    .map(
+      ({
+        startsAt: _startsAt,
+        endsAt: _endsAt,
+        ...rest
+      }) => rest,
+    );
 });
 
 export const getTiersFor = cache(
