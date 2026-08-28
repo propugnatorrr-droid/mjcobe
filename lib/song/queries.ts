@@ -5,6 +5,10 @@ import { db } from '@/lib/db/client';
 import * as s from '@/lib/db/schema';
 import { setting } from '@/lib/config/settings';
 import {
+  getPublicSupportTiers,
+  type PublicSupportTier,
+} from '@/lib/tiers/queries';
+import {
   getCampaignTotals,
   getLeaderboard,
   getTopSpot,
@@ -25,7 +29,7 @@ export type SongPageData = {
   fan: { rows: LeaderboardRowData[]; totalCount: number };
   business: { rows: LeaderboardRowData[]; totalCount: number };
   crown: Awaited<ReturnType<typeof getTopSpot>> | null;
-  tiers: (typeof s.supportTiers.$inferSelect)[];
+  tiers: PublicSupportTier[];
   packages: (typeof s.sponsorPackages.$inferSelect)[];
   updates: (typeof s.songUpdates.$inferSelect)[];
   journey: (typeof s.journeyEvents.$inferSelect)[];
@@ -115,9 +119,9 @@ export const getSongPage = cache(async (slug: string): Promise<SongPageData | nu
       getLeaderboard(campaign.id, 'fan', visibleRows),
       getLeaderboard(campaign.id, 'business', visibleRows),
       getTopSpot(campaign.id, 'business'),
-      db.select().from(s.supportTiers)
-        .where(and(eq(s.supportTiers.campaignId, campaign.id), eq(s.supportTiers.isActive, true)))
-        .orderBy(asc(s.supportTiers.sortIndex), asc(s.supportTiers.amountCents)),
+      getPublicSupportTiers(
+        campaign.id,
+      ),
       db.select().from(s.sponsorPackages)
         .where(and(eq(s.sponsorPackages.campaignId, campaign.id), eq(s.sponsorPackages.isActive, true)))
         .orderBy(asc(s.sponsorPackages.sortIndex)),
