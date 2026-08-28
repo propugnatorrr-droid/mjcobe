@@ -42,24 +42,21 @@ async function loadMonoFont(): Promise<
 }
 
 export function shareImageNotFound() {
-  return new Response(
-    'Not found',
-    {
-      status: 404,
-      headers: {
-        'Cache-Control':
-          'private, no-store, max-age=0',
-        'X-Robots-Tag':
-          'noindex, nofollow, noarchive',
-      },
+  return new Response('Not found', {
+    status: 404,
+    headers: {
+      'Cache-Control':
+        'private, no-store, max-age=0',
+      'X-Robots-Tag':
+        'noindex, nofollow, noarchive',
     },
-  );
+  });
 }
 
 function paddedNumber(
-  number: number,
+  value: number,
 ): string {
-  return String(number).padStart(
+  return String(value).padStart(
     4,
     '0',
   );
@@ -103,15 +100,25 @@ export async function createShareImage(
     foundingLabel,
     supporterLabel,
     privateAmount,
+    amountHeading,
+    storyLabel,
+    feedLabel,
+    xLabel,
   ] = await Promise.all([
     text('hero.artist_name'),
-    text('thanks.share.fan_headline'),
+    text(
+      'thanks.share.fan_headline',
+    ),
     text(
       'thanks.share.partner_headline',
     ),
     text('thanks.founding_number'),
     text('thanks.supporter_number'),
     text('song.amount_hidden'),
+    text('thanks.amount'),
+    text('thanks.share.story'),
+    text('thanks.share.feed'),
+    text('thanks.share.x'),
   ]);
 
   const numberLabel =
@@ -138,6 +145,13 @@ export async function createShareImage(
       ? confirmation.businessName
       : artist;
 
+  const formatLabel =
+    formatKey === 'story'
+      ? storyLabel
+      : formatKey === 'feed'
+        ? feedLabel
+        : xLabel;
+
   const font = await loadMonoFont();
 
   const horizontalPadding =
@@ -149,15 +163,6 @@ export async function createShareImage(
       : isFeed
         ? 82
         : 68;
-
-  const headlineSize =
-    isStory ? 26 : 22;
-
-  const identitySize =
-    isStory ? 38 : 28;
-
-  const amountSize =
-    isStory ? 64 : 44;
 
   return new ImageResponse(
     (
@@ -194,11 +199,13 @@ export async function createShareImage(
           <div
             style={{
               display: 'flex',
-              fontSize: headlineSize,
+              fontSize:
+                isStory ? 26 : 22,
               letterSpacing:
                 isStory ? 7 : 6,
               color: '#aaa69d',
-              textTransform: 'uppercase',
+              textTransform:
+                'uppercase',
             }}
           >
             {headline}
@@ -207,11 +214,12 @@ export async function createShareImage(
           <div
             style={{
               display: 'flex',
+              maxWidth: '100%',
               fontSize: titleSize,
               lineHeight: 0.98,
               letterSpacing: -2,
-              textTransform: 'uppercase',
-              maxWidth: '100%',
+              textTransform:
+                'uppercase',
             }}
           >
             {confirmation.songTitle}
@@ -220,11 +228,13 @@ export async function createShareImage(
           <div
             style={{
               display: 'flex',
-              fontSize: identitySize,
+              fontSize:
+                isStory ? 38 : 28,
               letterSpacing:
                 isStory ? 8 : 6,
               color: '#c9a86a',
-              textTransform: 'uppercase',
+              textTransform:
+                'uppercase',
             }}
           >
             {identity}
@@ -276,7 +286,8 @@ export async function createShareImage(
               <div
                 style={{
                   display: 'flex',
-                  flexDirection: 'column',
+                  flexDirection:
+                    'column',
                   gap: 14,
                 }}
               >
@@ -348,15 +359,14 @@ export async function createShareImage(
                   'uppercase',
               }}
             >
-              {await text(
-                'thanks.amount',
-              )}
+              {amountHeading}
             </div>
 
             <div
               style={{
                 display: 'flex',
-                fontSize: amountSize,
+                fontSize:
+                  isStory ? 64 : 44,
                 color: '#edeae4',
               }}
             >
@@ -375,9 +385,9 @@ export async function createShareImage(
           <div
             style={{
               display: 'flex',
+              width: '100%',
               height: 4,
               background: '#9f2530',
-              width: '100%',
             }}
           />
 
@@ -390,7 +400,8 @@ export async function createShareImage(
                 isStory ? 18 : 15,
               letterSpacing: 4,
               color: '#77736d',
-              textTransform: 'uppercase',
+              textTransform:
+                'uppercase',
             }}
           >
             <div
@@ -398,7 +409,7 @@ export async function createShareImage(
                 display: 'flex',
               }}
             >
-              MJ COBE
+              {artist}
             </div>
 
             <div
@@ -406,11 +417,7 @@ export async function createShareImage(
                 display: 'flex',
               }}
             >
-              {isStory
-                ? 'STORY'
-                : isFeed
-                  ? 'FEED'
-                  : 'X'}
+              {formatLabel}
             </div>
           </div>
         </div>
