@@ -9,6 +9,9 @@ import {
 import { dbw } from '@/lib/db/write';
 import * as s from '@/lib/db/schema';
 import { getProvider } from '@/lib/payments';
+import {
+  sendContributionConfirmation,
+} from '@/lib/notifications/outbox';
 import type { ProviderId, RefundReasonCode } from '@/lib/payments';
 
 export const sha = (v: string) => createHash('sha256').update(v).digest('hex');
@@ -291,39 +294,55 @@ export async function cancelContribution(
 export async function settleContribution(transactionId: string): Promise<SettleResult> {
   const [tx] = await dbw.select().from(s.transactions).where(eq(s.transactions.id, transactionId)).limit(1);
   if (!tx) return { ok: false, code: 'not_found', message: 'Transaction not found.' };
-if (tx.state === 'settled') {
-  const existing = await dbw
-    .select({
-      seriesKey:
-        s.supporterNumbers.seriesKey,
-      number:
-        s.supporterNumbers.number,
-    })
-    .from(s.supporterNumbers)
-    .where(
-      eq(
-        s.supporterNumbers.contributionId,
-        tx.contributionId,
-      ),
+  if (
+    tx.state ===
+    'settled'
+  ) {
+    const existing =
+      await dbw
+        .select({
+          seriesKey:
+            s.supporterNumbers.seriesKey,
+          number:
+            s.supporterNumbers.number,
+        })
+        .from(s.supporterNumbers)
+        .where(
+          eq(
+            s.supporterNumbers.contributionId,
+            tx.contributionId,
+          ),
+        );
+
+    const result = {
+      ok: true as const,
+
+      supporterNumber:
+        existing.find(
+          (number) =>
+            number.seriesKey ===
+            'supporter',
+        )?.number ?? null,
+
+      foundingNumber:
+        existing.find(
+          (number) =>
+            number.seriesKey ===
+            'founding',
+        )?.number ?? null,
+    };
+
+    /*
+     * This also repairs the notification outbox
+     * if settlement succeeded previously but the
+     * process stopped before enqueueing email.
+     */
+    await sendContributionConfirmation(
+      transactionId,
     );
 
-  return {
-    ok: true,
-    supporterNumber:
-      existing.find(
-        (number) =>
-          number.seriesKey ===
-          'supporter',
-      )?.number ?? null,
-    foundingNumber:
-      existing.find(
-        (number) =>
-          number.seriesKey ===
-          'founding',
-      )?.number ?? null,
-  };
-}
-
+    return result;
+  }
 
   const provider = getProvider(tx.provider);
   const outcome = await provider.capture(tx.providerRef ?? '');
@@ -342,7 +361,9 @@ if (tx.state === 'settled') {
     return { ok: false, code: 'pending', message: 'Payment is still processing.' };
   }
 
-  return dbw.transaction(async (t) => {
+  const result =
+    await dbw.transaction(
+      async (t) => {
     /*
      * Serialize final settlement by transaction ID.
      * Stripe may retry a webhook while an admin
@@ -543,11 +564,29 @@ const nextNumber = async (
       isVisible: false, // surfaced only when a milestone rule promotes it
     });
 
-    return { ok: true as const, supporterNumber, foundingNumber };
+    return {
+      ok: true as const,
+      supporterNumber,
+      foundingNumber,
+    };
   });
+
+  if (result.ok) {
+    /*
+     * Settlement is already committed. An email
+     * outage must never roll back or alter the
+     * successful payment.
+     */
+    await sendContributionConfirmation(
+      transactionId,
+    );
+  }
+
+  return result;
 }
 
 const refundReasons:
+
 ReadonlySet<RefundReasonCode> =
   new Set([
     'unverified_sponsor',
