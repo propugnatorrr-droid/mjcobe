@@ -20,6 +20,9 @@ import {
   CheckField,
 } from '@/components/primitives/Field';
 import { SubmitRow } from '@/components/checkout/SubmitRow';
+import {
+  StripePaymentStep,
+} from '@/components/checkout/StripePaymentStep';
 import { interpolate } from '@/lib/copy/defaults';
 
 export type FanFormLabels = Record<
@@ -163,6 +166,30 @@ export function FanCheckoutForm({
 
   const selectedLabel =
     selected?.label ?? labels.custom;
+
+  if (state.payment) {
+    return (
+      <StripePaymentStep
+        clientSecret={
+          state.payment
+            .clientSecret
+        }
+        returnPath={
+          state.payment
+            .returnPath
+        }
+        heading={
+          labels.payment
+        }
+        submitLabel={
+          labels.submit
+        }
+        workingLabel={
+          labels.working
+        }
+      />
+    );
+  }
 
   return (
     <form
