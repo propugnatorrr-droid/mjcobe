@@ -252,6 +252,36 @@ logoRequirements:
     updateGated: 'Supporter only',
     updateVisibleState: 'Visible',
     updateHiddenState: 'Hidden',
+    sponsorPackages:
+      'BUSINESS SPONSOR PACKAGES',
+    sponsorPackagesHint:
+      'Create fixed sponsorship choices and define exactly what each package includes.',
+    sponsorPackagesEmpty:
+      'No business sponsor packages have been created for this campaign.',
+    newSponsorPackage:
+      'ADD SPONSOR PACKAGE',
+    sponsorPackageName:
+      'PACKAGE NAME',
+    sponsorPackagePrice:
+      'PACKAGE PRICE',
+    sponsorPackageSort:
+      'DISPLAY ORDER',
+    sponsorDeliverables:
+      'DELIVERABLES',
+    sponsorDeliverablesHint:
+      'Enter one deliverable per line.',
+    includesBrandedVisual:
+      'Includes a branded visual',
+    sponsorPackageActive:
+      'Package is active',
+    createSponsorPackage:
+      'CREATE SPONSOR PACKAGE',
+    saveSponsorPackage:
+      'SAVE SPONSOR PACKAGE',
+    activateSponsorPackage:
+      'ACTIVATE PACKAGE',
+    deactivateSponsorPackage:
+      'DEACTIVATE PACKAGE',
     tierBadges: {
       supporter: 'Supporter',
       day_one: 'Day One',
