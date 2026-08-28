@@ -19,6 +19,7 @@ export type ConfirmationData = {
   campaignId: string;
   supportType: 'fan' | 'business';
   amountCents: number;
+  netAmountCents: number;
   hideAmount: boolean;
   isAnonymous: boolean;
   displayName: string | null;
@@ -104,52 +105,61 @@ export async function getConfirmationData(
     return null;
   }
 
-const [settlement] = await db
-  .select({
-    netCents: sql<number>`
-      coalesce(
-        sum(
-          ${s.ledgerEntries.amountCents}
-        ),
-        0
-      )::int
-    `,
-  })
-  .from(s.ledgerEntries)
-  .where(
-    eq(
-      s.ledgerEntries.contributionId,
-      row.contributionId,
+  const [settlement] = await db
+    .select({
+      netCents: sql<number>`
+        coalesce(
+          sum(
+            ${s.ledgerEntries.amountCents}
+          ),
+          0
+        )::int
+      `,
+    })
+    .from(s.ledgerEntries)
+    .where(
+      eq(
+        s.ledgerEntries.contributionId,
+        row.contributionId,
+      ),
+    );
+
+  const netAmountCents = Math.max(
+    0,
+    Number(
+      settlement?.netCents ?? 0,
     ),
   );
 
-const settled =
-  Number(
-    settlement?.netCents ?? 0,
-  ) > 0;
+  const settled =
+    netAmountCents > 0;
 
+  const base = {
+    token,
+    contributionId:
+      row.contributionId,
+    campaignId: row.campaignId,
+    supportType: row.supportType,
+    amountCents: row.amountCents,
+    netAmountCents,
+    hideAmount: row.hideAmount,
+    isAnonymous: row.isAnonymous,
+    displayName: row.displayName,
+    songTitle: row.songTitle,
+    songSlug: row.songSlug,
+    businessName:
+      row.businessName ?? null,
+    transactionState:
+      row.transactionState ?? null,
+  };
 
   if (!settled) {
     return {
-      token,
-      contributionId:
-        row.contributionId,
-      campaignId: row.campaignId,
-      supportType: row.supportType,
-      amountCents: row.amountCents,
-      hideAmount: row.hideAmount,
-      isAnonymous: row.isAnonymous,
-      displayName: row.displayName,
-      songTitle: row.songTitle,
-      songSlug: row.songSlug,
-      businessName:
-        row.businessName ?? null,
+      ...base,
       supporterNumber: null,
       foundingNumber: null,
       rank: null,
       settled: false,
-      transactionState:
-        row.transactionState ?? null,
     };
   }
 
@@ -173,26 +183,16 @@ const settled =
       ? row.sponsorId
       : row.supporterId;
 
-  const rank = await rankForIdentity(
-    row.campaignId,
-    row.supportType,
-    identityId,
-  );
+  const rank = identityId
+    ? await rankForIdentity(
+        row.campaignId,
+        row.supportType,
+        identityId,
+      )
+    : null;
 
   return {
-    token,
-    contributionId:
-      row.contributionId,
-    campaignId: row.campaignId,
-    supportType: row.supportType,
-    amountCents: row.amountCents,
-    hideAmount: row.hideAmount,
-    isAnonymous: row.isAnonymous,
-    displayName: row.displayName,
-    songTitle: row.songTitle,
-    songSlug: row.songSlug,
-    businessName:
-      row.businessName ?? null,
+    ...base,
     supporterNumber:
       numbers.find(
         (number) =>
@@ -207,7 +207,5 @@ const settled =
       )?.number ?? null,
     rank,
     settled: true,
-    transactionState:
-      row.transactionState ?? null,
   };
 }
