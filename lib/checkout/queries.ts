@@ -4,6 +4,9 @@ import { and, asc, desc, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import * as s from '@/lib/db/schema';
 import { getLeaderboard } from '@/lib/campaign/queries';
+import {
+  getPublicSupportTiers,
+} from '@/lib/tiers/queries';
 
 export type OpenCampaign = {
   campaignId: string;
@@ -47,12 +50,9 @@ export const getOpenCampaigns = cache(async (): Promise<OpenCampaign[]> => {
     .map(({ endsAt: _endsAt, ...rest }) => rest);
 });
 
-export const getTiersFor = cache(async (campaignId: string) =>
-  db
-    .select()
-    .from(s.supportTiers)
-    .where(and(eq(s.supportTiers.campaignId, campaignId), eq(s.supportTiers.isActive, true)))
-    .orderBy(asc(s.supportTiers.sortIndex), asc(s.supportTiers.amountCents)),
+export const getTiersFor = cache(
+  async (campaignId: string) =>
+    getPublicSupportTiers(campaignId),
 );
 
 export const getPackagesFor = cache(async (campaignId: string) =>
