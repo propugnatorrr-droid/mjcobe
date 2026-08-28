@@ -18,6 +18,30 @@ export type AdminCampaignRow =
 export type AdminSupportTierRow =
   typeof s.supportTiers.$inferSelect;
 
+export type AdminMediaAssetRow =
+  typeof s.mediaAssets.$inferSelect;
+
+async function mediaAsset(
+  id: string | null,
+): Promise<AdminMediaAssetRow | null> {
+  if (!id) {
+    return null;
+  }
+
+  const [asset] = await db
+    .select()
+    .from(s.mediaAssets)
+    .where(
+      eq(
+        s.mediaAssets.id,
+        id,
+      ),
+    )
+    .limit(1);
+
+  return asset ?? null;
+}
+
 export async function listSongsAdmin():
 Promise<AdminSongRow[]> {
   return db
@@ -35,6 +59,8 @@ export async function getSongAdmin(
   song: AdminSongRow;
   campaigns: AdminCampaignRow[];
   tiers: AdminSupportTierRow[];
+  cover: AdminMediaAssetRow | null;
+  audio: AdminMediaAssetRow | null;
 } | null> {
   const [song] = await db
     .select()
@@ -46,18 +72,28 @@ export async function getSongAdmin(
     return null;
   }
 
-  const campaigns = await db
-    .select()
-    .from(s.campaigns)
-    .where(
-      eq(
-        s.campaigns.songId,
-        id,
+  const [
+    campaigns,
+    cover,
+    audio,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(s.campaigns)
+      .where(
+        eq(
+          s.campaigns.songId,
+          id,
+        ),
+      )
+      .orderBy(
+        desc(
+          s.campaigns.createdAt,
+        ),
       ),
-    )
-    .orderBy(
-      desc(s.campaigns.createdAt),
-    );
+    mediaAsset(song.coverAssetId),
+    mediaAsset(song.audioAssetId),
+  ]);
 
   const tiers =
     campaigns.length === 0
@@ -87,5 +123,7 @@ export async function getSongAdmin(
     song,
     campaigns,
     tiers,
+    cover,
+    audio,
   };
 }
