@@ -12,8 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx lib/db/seed.ts",
-    "assets:ingest": "tsx scripts/ingest-assets.ts"
-    "campaign:open": "tsx scripts/open-song-campaigns.ts",
+    "assets:ingest": "tsx scripts/ingest-assets.ts",
+    "campaign:open": "tsx scripts/open-song-campaigns.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
