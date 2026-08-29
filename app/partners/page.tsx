@@ -56,11 +56,11 @@ export default async function PartnersPage() {
   const popularIndex = data.packages.length > 1 ? 1 : -1;
 
   return (
-    <main className="surface-ink min-h-screen">
+    <main className="story-v4-page partners-v4-page surface-ink min-h-screen">
       <SiteNav sub="PARTNERS" />
 
       {/* Hero */}
-      <section className="relative isolate min-h-[26rem] overflow-hidden md:min-h-[30rem]">
+      <section className="partners-v4-hero relative isolate min-h-[26rem] overflow-hidden md:min-h-[30rem]">
         <div className="absolute inset-0 -z-10">
           <div className="absolute inset-y-0 right-0 w-full md:w-[54%]">
             <PhotoTreatment vignette grain fill>
@@ -103,13 +103,13 @@ export default async function PartnersPage() {
       </section>
 
       {/* Campaigns accepting sponsors */}
-      <section className="mx-auto max-w-[92rem] px-6 py-12 md:px-10">
+      <section className="partners-v4-section">
         <SectionHeading sub={seekingSponsors}>{acceptingHeading}</SectionHeading>
 
         {data.accepting.length === 0 ? (
           <p className="mt-6 text-body text-[var(--text-dim)]">{empty}</p>
         ) : (
-          <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="partners-v4-campaign-grid mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {data.accepting.map((c) => (
               <Link
                 key={c.campaignId}
@@ -163,7 +163,7 @@ export default async function PartnersPage() {
       </section>
 
       {/* Packages */}
-      <section id="packages" className="mx-auto max-w-[92rem] px-6 py-12 md:px-10">
+      <section id="packages" className="partners-v4-section partners-v4-packages">
         <SectionHeading>{packagesHeading}</SectionHeading>
 
         <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -173,7 +173,7 @@ export default async function PartnersPage() {
             return (
               <div
                 key={pkg.id}
-                className="relative flex flex-col rounded-[var(--radius-panel)] border p-6"
+                className="partners-v4-package relative flex flex-col rounded-[var(--radius-panel)] border p-6"
                 style={{
                   borderColor: popular ? 'var(--champagne)' : 'var(--line)',
                   background: 'var(--ink-2)',
@@ -220,7 +220,7 @@ export default async function PartnersPage() {
 
       {/* Impact */}
       <section
-        className="border-y py-12"
+        className="partners-v4-impact border-y py-12"
         style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
       >
         <div className="mx-auto max-w-[92rem] px-6 md:px-10">
@@ -250,7 +250,7 @@ export default async function PartnersPage() {
 
       {/* Roster */}
       {data.sponsors.length > 0 ? (
-        <section className="mx-auto max-w-[92rem] px-6 py-12 md:px-10">
+        <section className="partners-v4-roster">
           <p className="text-center font-ui text-[0.625rem] uppercase tracking-[0.28em] text-[var(--text-dim)]">
             {pastSponsors}
           </p>
