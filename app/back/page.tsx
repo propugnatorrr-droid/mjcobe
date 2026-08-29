@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { ShieldCheck } from 'lucide-react';
 import { SimulationRibbon } from '@/components/SimulationRibbon';
 import { SiteNav } from '@/components/SiteNav';
@@ -76,7 +76,7 @@ export default async function BackPage({
     (songParam ? undefined : payableCampaigns[0]);
 
   if (!selectedCampaign) {
-    notFound();
+    redirect('/back');
   }
 
   const tiers = await getTiersFor(
