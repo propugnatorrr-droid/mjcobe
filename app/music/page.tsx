@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { SiteNav } from '@/components/SiteNav';
-import { SiteFooter } from '@/components/SiteFooter';
-import { MobileCta } from '@/components/MobileCta';
 import { CatalogSection } from '@/components/catalog/CatalogSection';
 import { CatalogVaultCard } from '@/components/catalog/CatalogVaultCard';
+import { MusicHero } from '@/components/catalog/MusicHero';
+import { MobileCta } from '@/components/MobileCta';
 import { SectionHeading } from '@/components/primitives/SectionHeading';
+import { SiteFooter } from '@/components/SiteFooter';
+import { SiteNav } from '@/components/SiteNav';
 import { listCatalog } from '@/lib/catalog/queries';
 import { text } from '@/lib/copy/site-copy';
 
@@ -20,6 +21,8 @@ export default async function MusicPage() {
   const [
     catalog,
     title,
+    eyebrow,
+    intro,
     releasedLabel,
     releasedSub,
     comingSoonLabel,
@@ -34,6 +37,8 @@ export default async function MusicPage() {
   ] = await Promise.all([
     listCatalog(),
     text('music.title'),
+    text('music.eyebrow'),
+    text('music.intro'),
     text('music.released'),
     text('music.released_sub'),
     text('music.coming_soon'),
@@ -70,72 +75,79 @@ export default async function MusicPage() {
     >
       <SiteNav sub={title} />
 
-      <div className="site-shell py-10 sm:py-12 lg:py-16">
-        <h1 className="sr-only">{title}</h1>
+      <MusicHero
+        title={title}
+        eyebrow={eyebrow}
+        intro={intro}
+        recordCount={catalog.length}
+      />
 
-        <div className="space-y-16 lg:space-y-20">
-          <CatalogSection
-            heading={releasedLabel}
-            subheading={releasedSub}
-            songs={released}
-            labels={{
-              status: releasedLabel,
-              supporters: supportersLabel,
-              joinJourney,
-              previewComingSoon,
-            }}
-          />
+      <div className="site-shell music-v2-catalog">
+        <CatalogSection
+          heading={buildingLabel}
+          subheading={buildingSub}
+          songs={building}
+          featured
+          labels={{
+            status: buildingLabel,
+            supporters: supportersLabel,
+            joinJourney,
+            previewComingSoon,
+          }}
+        />
 
-          <CatalogSection
-            heading={comingSoonLabel}
-            subheading={comingSoonSub}
-            songs={comingSoon}
-            labels={{
-              status: comingSoonLabel,
-              supporters: supportersLabel,
-              joinJourney,
-              previewComingSoon,
-            }}
-          />
+        <CatalogSection
+          heading={releasedLabel}
+          subheading={releasedSub}
+          songs={released}
+          labels={{
+            status: releasedLabel,
+            supporters: supportersLabel,
+            joinJourney,
+            previewComingSoon,
+          }}
+        />
 
-          <CatalogSection
-            heading={buildingLabel}
-            subheading={buildingSub}
-            songs={building}
-            labels={{
-              status: buildingLabel,
-              supporters: supportersLabel,
-              joinJourney,
-              previewComingSoon,
-            }}
-          />
+        <CatalogSection
+          heading={comingSoonLabel}
+          subheading={comingSoonSub}
+          songs={comingSoon}
+          labels={{
+            status: comingSoonLabel,
+            supporters: supportersLabel,
+            joinJourney,
+            previewComingSoon,
+          }}
+        />
 
-          {vault.length > 0 ? (
-            <section aria-labelledby="catalog-vault">
-              <div id="catalog-vault">
-                <SectionHeading>{vaultLabel}</SectionHeading>
-              </div>
+        {vault.length > 0 ? (
+          <section
+            aria-labelledby="catalog-vault"
+            className="music-v2-section"
+          >
+            <div id="catalog-vault">
+              <SectionHeading>
+                {vaultLabel}
+              </SectionHeading>
+            </div>
 
-              <div className="catalog-grid mt-7">
-                {vault.map((song) => (
-                  <CatalogVaultCard
-                    key={song.id}
-                    song={song}
-                    label={vaultLabel}
-                  />
-                ))}
-              </div>
-            </section>
-          ) : null}
+            <div className="music-v2-grid">
+              {vault.map((song) => (
+                <CatalogVaultCard
+                  key={song.id}
+                  song={song}
+                  label={vaultLabel}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-          {catalog.length === 0 ? (
-            <section className="panel p-8 sm:p-10">
-              <p className="max-w-[52ch] text-base leading-7 text-[var(--text-dim)]">
-                {emptyLabel}
-              </p>
-            </section>
-          ) : null}
-        </div>
+        {catalog.length === 0 ? (
+          <section className="music-v2-empty">
+            <p>{emptyLabel}</p>
+          </section>
+        ) : null}
       </div>
 
       <SiteFooter />
