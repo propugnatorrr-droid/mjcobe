@@ -1,4 +1,4 @@
-import { ArrowRight, Play, Sparkles } from 'lucide-react';
+import { ArrowRight, Play } from 'lucide-react';
 import { ButtonLink } from '@/components/primitives/Button';
 
 type HomeHeroProps = {
@@ -45,29 +45,27 @@ export function HomeHero({
         className="home-v2-hero-treatment"
       />
 
+      <div
+        aria-hidden
+        className="home-v2-hero-frame"
+      />
+
       <div className="site-shell home-v2-hero-shell">
         <div className="home-v2-hero-copy">
-          <div className="home-v2-eyebrow">
-            <Sparkles
-              aria-hidden
-              size={14}
-              strokeWidth={1.6}
-            />
-
-            <span>{artistName}</span>
-
-            <span
-              aria-hidden
-              className="home-v2-eyebrow-line"
-            />
-          </div>
+          <p className="home-v2-eyebrow">
+            Original rhythm and blues
+          </p>
 
           <h1
             id="home-hero-heading"
             className="home-v2-title"
           >
-            {tagline}
+            {artistName}
           </h1>
+
+          <p className="home-v2-tagline">
+            {tagline}
+          </p>
 
           <p className="home-v2-subcopy">
             {subcopy}
@@ -91,12 +89,12 @@ export function HomeHero({
 
             <ButtonLink
               href="/music"
-              variant="quiet"
+              variant="ghost"
               className="home-v2-secondary-action"
             >
               <Play
                 aria-hidden
-                size={15}
+                size={14}
                 strokeWidth={1.8}
                 fill="currentColor"
               />
@@ -110,10 +108,17 @@ export function HomeHero({
           aria-hidden
           className="home-v2-index"
         >
-          <span>01</span>
-          <span className="home-v2-index-line" />
-          <span>MJ COBE</span>
+          <span>EST.</span>
+          <strong>2026</strong>
         </div>
+      </div>
+
+      <div
+        aria-hidden
+        className="home-v2-scroll"
+      >
+        <span>SCROLL TO DISCOVER</span>
+        <span className="home-v2-scroll-line" />
       </div>
     </section>
   );
