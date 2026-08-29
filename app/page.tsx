@@ -40,8 +40,9 @@ export default async function HomePage() {
         ])
       : [null, null];
 
-  const [
+const [
     artistName,
+    eyebrow,
     tagline,
     subcopy,
     heroAlt,
@@ -58,7 +59,8 @@ export default async function HomePage() {
     anonymousLabel,
     hiddenAmountLabel,
   ] = await Promise.all([
-    text('hero.artist_name'),
+text('hero.artist_name'),
+    text('hero.eyebrow'),
     text('hero.tagline'),
     text('hero.subcopy'),
     text('lookbook.hero_alt'),
@@ -83,8 +85,9 @@ export default async function HomePage() {
     >
       <SiteNav />
 
-      <HomeHero
+<HomeHero
         imageAlt={heroAlt}
+        eyebrow={eyebrow}
         artistName={artistName}
         tagline={tagline}
         subcopy={subcopy}
