@@ -7,6 +7,7 @@ import './visual-phase-3.css';
 import './visual-phase-4.css';
 import './visual-phase-5.css';
 import './visual-phase-6.css';
+import './visual-phase-6-music.css';
 
 const tanker = localFont({
   src: './fonts/tanker/Tanker-Regular.woff2',
