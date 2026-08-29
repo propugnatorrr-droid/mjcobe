@@ -61,14 +61,14 @@ export default async function SponsorProfilePage({ params }: Props) {
   );
 
   return (
-    <main className="surface-ink min-h-screen">
+    <main className="story-v4-page partner-v4-page surface-ink min-h-screen">
       <SiteNav sub="PARTNERS" />
 
-      <div className="mx-auto grid max-w-[92rem] grid-cols-1 gap-8 px-6 py-12 md:px-10 lg:grid-cols-[1fr_23rem]">
+      <div className="partner-v4-shell grid grid-cols-1 lg:grid-cols-[1fr_23rem]">
         <div>
           {/* Presenting-partner hero card, gold-framed as in the mockup. */}
           <div
-            className="relative overflow-hidden rounded-[var(--radius-panel)] border p-6 md:p-8"
+            className="partner-v4-hero-card relative overflow-hidden rounded-[var(--radius-panel)] border p-6 md:p-8"
             style={{
               borderColor: 'var(--champagne)',
               background: 'var(--ink-2)',
@@ -146,7 +146,7 @@ export default async function SponsorProfilePage({ params }: Props) {
 
           {/* Records this brand backs */}
           {profile.songs.length > 0 ? (
-            <section className="mt-10">
+            <section className="partner-v4-records mt-10">
               <SectionHeading>{officialSupporterOf}</SectionHeading>
               <div className="mt-6 flex flex-col gap-3">
                 {profile.songs.map((song) => (
@@ -176,7 +176,7 @@ export default async function SponsorProfilePage({ params }: Props) {
 
         {/* Brand sidebar */}
         <aside
-          className="h-fit rounded-[var(--radius-panel)] border p-6"
+          className="partner-v4-sidebar h-fit rounded-[var(--radius-panel)] border p-6"
           style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
         >
           <p className="font-ui text-[0.625rem] uppercase tracking-[0.24em] text-[var(--text-dim)]">
