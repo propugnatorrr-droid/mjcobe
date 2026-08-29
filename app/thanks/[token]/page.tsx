@@ -85,7 +85,7 @@ export default async function ThanksPage({
         'authorized';
 
     return (
-      <main className="surface-ink min-h-screen">
+      <main className="thanks-v3-page surface-ink min-h-screen">
         <SimulationRibbon />
         <SiteNav />
 
@@ -93,7 +93,8 @@ export default async function ThanksPage({
           <PaymentStatusRefresh />
         ) : null}
 
-        <div className="mx-auto w-full max-w-5xl px-6 pt-16 md:px-12 md:pt-24">
+<section className="thanks-v3-processing site-shell">
+  <div>
           <Eyebrow>
             {isBusiness
               ? await text(
@@ -137,8 +138,9 @@ export default async function ThanksPage({
             </ButtonLink>
           </div>
         </div>
+      </section>
 
-        <SiteFooter />
+      <SiteFooter />
       </main>
     );
   }
@@ -207,12 +209,13 @@ export default async function ThanksPage({
   };
 
   return (
-    <main className="surface-ink min-h-screen pb-24">
+    <main className="thanks-v3-page surface-ink min-h-screen">
       <SimulationRibbon />
 
       <SiteNav sub="SONG JOURNEY" />
 
-      <div className="mx-auto max-w-3xl px-6 py-14 text-center md:py-20">
+<section className="thanks-v3-settled">
+  <div className="thanks-v3-card">
         <h1 className="font-display text-[clamp(2.25rem,6vw,4.5rem)] uppercase leading-[0.95] text-[var(--text)]">
           {await text(
             'thanks.heading',
@@ -241,7 +244,7 @@ export default async function ThanksPage({
         </p>
 
         {displayedNumber ? (
-          <div className="mt-10">
+<div className="thanks-v3-number">
             <p className="font-display text-[clamp(3.5rem,14vw,9rem)] leading-none text-gold">
               #
               {paddedNumber(
@@ -291,8 +294,8 @@ export default async function ThanksPage({
           </span>
         </p>
 
-        <div className="mt-12">
-          <ShareRow
+<div className="thanks-v3-share">
+  <ShareRow
             token={token}
             shareUrlPath={`/s/${token}`}
             labels={shareLabels}
@@ -300,7 +303,7 @@ export default async function ThanksPage({
 
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
+        <div className="thanks-v3-actions mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <ButtonLink
             href={`/song/${confirmation.songSlug}`}
             variant="primary"
@@ -323,8 +326,9 @@ export default async function ThanksPage({
           </ButtonLink>
         </div>
       </div>
+    </section>
 
-      <SiteFooter />
+    <SiteFooter />
     </main>
   );
 }
