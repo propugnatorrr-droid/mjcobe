@@ -9,8 +9,11 @@ export default function AdminLoginPage() {
   const [state, action] = useActionState<AdminState, FormData>(signIn, {});
 
   return (
-    <main className="surface-ink flex min-h-screen items-center px-6 md:px-12">
-      <form action={action} className="mx-auto w-full max-w-sm">
+    <main className="admin-v5-login surface-ink min-h-screen">
+<form
+  action={action}
+  className="admin-v5-login-card mx-auto w-full max-w-sm"
+>
         <h1 className="mb-16 font-mono text-eyebrow uppercase tracking-[0.18em] text-[var(--text-dim)]">
           {admin.brand}
         </h1>
