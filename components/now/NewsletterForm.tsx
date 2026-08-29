@@ -23,7 +23,10 @@ export function NewsletterForm({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-3 sm:flex-row">
+<form
+  action={action}
+  className="now-v4-newsletter flex flex-col gap-3 sm:flex-row"
+>
       <input
         type="email"
         name="email"
