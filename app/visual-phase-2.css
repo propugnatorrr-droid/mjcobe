@@ -1,0 +1,476 @@
+/* -------------------------------------------------------------------------- */
+/* Visual Phase 2 — music catalog                                              */
+/* -------------------------------------------------------------------------- */
+
+.music-v2-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 28rem;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(
+      115deg,
+      rgba(201, 162, 39, 0.065),
+      transparent 34%
+    ),
+    var(--ink);
+}
+
+.music-v2-hero::before {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  content: "";
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent calc(20% - 1px),
+      rgba(255, 255, 255, 0.025) 20%
+    );
+}
+
+.music-v2-hero-shell {
+  position: relative;
+  display: flex;
+  min-height: 28rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 3rem;
+  padding-top: 6rem;
+  padding-bottom: 4rem;
+}
+
+.music-v2-hero-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 56rem;
+}
+
+.music-v2-hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--champagne);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.music-v2-hero-title {
+  margin-top: 1rem;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(5.25rem, 23vw, 11rem);
+  letter-spacing: -0.035em;
+  line-height: 0.78;
+  text-transform: uppercase;
+}
+
+.music-v2-hero-intro {
+  max-width: 40rem;
+  margin-top: 1.8rem;
+  color: var(--text-dim);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.music-v2-hero-meta {
+  position: relative;
+  z-index: 2;
+  display: none;
+  flex: none;
+  text-align: right;
+}
+
+.music-v2-hero-meta p {
+  color: var(--champagne);
+  font-family: var(--font-serif);
+  font-size: 3.5rem;
+  line-height: 0.9;
+}
+
+.music-v2-hero-meta span {
+  display: block;
+  margin-top: 0.7rem;
+  color: var(--text-dim);
+  font-size: 0.5625rem;
+  font-weight: 650;
+  letter-spacing: 0.25em;
+}
+
+.music-v2-hero-disc {
+  position: absolute;
+  top: 50%;
+  right: -10rem;
+  z-index: -1;
+  width: 28rem;
+  height: 28rem;
+  transform: translateY(-50%);
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  background:
+    repeating-radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.055) 0,
+      rgba(255, 255, 255, 0.055) 1px,
+      transparent 2px,
+      transparent 8px
+    ),
+    #0d0d0f;
+  box-shadow:
+    -30px 20px 80px rgba(0, 0, 0, 0.55),
+    inset 0 0 60px rgba(255, 255, 255, 0.02);
+  opacity: 0.82;
+}
+
+.music-v2-hero-disc-ring {
+  position: absolute;
+  inset: 31%;
+  border: 1px solid rgba(201, 162, 39, 0.25);
+  border-radius: inherit;
+  background: rgba(201, 162, 39, 0.07);
+}
+
+.music-v2-hero-disc-label {
+  position: absolute;
+  inset: 42%;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: var(--champagne);
+  color: var(--ink);
+}
+
+.music-v2-catalog {
+  padding-top: clamp(4.5rem, 8vw, 7.5rem);
+  padding-bottom: clamp(5rem, 10vw, 9rem);
+}
+
+.music-v2-section + .music-v2-section {
+  margin-top: clamp(5rem, 9vw, 8rem);
+}
+
+.music-v2-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  margin-top: 1.75rem;
+}
+
+.music-v2-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--ink-2);
+  box-shadow: var(--shadow-panel);
+}
+
+.music-v2-card-art-link {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.music-v2-card-art,
+.music-v2-card-art-placeholder,
+.music-v2-card-art-treatment {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.music-v2-card-art {
+  max-width: none;
+  object-fit: cover;
+  transition:
+    filter var(--duration-signature) var(--ease-signature),
+    transform var(--duration-signature) var(--ease-signature);
+}
+
+.music-v2-card:hover .music-v2-card-art {
+  filter: brightness(1.08);
+  transform: scale(1.018);
+}
+
+.music-v2-card-art-placeholder {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(201, 162, 39, 0.1),
+      transparent 42%
+    ),
+    var(--ink);
+  color: var(--champagne);
+}
+
+.music-v2-card-art-treatment {
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10, 10, 11, 0.02) 42%,
+      rgba(10, 10, 11, 0.78) 100%
+    );
+}
+
+.music-v2-card-status {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+}
+
+.music-v2-card-arrow {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  place-items: center;
+  border: 1px solid rgba(201, 162, 39, 0.55);
+  border-radius: 9999px;
+  background: rgba(10, 10, 11, 0.84);
+  color: var(--champagne);
+  transition:
+    color var(--duration-signature) var(--ease-signature),
+    background-color var(--duration-signature) var(--ease-signature);
+}
+
+.music-v2-card:hover .music-v2-card-arrow {
+  background: var(--champagne);
+  color: var(--ink);
+}
+
+.music-v2-card-supporters {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text);
+  font-size: 0.5625rem;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.music-v2-card-supporters svg {
+  color: var(--champagne);
+}
+
+.music-v2-card-supporters span:nth-child(2) {
+  color: var(--champagne);
+}
+
+.music-v2-card-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.35rem;
+  padding: 1.25rem;
+}
+
+.music-v2-card-title {
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: clamp(1.75rem, 7vw, 2.5rem);
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+}
+
+.music-v2-card-title a {
+  transition: color var(--duration-signature) var(--ease-signature);
+}
+
+.music-v2-card-title a:hover {
+  color: var(--champagne);
+}
+
+.music-v2-card-description {
+  display: -webkit-box;
+  max-width: 54ch;
+  margin-top: 0.85rem;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.music-v2-card-link {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--text-dim);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  transition: color var(--duration-signature) var(--ease-signature);
+}
+
+.music-v2-card-link:hover {
+  color: var(--champagne);
+}
+
+.music-v2-vault-art {
+  filter: grayscale(1) brightness(0.42);
+}
+
+.music-v2-card:hover .music-v2-vault-art {
+  filter: grayscale(1) brightness(0.48);
+  transform: none;
+}
+
+.music-v2-vault-treatment {
+  background: rgba(10, 10, 11, 0.42);
+}
+
+.music-v2-vault-lock {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(201, 162, 39, 0.5);
+  border-radius: 9999px;
+  background: rgba(10, 10, 11, 0.9);
+  color: var(--champagne);
+}
+
+.music-v2-vault-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.music-v2-vault-lines span {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: var(--line);
+}
+
+.music-v2-vault-lines span:nth-child(2) {
+  width: 78%;
+}
+
+.music-v2-vault-lines span:nth-child(3) {
+  width: 52%;
+}
+
+.music-v2-empty {
+  padding: 2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--ink-2);
+}
+
+.music-v2-empty p {
+  max-width: 52ch;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+@media (min-width: 640px) {
+  .music-v2-hero-meta {
+    display: block;
+  }
+
+  .music-v2-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .music-v2-card-content {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .music-v2-hero {
+    min-height: 34rem;
+  }
+
+  .music-v2-hero-shell {
+    min-height: 34rem;
+    padding-top: 7rem;
+    padding-bottom: 5rem;
+  }
+
+  .music-v2-hero-disc {
+    right: 3vw;
+    width: 34rem;
+    height: 34rem;
+  }
+
+  .music-v2-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .music-v2-grid-featured {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .music-v2-card-featured {
+    display: grid;
+    grid-template-columns: minmax(23rem, 0.92fr) minmax(0, 1.08fr);
+  }
+
+  .music-v2-card-featured .music-v2-card-art-link {
+    height: 100%;
+    min-height: 34rem;
+    aspect-ratio: auto;
+    border-right: 1px solid var(--line);
+  }
+
+  .music-v2-card-featured .music-v2-card-content {
+    justify-content: center;
+    padding: 3rem;
+  }
+
+  .music-v2-card-featured .music-v2-card-title {
+    font-size: clamp(3.25rem, 5vw, 5.5rem);
+  }
+
+  .music-v2-card-featured .music-v2-card-description {
+    max-width: 60ch;
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .music-v2-hero-disc {
+    right: 8vw;
+  }
+
+  .music-v2-grid {
+    gap: 1.75rem;
+  }
+}
