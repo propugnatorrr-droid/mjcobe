@@ -1,0 +1,871 @@
+/* =========================================================
+   VISUAL PHASE 3
+   Checkout, sponsorship and confirmation
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   Shared checkout page
+   --------------------------------------------------------- */
+
+.checkout-v3-page,
+.sponsor-v3-page,
+.thanks-v3-page {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  background:
+    radial-gradient(
+      circle at 50% -10rem,
+      rgba(201, 162, 39, 0.09),
+      transparent 38rem
+    ),
+    var(--ink);
+}
+
+.checkout-v3-page::before,
+.sponsor-v3-page::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  opacity: 0.13;
+  background-image:
+    linear-gradient(
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px
+    );
+  background-size: 5rem 5rem;
+  mask-image: linear-gradient(
+    to bottom,
+    black,
+    transparent 72%
+  );
+}
+
+.checkout-v3-shell {
+  width: min(100% - 2rem, 88rem);
+  margin-inline: auto;
+  padding-top: clamp(2rem, 5vw, 4.5rem);
+  padding-bottom: clamp(5rem, 9vw, 8rem);
+}
+
+.checkout-v3-header {
+  position: relative;
+  min-height: clamp(12rem, 28vw, 21rem);
+  padding:
+    clamp(2rem, 6vw, 5rem)
+    clamp(1.25rem, 5vw, 4rem);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(
+      circle at 88% 25%,
+      rgba(201, 162, 39, 0.15),
+      transparent 22rem
+    ),
+    linear-gradient(
+      125deg,
+      rgba(29, 28, 25, 0.98),
+      rgba(13, 13, 14, 0.99) 62%
+    );
+  box-shadow:
+    0 2rem 6rem rgba(0, 0, 0, 0.32),
+    inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.checkout-v3-header::before {
+  position: absolute;
+  top: 50%;
+  right: clamp(-9rem, -5vw, -3rem);
+  width: clamp(17rem, 38vw, 34rem);
+  aspect-ratio: 1;
+  content: "";
+  pointer-events: none;
+  border: 1px solid rgba(201, 162, 39, 0.15);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  box-shadow:
+    0 0 0 3rem rgba(201, 162, 39, 0.018),
+    0 0 0 7rem rgba(201, 162, 39, 0.012);
+}
+
+.checkout-v3-header::after {
+  position: absolute;
+  right: 7%;
+  bottom: 13%;
+  width: clamp(4rem, 10vw, 8rem);
+  height: 1px;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(201, 162, 39, 0.8)
+  );
+}
+
+.checkout-v3-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+.checkout-v3-header h1 {
+  max-width: 13ch;
+  font-size: clamp(3.25rem, 8vw, 7.75rem) !important;
+  line-height: 0.84 !important;
+  letter-spacing: 0.015em !important;
+  text-wrap: balance;
+}
+
+.checkout-v3-song-nav {
+  display: flex;
+  gap: 0.65rem;
+  max-width: 100%;
+  margin-top: 1.25rem;
+  padding-block: 0.5rem;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+.checkout-v3-song-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.checkout-v3-song-nav > span {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  flex: 0 0 auto;
+  padding-right: 0.75rem;
+  background: linear-gradient(
+    90deg,
+    var(--ink) 76%,
+    transparent
+  );
+}
+
+.checkout-v3-song-nav > a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  flex: 0 0 auto;
+  padding-inline: 1.1rem;
+  white-space: nowrap;
+}
+
+.checkout-v3-form {
+  position: relative;
+}
+
+.checkout-v3-form > div:first-of-type {
+  gap: 1.25rem;
+}
+
+.checkout-v3-step {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.085) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(25, 25, 27, 0.98),
+      rgba(13, 13, 14, 0.99)
+    ) !important;
+  box-shadow:
+    0 1.25rem 4rem rgba(0, 0, 0, 0.18),
+    inset 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.checkout-v3-step::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    rgba(201, 162, 39, 0),
+    rgba(201, 162, 39, 0.65),
+    rgba(201, 162, 39, 0)
+  );
+  opacity: 0.55;
+}
+
+.checkout-v3-step > div[aria-hidden="true"] {
+  margin-bottom: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.checkout-v3-step > div[aria-hidden="true"] > span:first-child {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: rgba(201, 162, 39, 0.08);
+  box-shadow: 0 0 1.5rem rgba(201, 162, 39, 0.08);
+}
+
+.checkout-v3-step > div[aria-hidden="true"] h2 {
+  font-size: clamp(1.45rem, 3vw, 2.15rem);
+  line-height: 1;
+}
+
+.checkout-v3-amount {
+  min-width: 0;
+}
+
+.checkout-v3-amount > div:first-of-type {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.checkout-v3-amount > div:first-of-type > button {
+  min-height: 7.75rem;
+  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(30, 30, 32, 0.98),
+      rgba(17, 17, 18, 0.99)
+    ) !important;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.checkout-v3-amount > div:first-of-type > button:hover:not(:disabled) {
+  border-color: rgba(201, 162, 39, 0.55) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(36, 33, 26, 0.99),
+      rgba(17, 17, 18, 0.99)
+    ) !important;
+}
+
+.checkout-v3-amount
+  > div:first-of-type
+  > button[aria-pressed="true"] {
+  border-color: var(--champagne) !important;
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(201, 162, 39, 0.16),
+      transparent 14rem
+    ),
+    rgba(201, 162, 39, 0.05) !important;
+  box-shadow:
+    0 0 0 1px rgba(201, 162, 39, 0.1),
+    0 1.25rem 3rem rgba(0, 0, 0, 0.2),
+    0 0 2rem rgba(201, 162, 39, 0.06) !important;
+}
+
+.checkout-v3-amount
+  > div:first-of-type
+  > button
+  > span:first-of-type {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.checkout-v3-form input:not([type="hidden"]):not([type="checkbox"]),
+.sponsor-v3-form input:not([type="hidden"]):not([type="checkbox"]),
+.sponsor-v3-form textarea {
+  min-height: 3.5rem;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(6, 6, 7, 0.72);
+}
+
+.checkout-v3-form
+  input:not([type="hidden"]):not([type="checkbox"]):hover,
+.sponsor-v3-form
+  input:not([type="hidden"]):not([type="checkbox"]):hover,
+.sponsor-v3-form textarea:hover {
+  border-color: rgba(201, 162, 39, 0.28);
+}
+
+.checkout-v3-form
+  input:not([type="hidden"]):not([type="checkbox"]):focus,
+.sponsor-v3-form
+  input:not([type="hidden"]):not([type="checkbox"]):focus,
+.sponsor-v3-form textarea:focus {
+  border-color: var(--champagne);
+  background: rgba(12, 12, 13, 0.96);
+}
+
+.checkout-v3-summary {
+  position: relative;
+}
+
+.checkout-v3-summary > div {
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(201, 162, 39, 0.13),
+      transparent 17rem
+    ),
+    linear-gradient(
+      150deg,
+      rgba(27, 26, 23, 0.99),
+      rgba(12, 12, 13, 0.99)
+    ) !important;
+  box-shadow:
+    0 2rem 5rem rgba(0, 0, 0, 0.3),
+    inset 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.checkout-v3-summary > div::before {
+  display: block;
+  width: 100%;
+  height: 2px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--champagne),
+    transparent
+  );
+  opacity: 0.72;
+}
+
+.checkout-v3-summary .text-gold {
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+}
+
+.checkout-v3-submit {
+  position: relative;
+}
+
+.checkout-v3-submit button {
+  min-height: 3.75rem;
+  box-shadow:
+    0 0 2rem rgba(201, 162, 39, 0.2),
+    0 1rem 2.5rem rgba(0, 0, 0, 0.2) !important;
+}
+
+.checkout-v3-submit button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 4px;
+}
+
+/* ---------------------------------------------------------
+   Stripe payment step
+   --------------------------------------------------------- */
+
+.checkout-v3-stripe {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(201, 162, 39, 0.46) !important;
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(201, 162, 39, 0.13),
+      transparent 21rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(25, 24, 21, 0.99),
+      rgba(12, 12, 13, 0.99)
+    ) !important;
+  box-shadow:
+    0 2rem 6rem rgba(0, 0, 0, 0.32),
+    inset 0 1px rgba(255, 255, 255, 0.035) !important;
+}
+
+.checkout-v3-stripe::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--champagne),
+    transparent
+  );
+}
+
+.checkout-v3-stripe button {
+  min-height: 3.75rem !important;
+}
+
+/* ---------------------------------------------------------
+   Business sponsorship
+   --------------------------------------------------------- */
+
+.sponsor-v3-hero {
+  position: relative;
+  min-height: clamp(27rem, 58vw, 43rem);
+  display: grid;
+  align-items: end;
+  overflow: hidden;
+  border-bottom-color: rgba(201, 162, 39, 0.2) !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(8, 8, 9, 0.99) 0%,
+      rgba(8, 8, 9, 0.88) 43%,
+      rgba(8, 8, 9, 0.28) 72%,
+      rgba(8, 8, 9, 0.15) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(8, 8, 9, 0.94),
+      transparent 58%
+    ),
+    url("/media/partners-hero-desktop.webp")
+      72% center / cover no-repeat;
+}
+
+.sponsor-v3-hero > div[aria-hidden="true"] {
+  display: none;
+}
+
+.sponsor-v3-hero .site-shell {
+  width: min(100% - 2rem, 88rem);
+  margin-inline: auto;
+  padding-top: clamp(6rem, 12vw, 10rem);
+  padding-bottom: clamp(3rem, 7vw, 6rem);
+  text-align: left;
+}
+
+.sponsor-v3-hero h1 {
+  max-width: 9ch;
+  margin-inline: 0;
+  font-size: clamp(4rem, 10vw, 9rem) !important;
+  line-height: 0.82 !important;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+.sponsor-v3-hero p {
+  margin-inline: 0;
+}
+
+.sponsor-v3-form {
+  position: relative;
+}
+
+.sponsor-v3-form-fieldset {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.085) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(25, 25, 27, 0.98),
+      rgba(13, 13, 14, 0.99)
+    ) !important;
+  box-shadow:
+    0 1.25rem 4rem rgba(0, 0, 0, 0.18),
+    inset 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.sponsor-v3-form-fieldset::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(201, 162, 39, 0.65),
+    transparent
+  );
+  opacity: 0.5;
+}
+
+.sponsor-v3-claim {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 1.5rem 4rem rgba(0, 0, 0, 0.24),
+    0 0 2rem rgba(201, 162, 39, 0.05);
+}
+
+.sponsor-v3-claim::after {
+  position: absolute;
+  top: -5rem;
+  right: -3rem;
+  width: 12rem;
+  height: 12rem;
+  content: "";
+  pointer-events: none;
+  border: 1px solid rgba(201, 162, 39, 0.14);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2.5rem rgba(201, 162, 39, 0.02);
+}
+
+.sponsor-v3-summary > div {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(201, 162, 39, 0.14),
+      transparent 19rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(28, 26, 22, 0.99),
+      rgba(12, 12, 13, 0.99)
+    ) !important;
+  box-shadow:
+    0 2rem 5rem rgba(0, 0, 0, 0.34) !important;
+}
+
+.sponsor-v3-summary > div::before {
+  display: block;
+  width: 100%;
+  height: 2px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--champagne),
+    transparent
+  );
+}
+
+.sponsor-v3-upload {
+  border-color: rgba(201, 162, 39, 0.24) !important;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.012),
+      rgba(255, 255, 255, 0.012) 0.65rem,
+      transparent 0.65rem,
+      transparent 1.3rem
+    ),
+    rgba(7, 7, 8, 0.68) !important;
+}
+
+/* ---------------------------------------------------------
+   Confirmation
+   --------------------------------------------------------- */
+
+.thanks-v3-page {
+  min-height: 100svh;
+  padding-bottom: 0 !important;
+  background: var(--ink);
+}
+
+.thanks-v3-settled {
+  position: relative;
+  min-height: calc(100svh - var(--header-height-desktop));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+}
+
+.thanks-v3-settled::before {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  content: "";
+  background:
+    linear-gradient(
+      90deg,
+      rgba(5, 5, 6, 0.9) 0%,
+      rgba(5, 5, 6, 0.58) 45%,
+      rgba(5, 5, 6, 0.76) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(5, 5, 6, 0.98) 0%,
+      transparent 50%,
+      rgba(5, 5, 6, 0.65) 100%
+    ),
+    url("/media/confirmation-background.webp")
+      center / cover no-repeat;
+}
+
+.thanks-v3-settled::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      rgba(201, 162, 39, 0.09),
+      transparent 24rem
+    );
+}
+
+.thanks-v3-card {
+  width: min(100% - 2rem, 50rem);
+  margin-inline: auto;
+  padding:
+    clamp(3rem, 7vw, 6rem)
+    clamp(1.25rem, 6vw, 4rem);
+  text-align: center;
+}
+
+.thanks-v3-card h1 {
+  margin-inline: auto;
+  max-width: 12ch;
+  font-size: clamp(3.5rem, 10vw, 8rem) !important;
+  line-height: 0.84 !important;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+.thanks-v3-number {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: clamp(2rem, 5vw, 3.5rem);
+  padding:
+    1.8rem
+    clamp(2rem, 6vw, 4.5rem);
+  border-block: 1px solid rgba(201, 162, 39, 0.3);
+}
+
+.thanks-v3-number > p {
+  text-shadow:
+    0 0 2rem rgba(201, 162, 39, 0.16);
+}
+
+.thanks-v3-share {
+  margin-top: clamp(2.25rem, 6vw, 4rem);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--radius-panel);
+  background: rgba(11, 11, 12, 0.84);
+  box-shadow:
+    0 1.5rem 5rem rgba(0, 0, 0, 0.35),
+    inset 0 1px rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(18px);
+}
+
+.thanks-v3-actions a {
+  min-height: 3.25rem;
+  padding-inline: 1.5rem;
+}
+
+.thanks-v3-processing {
+  min-height: calc(100svh - var(--header-height-desktop));
+  display: flex;
+  align-items: center;
+  padding-block: clamp(4rem, 10vw, 8rem);
+}
+
+.thanks-v3-processing > div {
+  position: relative;
+  overflow: hidden;
+  padding:
+    clamp(2rem, 6vw, 4.5rem);
+  border: 1px solid rgba(201, 162, 39, 0.28);
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(201, 162, 39, 0.12),
+      transparent 20rem
+    ),
+    rgba(18, 18, 20, 0.96);
+  box-shadow:
+    0 2rem 6rem rgba(0, 0, 0, 0.3);
+}
+
+/* ---------------------------------------------------------
+   Responsive checkout
+   --------------------------------------------------------- */
+
+@media (min-width: 768px) {
+  .checkout-v3-amount > div:first-of-type {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023px) {
+  .checkout-v3-form {
+    gap: 1.25rem !important;
+  }
+
+  .checkout-v3-summary {
+    order: -1;
+    position: static !important;
+  }
+
+  .checkout-v3-summary > div > div:nth-child(2),
+  .checkout-v3-summary > div > div:nth-child(3) {
+    padding-block: 1.25rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .checkout-v3-shell {
+    width: min(100% - 1rem, 88rem);
+    padding-top: 0.75rem;
+    padding-bottom: 4.5rem;
+  }
+
+  .checkout-v3-header {
+    min-height: 16rem;
+    padding: 2rem 1.25rem;
+    border-radius: 0.75rem;
+  }
+
+  .checkout-v3-header h1 {
+    font-size: clamp(3rem, 17vw, 5.2rem) !important;
+  }
+
+  .checkout-v3-header > p:last-child {
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .checkout-v3-song-nav {
+    margin-inline: -0.25rem;
+    padding-inline: 0.25rem;
+  }
+
+  .checkout-v3-step {
+    padding: 1.25rem !important;
+    border-radius: 0.75rem;
+  }
+
+  .checkout-v3-amount > div:first-of-type {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .checkout-v3-amount > div:first-of-type > button {
+    min-height: 6.25rem;
+  }
+
+  .checkout-v3-summary > div {
+    border-radius: 0.75rem;
+  }
+
+  .sponsor-v3-hero {
+    min-height: 38rem;
+    background:
+      linear-gradient(
+        0deg,
+        rgba(7, 7, 8, 0.98) 0%,
+        rgba(7, 7, 8, 0.48) 58%,
+        rgba(7, 7, 8, 0.12) 100%
+      ),
+      url("/media/partners-hero-mobile.webp")
+        center top / cover no-repeat;
+  }
+
+  .sponsor-v3-hero .site-shell {
+    padding-top: 14rem;
+    padding-bottom: 3rem;
+  }
+
+  .sponsor-v3-hero h1 {
+    font-size: clamp(3.75rem, 18vw, 6.5rem) !important;
+  }
+
+  .sponsor-v3-form-fieldset {
+    padding: 1.25rem !important;
+    border-radius: 0.75rem;
+  }
+
+  .thanks-v3-settled {
+    align-items: flex-end;
+  }
+
+  .thanks-v3-settled::before {
+    background:
+      linear-gradient(
+        0deg,
+        rgba(5, 5, 6, 0.99) 0%,
+        rgba(5, 5, 6, 0.7) 57%,
+        rgba(5, 5, 6, 0.18) 100%
+      ),
+      url("/media/confirmation-background.webp")
+        58% center / cover no-repeat;
+  }
+
+  .thanks-v3-card {
+    padding-top: 14rem;
+    padding-bottom: 4rem;
+  }
+
+  .thanks-v3-card h1 {
+    font-size: clamp(3.25rem, 17vw, 5.75rem) !important;
+  }
+
+  .thanks-v3-number {
+    width: 100%;
+    padding-inline: 1rem;
+  }
+
+  .thanks-v3-share {
+    padding: 0.75rem;
+  }
+
+  .thanks-v3-actions {
+    gap: 0.75rem;
+  }
+
+  .thanks-v3-actions a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .thanks-v3-processing {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 380px) {
+  .checkout-v3-header {
+    padding-inline: 1rem;
+  }
+
+  .checkout-v3-header h1 {
+    font-size: 2.8rem !important;
+  }
+
+  .checkout-v3-step {
+    padding-inline: 1rem !important;
+  }
+
+  .checkout-v3-amount
+    > div:first-of-type
+    > button {
+    padding-inline: 0.85rem;
+  }
+
+  .sponsor-v3-hero h1 {
+    font-size: 3.4rem !important;
+  }
+
+  .thanks-v3-card {
+    width: min(100% - 1rem, 50rem);
+    padding-inline: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkout-v3-page *,
+  .sponsor-v3-page *,
+  .thanks-v3-page * {
+    scroll-behavior: auto !important;
+  }
+}
