@@ -46,7 +46,7 @@ export async function FundingPanel({
   return (
     <section
       aria-label={backed}
-      className="border-y border-[var(--line)] bg-[var(--ink-2)]"
+      className="song-v2-funding border-y border-[var(--line)] bg-[var(--ink-2)]"
     >
       <div className="site-shell py-8 sm:py-10">
         <div
