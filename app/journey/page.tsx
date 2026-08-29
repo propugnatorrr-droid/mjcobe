@@ -38,11 +38,14 @@ export default async function JourneyPage({
     filter === 'all' ? entries : entries.filter((e) => journeyGroup(e.kind) === filter);
 
   return (
-    <main className="surface-ink min-h-screen">
+    <main className="story-v4-page journey-v4-page surface-ink min-h-screen">
       <SiteNav sub="THE JOURNEY" />
 
       {/* Title band */}
-      <section className="border-b py-14" style={{ borderColor: 'var(--line)' }}>
+<section
+  className="journey-v4-hero border-b py-14"
+  style={{ borderColor: 'var(--line)' }}
+>
         <div className="mx-auto max-w-[92rem] px-6 text-center md:px-10">
           <h1 className="font-display text-[clamp(2.5rem,8vw,6rem)] uppercase leading-none text-gold">
             {title}
@@ -52,9 +55,9 @@ export default async function JourneyPage({
         </div>
       </section>
 
-      <div className="mx-auto max-w-[68rem] px-6 py-12 md:px-10">
+      <div className="journey-v4-shell">
         {/* Filters, right-aligned as in the mockup */}
-        <div className="flex flex-wrap justify-center gap-3 lg:justify-end">
+        <div className="journey-v4-filters flex flex-wrap justify-center gap-3 lg:justify-end">
           {FILTERS.map((f, i) => (
             <Link
               key={f}
@@ -75,7 +78,7 @@ export default async function JourneyPage({
           <p className="mt-16 text-center text-body text-[var(--text-dim)]">{empty}</p>
         ) : (
           /* Centre spine with events alternating left/right on wide screens. */
-          <ol className="relative mt-12">
+          <ol className="journey-v4-timeline relative mt-12">
             <span
               aria-hidden
               className="absolute inset-y-0 left-4 w-px lg:left-1/2 lg:-translate-x-1/2"
@@ -88,7 +91,10 @@ export default async function JourneyPage({
                 const right = i % 2 === 1;
 
                 return (
-                  <li key={event.id} className="relative pb-8 last:pb-0">
+<li
+  key={event.id}
+  className="journey-v4-event relative pb-8 last:pb-0"
+>
                     <span
                       aria-hidden
                       className="absolute left-4 top-6 z-10 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border lg:left-1/2"
@@ -107,7 +113,7 @@ export default async function JourneyPage({
                       }`}
                     >
                       <div
-                        className="overflow-hidden rounded-[var(--radius-panel)] border"
+                        className="journey-v4-card overflow-hidden rounded-[var(--radius-panel)] border"
                         style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
                       >
                         {event.imagePath ? (
