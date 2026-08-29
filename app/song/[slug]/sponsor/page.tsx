@@ -133,11 +133,11 @@ export default async function SponsorPage({
   );
 
   return (
-    <main className="surface-ink min-h-screen">
+    <main className="sponsor-v3-page surface-ink min-h-screen">
       <SimulationRibbon />
       <SiteNav sub="BUSINESS SPONSORSHIP" />
 
-      <section className="relative overflow-hidden border-b border-[var(--line)]">
+      <section className="sponsor-v3-hero relative overflow-hidden border-b border-[var(--line)]">
         <div
           aria-hidden
           className={[
