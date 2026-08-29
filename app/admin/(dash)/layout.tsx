@@ -1,6 +1,20 @@
 import Link from 'next/link';
 import {
-  LayoutGrid, Music, Images, History, Receipt, Landmark, Wallet, Settings, FileText, ShieldCheck, LogOut, Ban, Link2, Bell,
+  Ban,
+  Bell,
+  CircleDollarSign,
+  FileText,
+  History,
+  Images,
+  Landmark,
+  LayoutGrid,
+  Link2,
+  LogOut,
+  Music,
+  Receipt,
+  Settings,
+  ShieldCheck,
+  Wallet,
 } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { signOut } from '@/lib/admin/actions';
@@ -13,6 +27,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const links = [
     { href: '/admin', label: admin.nav.overview, icon: LayoutGrid },
     { href: '/admin/songs', label: admin.nav.songs, icon: Music },
+    {
+      href: '/admin/campaigns',
+      label: admin.nav.campaigns,
+      icon: CircleDollarSign,
+    },
     { href: '/admin/media', label: admin.nav.media, icon: Images },
     { href: '/admin/journey', label: admin.nav.journey, icon: History },
     { href: '/admin/contributions', label: admin.nav.contributions, icon: Receipt },
@@ -32,12 +51,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ];
 
   return (
-    <div className="surface-ink flex min-h-screen">
+    <div className="admin-v5-shell surface-ink flex min-h-screen">
       <aside
-        className="flex w-64 shrink-0 flex-col border-r px-5 py-8"
+        className="admin-v5-sidebar flex w-64 shrink-0 flex-col border-r px-5 py-8"
         style={{ borderColor: 'var(--line)' }}
       >
-        <div className="mb-9 flex items-center gap-3 px-2">
+        <div className="admin-v5-brand mb-9 flex items-center gap-3 px-2">
           <span
             aria-hidden
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-serif text-base text-gold"
@@ -53,7 +72,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </span>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-1">
+        <nav className="admin-v5-nav flex flex-1 flex-col gap-1">
           {links.map((l) => {
             const Icon = l.icon;
             return (
@@ -69,7 +88,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           })}
         </nav>
 
-        <form action={signOut} className="mt-auto flex flex-col gap-3 border-t px-3 pt-6" style={{ borderColor: 'var(--line)' }}>
+        <form   action={signOut}   className="admin-v5-user mt-auto flex flex-col gap-3 border-t px-3 pt-6"   style={{ borderColor: 'var(--line)' }} >
           <span className="truncate font-mono text-eyebrow text-[var(--text-dim)]">
             {me.email}
           </span>
@@ -83,7 +102,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </form>
       </aside>
 
-      <div className="flex-1 px-8 py-10 md:px-12 md:py-14">{children}</div>
+<main className="admin-v5-content flex-1">
+  {children}
+</main>
     </div>
   );
 }
