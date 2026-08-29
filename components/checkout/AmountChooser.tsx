@@ -95,7 +95,7 @@ export function AmountChooser({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="checkout-v3-amount flex flex-col gap-6">
       <input
         type="hidden"
         name={fieldName}
