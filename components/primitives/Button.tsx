@@ -2,50 +2,15 @@ import Link from 'next/link';
 
 type Variant = 'primary' | 'ghost' | 'quiet';
 
-const BASE = [
-  'inline-flex min-h-12 items-center justify-center gap-2',
-  'rounded-full px-7 py-3',
-  'font-ui text-xs font-semibold uppercase tracking-[0.12em]',
-  'transition-[color,background-color,border-color,filter,transform,box-shadow]',
-  '[transition-duration:var(--duration-signature)]',
-  '[transition-timing-function:var(--ease-signature)]',
-  'focus-visible:outline focus-visible:outline-2',
-  'focus-visible:outline-offset-2',
-  'focus-visible:outline-[var(--champagne)]',
-  'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40',
-].join(' ');
-
-function variantClass(variant: Variant) {
-  switch (variant) {
-    case 'primary':
-      return [
-        'bg-gold',
-        'border border-transparent',
-        'text-[var(--ink)]',
-        'hover:brightness-110',
-        'active:translate-y-px',
-      ].join(' ');
-
-    case 'quiet':
-      return [
-        'border border-[var(--line)]',
-        'bg-[var(--ink-2)]',
-        'text-[var(--text)]',
-        'hover:border-[var(--line-strong)]',
-        'hover:text-[var(--champagne)]',
-        'active:translate-y-px',
-      ].join(' ');
-
-    case 'ghost':
-    default:
-      return [
-        'border border-[var(--champagne)]',
-        'bg-transparent',
-        'text-[var(--champagne)]',
-        'hover:bg-[rgba(201,162,39,0.09)]',
-        'active:translate-y-px',
-      ].join(' ');
-  }
+function classes(variant: Variant, className: string, glow: boolean) {
+  return [
+    'mj-button',
+    `mj-button--${variant}`,
+    glow ? 'mj-button--glow' : '',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 type ButtonProps = {
@@ -78,8 +43,7 @@ export function Button({
     <button
       {...props}
       type={type}
-      className={`${BASE} ${variantClass(variant)} ${className}`}
-      style={glow ? { boxShadow: 'var(--glow-champagne)' } : undefined}
+      className={classes(variant, className, glow)}
       disabled={disabled}
     >
       {children}
@@ -111,8 +75,7 @@ export function ButtonLink({
     <Link
       {...props}
       href={href}
-      className={`${BASE} ${variantClass(variant)} ${className}`}
-      style={glow ? { boxShadow: 'var(--glow-champagne)' } : undefined}
+      className={classes(variant, className, glow)}
     >
       {children}
     </Link>
