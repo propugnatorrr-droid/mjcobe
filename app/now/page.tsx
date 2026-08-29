@@ -53,7 +53,7 @@ function Panel({
 }) {
   return (
     <section
-      className="rounded-[var(--radius-panel)] border p-5"
+      className="now-v4-panel rounded-[var(--radius-panel)] border p-5"
       style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
     >
       <p className="flex items-center gap-2 font-ui text-[0.625rem] uppercase tracking-[0.24em] text-[var(--champagne)]">
@@ -111,11 +111,11 @@ export default async function NowPage() {
   ).filter((p) => p.url);
 
   return (
-    <main className="surface-ink min-h-screen">
+    <main className="story-v4-page now-v4-page surface-ink min-h-screen">
       <SiteNav />
 
       {/* Hero */}
-      <section className="relative isolate min-h-[20rem] overflow-hidden md:min-h-[24rem]">
+      <section className="now-v4-hero relative isolate min-h-[20rem] overflow-hidden md:min-h-[24rem]">
         <div className="absolute inset-0 -z-10">
           <div className="absolute inset-y-0 right-0 w-full md:w-[52%]">
             <PhotoTreatment vignette grain fill>
@@ -146,9 +146,9 @@ export default async function NowPage() {
         </div>
       </section>
 
-      <div className="mx-auto grid max-w-[92rem] grid-cols-1 gap-6 px-6 py-10 md:px-10 lg:grid-cols-2">
+      <div className="now-v4-grid grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left column */}
-        <div className="flex flex-col gap-6">
+        <div className="now-v4-column flex flex-col gap-6">
           {activity.length > 0 ? (
             <Panel title={happeningNow} icon={<Flame aria-hidden size={13} />}>
               <ul className="flex flex-col divide-y" style={{ borderColor: 'var(--line)' }}>
@@ -272,9 +272,9 @@ export default async function NowPage() {
         </div>
 
         {/* Right column: the link rail */}
-        <div className="flex flex-col gap-6">
+        <div className="now-v4-column flex flex-col gap-6">
           {socialLinks.length > 0 ? (
-            <div className="flex flex-col gap-2.5">
+            <div className="now-v4-links flex flex-col gap-2.5">
               {socialLinks.map((p) => (
                 <Link
                   key={p.slug}
