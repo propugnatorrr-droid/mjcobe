@@ -16,8 +16,10 @@ function isCurrentRoute(pathname: string, href: string) {
 
 export function MobileNavToggle({
   links,
+  ctaLabel,
 }: {
   links: PrimaryNavLink[];
+  ctaLabel: string;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -126,7 +128,7 @@ export function MobileNavToggle({
               onClick={closeMenu}
               className="site-nav__mobile-primary"
             >
-              Back a record
+              {ctaLabel}
             </Link>
           </nav>
         </>
