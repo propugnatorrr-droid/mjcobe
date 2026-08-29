@@ -21,7 +21,7 @@ export async function TierGrid({
   const soldOut = await text('song.tiers.sold_out');
 
   return (
-    <section className="py-16 md:py-24">
+    <section className="song-v2-tiers py-16 md:py-24">
       <Eyebrow>{await text('song.tiers.heading')}</Eyebrow>
 
       <div className="mt-10 flex flex-col gap-4">
