@@ -474,3 +474,231 @@
     gap: 1.75rem;
   }
 }
+/* -------------------------------------------------------------------------- */
+/* Visual Phase 2C — song campaign hero                                        */
+/* -------------------------------------------------------------------------- */
+
+.song-v2-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100svh - var(--header-height-mobile));
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  background: var(--ink);
+}
+
+.song-v2-hero-media,
+.song-v2-hero-image,
+.song-v2-hero-treatment {
+  position: absolute;
+  inset: 0;
+}
+
+.song-v2-hero-media {
+  z-index: -3;
+  display: block;
+}
+
+.song-v2-hero-image {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center 34%;
+}
+
+.song-v2-hero-treatment {
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10, 10, 11, 0.08) 0%,
+      rgba(10, 10, 11, 0.26) 32%,
+      rgba(10, 10, 11, 0.86) 76%,
+      var(--ink) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(10, 10, 11, 0.4),
+      rgba(10, 10, 11, 0.05)
+    );
+}
+
+.song-v2-hero-shell {
+  position: relative;
+  display: flex;
+  min-height: calc(100svh - var(--header-height-mobile));
+  align-items: flex-end;
+  padding-top: 7rem;
+  padding-bottom: 5rem;
+}
+
+.song-v2-hero-copy {
+  width: 100%;
+  max-width: 60rem;
+}
+
+.song-v2-hero-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--text-dim);
+  font-size: 0.5625rem;
+  font-weight: 650;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.song-v2-hero-rule {
+  width: 2rem;
+  height: 1px;
+  background: var(--champagne);
+  opacity: 0.62;
+}
+
+.song-v2-title {
+  max-width: 9ch;
+  margin-top: 1.25rem;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(4.4rem, 20vw, 9rem);
+  letter-spacing: -0.04em;
+  line-height: 0.82;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.song-v2-objective {
+  max-width: 42rem;
+  margin-top: 1.5rem;
+  color: var(--text-dim);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.song-v2-player {
+  max-width: 44rem;
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: rgba(10, 10, 11, 0.91);
+  box-shadow: var(--shadow-panel);
+}
+
+.song-v2-player-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.song-v2-player-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  place-items: center;
+  border: 1px solid rgba(201, 162, 39, 0.42);
+  border-radius: 9999px;
+  color: var(--champagne);
+}
+
+.song-v2-player-heading p {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.song-v2-player-heading span {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--text-dim);
+  font-size: 0.5rem;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.song-v2-scroll {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.75rem;
+  display: none;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--text-dim);
+  font-size: 0.5625rem;
+  font-weight: 650;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: color var(--duration-signature) var(--ease-signature);
+}
+
+.song-v2-scroll:hover {
+  color: var(--champagne);
+}
+
+@media (min-width: 768px) {
+  .song-v2-hero {
+    min-height: 44rem;
+  }
+
+  .song-v2-hero-shell {
+    min-height: 44rem;
+  }
+
+  .song-v2-scroll {
+    display: flex;
+  }
+}
+
+@media (min-width: 1024px) {
+  .song-v2-hero {
+    min-height: calc(100svh - var(--header-height-desktop));
+    max-height: 58rem;
+  }
+
+  .song-v2-hero-image {
+    object-position: center;
+  }
+
+  .song-v2-hero-treatment {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(10, 10, 11, 0.78) 0%,
+        rgba(10, 10, 11, 0.48) 42%,
+        rgba(10, 10, 11, 0.14) 68%,
+        rgba(10, 10, 11, 0.3) 100%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(10, 10, 11, 0.06) 0%,
+        rgba(10, 10, 11, 0.16) 62%,
+        var(--ink) 100%
+      );
+  }
+
+  .song-v2-hero-shell {
+    min-height: calc(100svh - var(--header-height-desktop));
+    max-height: 58rem;
+    align-items: center;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+
+  .song-v2-title {
+    font-size: clamp(6rem, 10vw, 10rem);
+  }
+
+  .song-v2-player {
+    padding: 1.25rem;
+  }
+}
