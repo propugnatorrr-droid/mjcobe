@@ -41,7 +41,7 @@ export async function LeaderboardPanel({
   const remaining = Math.max(0, totalCount - rows.length);
 
   return (
-    <section className="py-12 md:py-16 lg:py-20">
+    <section className="song-v2-leaderboard py-12 md:py-16 lg:py-20">
       <div className="flex items-center justify-between gap-5">
         <Eyebrow>{heading}</Eyebrow>
 
