@@ -5,13 +5,17 @@ loadEnv({
   override: true,
 });
 
-import {
-  and,
-  asc,
-  eq,
-} from 'drizzle-orm';
-import { db } from '@/lib/db/client';
-import * as s from '@/lib/db/schema';
+const [
+  { and, asc, eq },
+  { db },
+  schema,
+] = await Promise.all([
+  import('drizzle-orm'),
+  import('@/lib/db/client'),
+  import('@/lib/db/schema'),
+]);
+
+const s = schema;
 
 const DEFAULT_GOAL_CENTS = 2_500_000;
 
