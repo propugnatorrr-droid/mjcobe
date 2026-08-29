@@ -3,6 +3,7 @@ import localFont from 'next/font/local';
 import { GrainOverlay } from '@/components/GrainOverlay';
 import './globals.css';
 import './visual-phase-2.css';
+import './visual-phase-3.css';
 
 const tanker = localFont({
   src: './fonts/tanker/Tanker-Regular.woff2',
