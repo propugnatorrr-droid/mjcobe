@@ -53,7 +53,7 @@ export async function SiteNav({ sub }: { sub?: string }) {
             {cta}
           </ButtonLink>
 
-          <MobileNavToggle links={links} />
+          <MobileNavToggle   links={links}   ctaLabel={cta} />
         </div>
       </div>
     </header>
