@@ -33,7 +33,7 @@ export async function CrownPanel({
     : crown.floorCents;
 
   return (
-    <section className="py-16 md:py-24">
+    <section className="song-v2-crown py-16 md:py-24">
       <Eyebrow>{await text('song.section.crown')}</Eyebrow>
 
       <p className="mt-8 max-w-[62ch] text-body text-[var(--text)]">
