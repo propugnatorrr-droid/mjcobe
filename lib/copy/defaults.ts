@@ -260,6 +260,9 @@ const copyDefaults = {
   'footer.media_kit': 'MEDIA KIT',
 
   // ---- Music catalog --------------------------------------------------------
+  'music.eyebrow': 'THE DISCOGRAPHY',
+'music.intro':
+  'Every record is a chapter. Listen to what is finished, preview what is next, and help build the songs still taking shape.',
   'music.title': 'MUSIC',
   'music.released': 'RELEASED',
   'music.released_sub': 'AVAILABLE EVERYWHERE',
