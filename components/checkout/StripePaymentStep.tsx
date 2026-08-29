@@ -163,14 +163,15 @@ function StripePaymentForm({
   return (
     <form
       onSubmit={submit}
-      className={[
-        'mx-auto w-full max-w-2xl',
-        'rounded-[var(--radius-panel)]',
-        'border border-[rgba(201,162,39,0.42)]',
-        'bg-[var(--ink-2)] p-5',
-        'shadow-[var(--shadow-panel)]',
-        'sm:p-8',
-      ].join(' ')}
+className={[
+  'checkout-v3-stripe',
+  'mx-auto w-full max-w-2xl',
+  'rounded-[var(--radius-panel)]',
+  'border border-[rgba(201,162,39,0.42)]',
+  'bg-[var(--ink-2)] p-5',
+  'shadow-[var(--shadow-panel)]',
+  'sm:p-8',
+].join(' ')}
     >
       <div className="mb-7 flex items-start gap-4">
         <span
@@ -296,13 +297,14 @@ export function StripePaymentStep({
     return (
       <div
         role="alert"
-        className={[
-          'mx-auto w-full max-w-2xl',
-          'rounded-[var(--radius-panel)]',
-          'border border-[rgba(198,93,98,0.5)]',
-          'bg-[rgba(198,93,98,0.08)]',
-          'px-5 py-4',
-        ].join(' ')}
+className={[
+  'checkout-v3-stripe',
+  'mx-auto w-full max-w-2xl',
+  'rounded-[var(--radius-panel)]',
+  'border border-[rgba(198,93,98,0.5)]',
+  'bg-[rgba(198,93,98,0.08)]',
+  'px-5 py-4',
+].join(' ')}
       >
         <p className="text-sm leading-6 text-[var(--status-danger)]">
           Secure payment is not
