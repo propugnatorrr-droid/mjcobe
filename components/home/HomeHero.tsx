@@ -3,6 +3,7 @@ import { ButtonLink } from '@/components/primitives/Button';
 
 type HomeHeroProps = {
   imageAlt: string;
+  eyebrow: string;
   artistName: string;
   tagline: string;
   subcopy: string;
@@ -12,6 +13,7 @@ type HomeHeroProps = {
 
 export function HomeHero({
   imageAlt,
+  eyebrow,
   artistName,
   tagline,
   subcopy,
@@ -52,9 +54,9 @@ export function HomeHero({
 
       <div className="site-shell home-v2-hero-shell">
         <div className="home-v2-hero-copy">
-          <p className="home-v2-eyebrow">
-            Original rhythm and blues
-          </p>
+<p className="home-v2-eyebrow">
+  {eyebrow}
+</p>
 
           <h1
             id="home-hero-heading"
