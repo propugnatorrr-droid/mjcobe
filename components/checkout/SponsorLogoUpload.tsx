@@ -88,14 +88,15 @@ export function SponsorLogoUpload({
       </div>
 
       <div
-        className={[
-          'mt-3 grid gap-5',
-          'rounded-[var(--radius-panel)]',
-          'border border-dashed border-[var(--line-strong)]',
-          'bg-[var(--field-bg)] p-5',
-          'sm:grid-cols-[7rem_minmax(0,1fr)]',
-          'sm:items-center',
-        ].join(' ')}
+className={[
+  'sponsor-v3-upload',
+  'mt-3 grid gap-5',
+  'rounded-[var(--radius-panel)]',
+  'border border-dashed border-[var(--line-strong)]',
+  'bg-[var(--field-bg)] p-5',
+  'sm:grid-cols-[7rem_minmax(0,1fr)]',
+  'sm:items-center',
+].join(' ')}
       >
         <div
           className={[
