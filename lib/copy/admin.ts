@@ -14,6 +14,7 @@ export const admin = {
   nav: {
     overview: 'OVERVIEW',
     songs: 'SONG MANAGEMENT',
+    campaigns: 'CAMPAIGN CONTROL',
     media: 'MEDIA LIBRARY',
     journey: 'JOURNEY',
     contributions: 'CONTRIBUTIONS',
