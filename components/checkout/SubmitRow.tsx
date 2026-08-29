@@ -15,7 +15,7 @@ export function SubmitRow({
   const { pending } = useFormStatus();
 
   return (
-    <div className="flex flex-col gap-4">
+<div className="checkout-v3-submit flex flex-col gap-4">
       {error ? (
         <div
           role="alert"
