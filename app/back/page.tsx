@@ -54,7 +54,7 @@ export default async function BackPage({
     return (
       <main
         id="main-content"
-        className="surface-ink min-h-screen"
+        className="checkout-v3-page surface-ink min-h-screen"
       >
         <SiteNav sub={navLabel} />
 
@@ -173,17 +173,17 @@ export default async function BackPage({
   return (
     <main
       id="main-content"
-      className="surface-ink min-h-screen"
+      className="checkout-v3-page surface-ink min-h-screen"
     >
       <SimulationRibbon />
       <SiteNav sub={heading} />
 
-      <div className="site-shell-standard pb-20 pt-8 sm:pt-10 lg:pt-12">
+      <div className="checkout-v3-shell">
         <header
-          className={[
-            'flex flex-wrap items-end justify-between gap-5',
-            'border-b border-[var(--line)] pb-7',
-          ].join(' ')}
+className={[
+  'checkout-v3-header',
+  'flex flex-wrap items-end justify-between gap-5',
+].join(' ')}
         >
           <div>
             <p className="text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-[var(--champagne)]">
@@ -216,7 +216,7 @@ export default async function BackPage({
         {payableCampaigns.length > 1 ? (
           <nav
             aria-label={chooseSong}
-            className="mt-7 flex flex-wrap items-center gap-3"
+            className="checkout-v3-song-nav"
           >
             <span className="mr-2 text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-dim)]">
               {chooseSong}
