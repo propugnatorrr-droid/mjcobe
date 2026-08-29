@@ -7,8 +7,9 @@ const copyDefaults = {
   'eyebrow.top_business_sponsor': '#1 BUSINESS SPONSOR',
   'eyebrow.live': 'LIVE',
 
-  'hero.artist_name': 'MJ COBE',
-  'hero.tagline': 'SOUL HAS A NEW FACE.',
+'hero.artist_name': 'MJ COBE',
+'hero.eyebrow': 'ORIGINAL RHYTHM AND BLUES',
+'hero.tagline': 'SOUL HAS A NEW FACE.',
   'hero.subcopy':
     'Original R&B. A new visual world. A career being built in real time.',
 
