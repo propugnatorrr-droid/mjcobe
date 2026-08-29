@@ -20,10 +20,10 @@ export default async function AdminOverview() {
   );
 
   return (
-    <>
+    <section className="admin-v5-page">
       <AdminHeading>{admin.nav.overview}</AdminHeading>
 
-      <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="admin-v5-metrics mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
         <Metric icon={DollarSign} label={admin.overview.totalRaised} value={formatCents(cents(data.totalCents))} />
         <Metric icon={Clock} label={admin.overview.today} value={formatCents(cents(data.todayCents))} />
         <Metric icon={TrendingUp} label={admin.overview.week} value={formatCents(cents(data.weekCents))} />
@@ -56,7 +56,7 @@ export default async function AdminOverview() {
         {admin.overview.trend}
       </h2>
       <div
-        className="rounded-[var(--radius-panel)] border p-6"
+        className="admin-v5-chart rounded-[var(--radius-panel)] border p-6"
         style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
       >
         <TrendChart points={daily} />
@@ -76,6 +76,6 @@ export default async function AdminOverview() {
           </tr>
         ))}
       </Table>
-    </>
+    </section>
   );
 }
