@@ -2,30 +2,45 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
+import type { PrimaryNavLink } from '@/components/PrimaryNavLinks';
 
-type NavLink = {
-  href: string;
-  label: string;
-};
+function isCurrentRoute(pathname: string, href: string) {
+  if (href === '/') {
+    return pathname === '/';
+  }
 
-export function MobileNavToggle({ links }: { links: NavLink[] }) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function MobileNavToggle({
+  links,
+}: {
+  links: PrimaryNavLink[];
+}) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     firstLinkRef.current?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return;
+      if (event.key !== 'Escape') {
+        return;
+      }
 
       setOpen(false);
+
       window.requestAnimationFrame(() => {
         triggerRef.current?.focus();
       });
@@ -39,12 +54,16 @@ export function MobileNavToggle({ links }: { links: NavLink[] }) {
     };
   }, [open]);
 
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
   function closeMenu() {
     setOpen(false);
   }
 
   return (
-    <div className="lg:hidden">
+    <div className="site-nav__mobile">
       <button
         ref={triggerRef}
         type="button"
@@ -52,20 +71,13 @@ export function MobileNavToggle({ links }: { links: NavLink[] }) {
         aria-expanded={open}
         aria-controls={menuId}
         aria-label={open ? 'Close navigation menu' : 'Open navigation menu'}
-        className={[
-          'flex h-11 w-11 items-center justify-center rounded-full',
-          'border border-[var(--line)]',
-          'bg-[var(--ink-2)] text-[var(--text)]',
-          'transition-[color,border-color,background-color]',
-          '[transition-duration:var(--duration-signature)]',
-          '[transition-timing-function:var(--ease-signature)]',
-          'hover:border-[var(--champagne)] hover:text-[var(--champagne)]',
-          'focus-visible:outline focus-visible:outline-2',
-          'focus-visible:outline-offset-2',
-          'focus-visible:outline-[var(--champagne)]',
-        ].join(' ')}
+        className="site-nav__menu-trigger"
       >
-        {open ? <X aria-hidden size={20} /> : <Menu aria-hidden size={20} />}
+        {open ? (
+          <X aria-hidden size={20} strokeWidth={1.7} />
+        ) : (
+          <Menu aria-hidden size={20} strokeWidth={1.7} />
+        )}
       </button>
 
       {open ? (
@@ -74,49 +86,48 @@ export function MobileNavToggle({ links }: { links: NavLink[] }) {
             type="button"
             aria-label="Close navigation menu"
             onClick={closeMenu}
-            className="fixed inset-0 top-[var(--header-height-mobile)] z-40 cursor-default bg-black/70 lg:hidden"
+            className="site-nav__mobile-backdrop"
           />
 
           <nav
             id={menuId}
             aria-label="Mobile navigation"
-            className={[
-              'absolute inset-x-0 top-full z-50',
-              'border-b border-[var(--line)]',
-              'bg-[var(--ink)] px-5 pb-7 pt-3',
-              'shadow-[0_24px_60px_rgba(0,0,0,0.55)]',
-            ].join(' ')}
+            className="site-nav__mobile-panel"
           >
-            <div className="mx-auto flex max-w-[92rem] flex-col">
-              {links.map((link, index) => (
-                <Link
-                  ref={index === 0 ? firstLinkRef : undefined}
-                  key={link.href}
-                  href={link.href}
-                  onClick={closeMenu}
-                  className={[
-                    'flex min-h-14 items-center justify-between',
-                    'border-b border-[var(--line)]',
-                    'font-ui text-sm font-medium uppercase tracking-[0.14em]',
-                    'text-[var(--text-dim)]',
-                    'transition-colors',
-                    '[transition-duration:var(--duration-signature)]',
-                    'hover:text-[var(--champagne)]',
-                    'focus-visible:outline focus-visible:outline-2',
-                    'focus-visible:outline-offset-[-2px]',
-                    'focus-visible:outline-[var(--champagne)]',
-                  ].join(' ')}
-                >
-                  <span>{link.label}</span>
-                  <span
-                    aria-hidden
-                    className="text-[var(--champagne)]"
+            <div className="site-nav__mobile-links">
+              {links.map((link, index) => {
+                const active = isCurrentRoute(pathname, link.href);
+
+                return (
+                  <Link
+                    ref={index === 0 ? firstLinkRef : undefined}
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMenu}
+                    aria-current={active ? 'page' : undefined}
+                    className="site-nav__mobile-link"
+                    data-active={active ? 'true' : 'false'}
                   >
-                    /
-                  </span>
-                </Link>
-              ))}
+                    <span>{link.label}</span>
+
+                    <span
+                      aria-hidden
+                      className="site-nav__mobile-link-mark"
+                    >
+                      {active ? '—' : '↗'}
+                    </span>
+                  </Link>
+                );
+              })}
             </div>
+
+            <Link
+              href="/back"
+              onClick={closeMenu}
+              className="site-nav__mobile-primary"
+            >
+              Back a record
+            </Link>
           </nav>
         </>
       ) : null}
