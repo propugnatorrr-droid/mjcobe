@@ -4,7 +4,7 @@ type IconType = ComponentType<{ size?: number; color?: string; 'aria-hidden'?: b
 
 export function AdminHeading({ children }: { children: ReactNode }) {
   return (
-    <h1 className="font-mono text-eyebrow uppercase tracking-[0.14em] text-[var(--text)]">
+<h1 className="admin-v5-heading font-mono text-eyebrow uppercase tracking-[0.14em] text-[var(--text)]">
       {children}
     </h1>
   );
@@ -12,7 +12,7 @@ export function AdminHeading({ children }: { children: ReactNode }) {
 
 export function AdminHint({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-3 mb-10 max-w-[62ch] text-body text-[var(--text-dim)]">
+    <p className="admin-v5-hint mt-3 mb-10 max-w-[62ch] text-body text-[var(--text-dim)]">
       {children}
     </p>
   );
@@ -29,7 +29,7 @@ function MetricShell({
 }) {
   return (
     <div
-      className="rounded-[var(--radius-panel)] border p-5"
+      className="admin-v5-metric rounded-[var(--radius-panel)] border p-5"
       style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
     >
       <span className="flex items-center gap-3 font-ui text-[0.625rem] uppercase tracking-[0.18em] text-[var(--text-dim)]">
@@ -99,7 +99,7 @@ export function Table({
 }) {
   return (
     <div
-      className="overflow-x-auto rounded-[var(--radius-panel)] border"
+      className="admin-v5-table overflow-x-auto rounded-[var(--radius-panel)] border"
       style={{ borderColor: 'var(--line)' }}
     >
       <table className="w-full min-w-[40rem] border-collapse text-left">
