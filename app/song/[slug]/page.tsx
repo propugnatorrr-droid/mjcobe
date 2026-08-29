@@ -137,12 +137,15 @@ export default async function SongPage({ params }: Props) {
         audio={audio}
       />
 
-      <FundingPanel
-        totals={totals}
-        daysLeft={data.daysLeft}
-        isAcceptingSupport={data.isAcceptingSupport}
-        objective={campaign?.objective ?? null}
-      />
+<div id="campaign">
+  <FundingPanel
+    totals={totals}
+    daysLeft={data.daysLeft}
+    isAcceptingSupport={data.isAcceptingSupport}
+    objective={data.campaign?.objective}
+  />
+</div>
+
 
       <section
         aria-label={supportLabel}
