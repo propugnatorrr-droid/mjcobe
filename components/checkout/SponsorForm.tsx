@@ -141,7 +141,7 @@ export function SponsorForm({
 
   return (
 
-    <form action={action}>
+    <form action={action} className="sponsor-v3-form">
       <input
         type="hidden"
         name="campaignId"
@@ -165,12 +165,13 @@ export function SponsorForm({
 
       {claimTop ? (
         <section
-          className={[
-            'mb-8 flex items-start gap-4',
-            'rounded-[var(--radius-panel)]',
-            'border border-[rgba(201,162,39,0.55)]',
-            'bg-[rgba(201,162,39,0.055)] p-5',
-          ].join(' ')}
+className={[
+  'sponsor-v3-claim',
+  'mb-8 flex items-start gap-4',
+  'rounded-[var(--radius-panel)]',
+  'border border-[rgba(201,162,39,0.55)]',
+  'bg-[rgba(201,162,39,0.055)] p-5',
+].join(' ')}
         >
           <span
             className={[
@@ -204,11 +205,12 @@ export function SponsorForm({
       <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-12">
         <div className="flex min-w-0 flex-col gap-10">
           <fieldset
-            className={[
-              'rounded-[var(--radius-panel)]',
-              'border border-[var(--line)]',
-              'bg-[var(--ink-2)] p-5 sm:p-7',
-            ].join(' ')}
+className={[
+  'sponsor-v3-form-fieldset',
+  'rounded-[var(--radius-panel)]',
+  'border border-[var(--line)]',
+  'bg-[var(--ink-2)] p-5 sm:p-7',
+].join(' ')}
           >
             <legend className="px-2 font-ui text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-[var(--champagne)]">
               01 / {labels.packages}
@@ -239,11 +241,12 @@ export function SponsorForm({
           </fieldset>
 
           <fieldset
-            className={[
-              'rounded-[var(--radius-panel)]',
-              'border border-[var(--line)]',
-              'bg-[var(--ink-2)] p-5 sm:p-7',
-            ].join(' ')}
+className={[
+  'sponsor-v3-form-fieldset',
+  'rounded-[var(--radius-panel)]',
+  'border border-[var(--line)]',
+  'bg-[var(--ink-2)] p-5 sm:p-7',
+].join(' ')}
           >
             <legend className="px-2 font-ui text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-[var(--champagne)]">
               02 / {labels.business}
@@ -348,11 +351,12 @@ export function SponsorForm({
           </fieldset>
 
           <fieldset
-            className={[
-              'rounded-[var(--radius-panel)]',
-              'border border-[var(--line)]',
-              'bg-[var(--ink-2)] p-5 sm:p-7',
-            ].join(' ')}
+className={[
+  'sponsor-v3-form-fieldset',
+  'rounded-[var(--radius-panel)]',
+  'border border-[var(--line)]',
+  'bg-[var(--ink-2)] p-5 sm:p-7',
+].join(' ')}
           >
             <legend className="px-2 font-ui text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-[var(--champagne)]">
               03 / {labels.payment}
@@ -408,7 +412,7 @@ export function SponsorForm({
           </fieldset>
         </div>
 
-        <aside className="hidden xl:sticky xl:top-28 xl:block">
+        <aside className="sponsor-v3-summary hidden xl:sticky xl:top-28 xl:block">
           <div
             className={[
               'overflow-hidden rounded-[var(--radius-panel)]',
