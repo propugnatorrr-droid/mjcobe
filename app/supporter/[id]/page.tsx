@@ -36,18 +36,18 @@ export default async function SupporterProfilePage({
   const initial = profile.displayName.replace('@', '').charAt(0).toUpperCase() || '?';
 
   return (
-    <main className="surface-ink min-h-screen">
+    <main className="story-v4-page supporter-v4-page surface-ink min-h-screen">
       <SiteNav />
 
       {/* Identity band */}
       <section
-        className="border-b py-12"
+        className="supporter-v4-identity border-b py-12"
         style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
       >
         <div className="mx-auto flex max-w-[92rem] flex-wrap items-center gap-8 px-6 md:px-10">
           <span
             aria-hidden
-            className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full font-serif text-5xl text-gold"
+            className="supporter-v4-avatar flex h-28 w-28 shrink-0 items-center justify-center rounded-full font-serif text-5xl text-gold"
             style={{ background: 'var(--ink)', outline: '2px solid var(--champagne)' }}
           >
             {initial}
@@ -112,10 +112,10 @@ export default async function SupporterProfilePage({
         </div>
       </section>
 
-      <div className="mx-auto max-w-[92rem] px-6 py-12 md:px-10">
+      <div className="supporter-v4-content">
         {/* Badges */}
-        <section>
-          <SectionHeading>{badgesLabel}</SectionHeading>
+<section className="supporter-v4-badges">
+  <SectionHeading>{badgesLabel}</SectionHeading>
           {profile.badges.length === 0 ? (
             <p className="mt-6 text-body text-[var(--text-dim)]">{noBadges}</p>
           ) : (
@@ -125,7 +125,7 @@ export default async function SupporterProfilePage({
                 return (
                   <div
                     key={b.key}
-                    className="flex flex-col items-center gap-3 rounded-[var(--radius-panel)] border p-5 text-center"
+                    className="supporter-v4-badge flex flex-col items-center gap-3 rounded-[var(--radius-panel)] border p-5 text-center"
                     style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
                   >
                     <span
@@ -146,7 +146,7 @@ export default async function SupporterProfilePage({
 
         {/* Records helped */}
         {profile.songs.length > 0 ? (
-          <section className="mt-14">
+          <section className="supporter-v4-records mt-14">
             <SectionHeading>{songsHelped}</SectionHeading>
             <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {profile.songs.map((song) => (
