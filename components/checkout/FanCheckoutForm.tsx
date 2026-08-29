@@ -68,12 +68,13 @@ function CheckoutStep({
 }) {
   return (
     <fieldset
-      className={[
-        'rounded-[var(--radius-panel)]',
-        'border border-[var(--line)]',
-        'bg-[var(--panel-soft)] p-5',
-        'sm:p-7 lg:p-8',
-      ].join(' ')}
+className={[
+  'checkout-v3-step',
+  'rounded-[var(--radius-panel)]',
+  'border border-[var(--line)]',
+  'bg-[var(--panel-soft)] p-5',
+  'sm:p-7 lg:p-8',
+].join(' ')}
     >
       <legend className="sr-only">
         {interpolate(stepLabel, { number })}: {title}
@@ -194,11 +195,12 @@ export function FanCheckoutForm({
   return (
     <form
       action={action}
-      className={[
-        'grid grid-cols-1 gap-8',
-        'lg:grid-cols-[minmax(0,1fr)_22rem]',
-        'lg:items-start lg:gap-10',
-      ].join(' ')}
+className={[
+  'checkout-v3-form',
+  'grid grid-cols-1 gap-8',
+  'lg:grid-cols-[minmax(0,1fr)_22rem]',
+  'lg:items-start lg:gap-10',
+].join(' ')}
     >
       <input
         type="hidden"
@@ -392,7 +394,7 @@ export function FanCheckoutForm({
         </CheckoutStep>
       </div>
 
-      <aside className="order-first lg:sticky lg:top-[calc(var(--header-height-desktop)+1.5rem)] lg:order-none">
+      <aside className="checkout-v3-summary order-first lg:sticky lg:top-[calc(var(--header-height-desktop)+1.5rem)] lg:order-none">
         <div
           className={[
             'overflow-hidden rounded-[var(--radius-panel)]',
