@@ -1,4 +1,7 @@
-import type { Metadata, Viewport } from 'next';
+import type {
+  Metadata,
+  Viewport,
+} from 'next';
 import localFont from 'next/font/local';
 import { GrainOverlay } from '@/components/GrainOverlay';
 import './globals.css';
@@ -8,6 +11,7 @@ import './visual-phase-4.css';
 import './visual-phase-5.css';
 import './visual-phase-6.css';
 import './visual-phase-6-music.css';
+import './visual-phase-7-song.css';
 
 const tanker = localFont({
   src: './fonts/tanker/Tanker-Regular.woff2',
@@ -54,7 +58,8 @@ const switzer = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: 'MJ COBE | Soul Has A New Face.',
+    default:
+      'MJ COBE | Soul Has A New Face.',
     template: '%s | MJ COBE',
   },
   description:
@@ -70,13 +75,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'MJ COBE',
-    title: 'MJ COBE | Soul Has A New Face.',
+    title:
+      'MJ COBE | Soul Has A New Face.',
     description:
       'Original R&B. A new visual world. A career being built in real time.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MJ COBE | Soul Has A New Face.',
+    title:
+      'MJ COBE | Soul Has A New Face.',
     description:
       'Original R&B. A new visual world. A career being built in real time.',
   },
@@ -90,11 +97,18 @@ export const viewport: Viewport = {
   colorScheme: 'dark',
 };
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+export default function RootLayout({
+  children,
+}: LayoutProps<'/'>) {
   return (
     <html
       lang="en"
-      className={`${tanker.variable} ${zodiak.variable} ${switzer.variable} h-full antialiased`}
+      className={[
+        tanker.variable,
+        zodiak.variable,
+        switzer.variable,
+        'h-full antialiased',
+      ].join(' ')}
     >
       <body className="surface-ink min-h-full overflow-x-clip">
         {children}
