@@ -18,7 +18,10 @@ import {
   supporterAccessForCampaign,
 } from '@/lib/supporter/access';
 import { text } from '@/lib/copy/site-copy';
-import { cents, formatCents } from '@/lib/money/cents';
+import {
+  cents,
+  formatCents,
+} from '@/lib/money/cents';
 
 export const revalidate = 60;
 
@@ -41,13 +44,18 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${data.song.title} — ${await text('hero.artist_name')}`,
+    title: `${data.song.title} — ${await text(
+      'hero.artist_name',
+    )}`,
     description:
-      data.song.description ?? (await text('hero.subcopy')),
+      data.song.description ??
+      (await text('hero.subcopy')),
   };
 }
 
-export default async function SongPage({ params }: Props) {
+export default async function SongPage({
+  params,
+}: Props) {
   const { slug } = await params;
   const data = await getSongPage(slug);
 
@@ -66,12 +74,11 @@ export default async function SongPage({ params }: Props) {
     crown,
   } = data;
 
-  const unlockedUpdateCents =
-    campaign
-      ? await supporterAccessForCampaign(
-          campaign.id,
-        )
-      : 0;
+  const unlockedUpdateCents = campaign
+    ? await supporterAccessForCampaign(
+        campaign.id,
+      )
+    : 0;
 
   const supportEnabled =
     data.isAcceptingSupport &&
@@ -79,9 +86,11 @@ export default async function SongPage({ params }: Props) {
 
   const sponsorEnabled =
     data.isAcceptingSupport &&
-    (campaign?.businessSponsorshipEnabled ?? false);
+    (campaign?.businessSponsorshipEnabled ??
+      false);
 
-  const showActions = supportEnabled || sponsorEnabled;
+  const showActions =
+    supportEnabled || sponsorEnabled;
 
   const [
     navLabel,
@@ -123,7 +132,7 @@ export default async function SongPage({ params }: Props) {
     <main
       id="main-content"
       className={[
-        'surface-ink min-h-screen',
+        'surface-ink song-v2-page',
         showActions ? 'pb-28 sm:pb-24' : '',
       ].join(' ')}
     >
@@ -137,27 +146,26 @@ export default async function SongPage({ params }: Props) {
         audio={audio}
       />
 
-<div id="campaign">
-  <FundingPanel
-    totals={totals}
-    daysLeft={data.daysLeft}
-    isAcceptingSupport={data.isAcceptingSupport}
-    objective={data.campaign?.objective}
-  />
-</div>
-
+      <FundingPanel
+        totals={totals}
+        daysLeft={data.daysLeft}
+        isAcceptingSupport={
+          data.isAcceptingSupport
+        }
+        objective={campaign?.objective}
+      />
 
       <section
         aria-label={supportLabel}
-        className="site-shell pt-8 sm:pt-10"
+        className="site-shell song-v2-action-band"
       >
         {showActions ? (
           <div
             className={[
-              'grid grid-cols-1 gap-3',
+              'song-v2-actions',
               supportEnabled && sponsorEnabled
-                ? 'sm:grid-cols-2'
-                : '',
+                ? ''
+                : 'song-v2-actions--single',
             ].join(' ')}
           >
             {supportEnabled ? (
@@ -165,7 +173,6 @@ export default async function SongPage({ params }: Props) {
                 href={`/back?song=${song.slug}`}
                 variant="primary"
                 glow
-                className="w-full !py-4"
               >
                 {supportLabel}
               </ButtonLink>
@@ -175,22 +182,19 @@ export default async function SongPage({ params }: Props) {
               <ButtonLink
                 href={`/song/${song.slug}/sponsor`}
                 variant="ghost"
-                className="w-full !py-4"
               >
                 {sponsorLabel}
               </ButtonLink>
             ) : null}
           </div>
         ) : (
-          <div className="panel px-6 py-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-dim)]">
-              {closedNotice}
-            </p>
-          </div>
+          <p className="song-v2-closed">
+            {closedNotice}
+          </p>
         )}
       </section>
 
-      <div className="site-shell grid grid-cols-1 gap-x-10 lg:grid-cols-2">
+      <div className="site-shell song-v2-leaderboards">
         <LeaderboardPanel
           headingKey="song.section.supporters"
           emptyKey="song.empty.supporters"
@@ -211,51 +215,51 @@ export default async function SongPage({ params }: Props) {
         />
       </div>
 
-      <section className="site-shell py-12 sm:py-16">
-        <div className="flex items-center gap-4 sm:gap-6">
+      <section className="site-shell song-v2-proof">
+        <div className="song-v2-proof-inner">
           <span
             aria-hidden
-            className="rule-gold h-px flex-1 opacity-40"
+            className="song-v2-proof-rule"
           />
 
-          <p
-            className={[
-              'max-w-[44rem] text-balance text-center',
-              'font-serif text-[clamp(1.2rem,3vw,2rem)] italic',
-              'leading-relaxed text-[var(--text-dim)]',
-            ].join(' ')}
-          >
+          <p className="song-v2-proof-copy">
             {proofLine}
           </p>
 
           <span
             aria-hidden
-            className="rule-gold h-px flex-1 opacity-40"
+            className="song-v2-proof-rule"
           />
         </div>
 
-        <Crown
+        <span
           aria-hidden
-          size={19}
-          strokeWidth={1.6}
-          color="var(--champagne)"
-          className="mx-auto mt-5"
-        />
+          className="song-v2-proof-icon"
+        >
+          <Crown
+            size={19}
+            strokeWidth={1.6}
+          />
+        </span>
       </section>
 
-      <div className="site-shell">
+      <div className="site-shell song-v2-content">
         {crown && sponsorEnabled ? (
           <CrownPanel
             crown={crown}
             songSlug={song.slug}
-            isAcceptingSupport={sponsorEnabled}
+            isAcceptingSupport={
+              sponsorEnabled
+            }
           />
         ) : null}
 
         <TierGrid
           tiers={data.tiers}
           songSlug={song.slug}
-          isAcceptingSupport={supportEnabled}
+          isAcceptingSupport={
+            supportEnabled
+          }
         />
 
         <UpdateList
@@ -264,7 +268,10 @@ export default async function SongPage({ params }: Props) {
             unlockedUpdateCents
           }
         />
-        <JourneyList journey={data.journey} />
+
+        <JourneyList
+          journey={data.journey}
+        />
       </div>
 
       <SiteFooter />
@@ -275,7 +282,9 @@ export default async function SongPage({ params }: Props) {
           primaryHref={primaryHref}
           secondaryLabel={secondaryLabel}
           secondaryHref={secondaryHref}
-          figure={formatCents(cents(totals.meterCents))}
+          figure={formatCents(
+            cents(totals.meterCents),
+          )}
           caption={proofLine}
         />
       ) : null}
