@@ -28,7 +28,9 @@ export async function FundingPanel({
     text('song.campaign_goal'),
     totals.sponsorCents > 0
       ? text('song.meter.sponsorship_note', {
-          amount: formatCents(cents(totals.sponsorCents)),
+          amount: formatCents(
+            cents(totals.sponsorCents),
+          ),
         })
       : Promise.resolve(''),
   ]);
@@ -41,60 +43,62 @@ export async function FundingPanel({
         ? await text('song.meter.final_day')
         : await text('song.meter.days_left');
 
-  const percent = Math.min(100, Math.max(0, totals.percent));
+  const percent = Math.min(
+    100,
+    Math.max(0, totals.percent),
+  );
 
   return (
     <section
+      id="campaign"
       aria-label={backed}
-      className="song-v2-funding border-y border-[var(--line)] bg-[var(--ink-2)]"
+      className="song-v2-funding"
     >
-      <div className="site-shell py-8 sm:py-10">
-        <div
-          className={[
-            'grid grid-cols-2 gap-x-6 gap-y-8',
-            'lg:grid-cols-[minmax(11rem,auto)_minmax(8rem,auto)_minmax(18rem,1fr)]',
-            'lg:items-center lg:gap-x-10',
-          ].join(' ')}
-        >
-          <div>
-            <p className="numeric font-serif text-[clamp(2.25rem,5vw,4rem)] leading-none text-gold">
-              {formatCents(cents(totals.meterCents))}
+      <div className="site-shell song-v2-funding-shell">
+        <div className="song-v2-funding-grid">
+          <div className="song-v2-funding-stat">
+            <p className="song-v2-funding-figure song-v2-funding-figure--gold">
+              {formatCents(
+                cents(totals.meterCents),
+              )}
             </p>
 
-            <p className="mt-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-[var(--text-dim)]">
+            <p className="song-v2-funding-label">
               {backed}
             </p>
           </div>
 
-          <div>
-            <p className="numeric font-serif text-[clamp(2.25rem,5vw,4rem)] leading-none text-[var(--text)]">
-              <CountUp value={totals.supporterCount} />
+          <div className="song-v2-funding-stat">
+            <p className="song-v2-funding-figure">
+              <CountUp
+                value={totals.supporterCount}
+              />
             </p>
 
-            <p className="mt-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-[var(--text-dim)]">
+            <p className="song-v2-funding-label">
               {supportersLabel}
             </p>
           </div>
 
-          <div className="col-span-2 lg:col-span-1">
+          <div className="song-v2-meter-column">
             <FundingMeter percent={percent} />
 
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-              <p className="text-[0.625rem] font-medium uppercase tracking-[0.16em] text-[var(--text-dim)]">
+            <div className="song-v2-meter-meta">
+              <p>
                 {goalLabel}:{' '}
-                <span className="numeric text-[var(--text)]">
-                  {formatCents(cents(totals.goalCents))}
+                <span>
+                  {formatCents(
+                    cents(totals.goalCents),
+                  )}
                 </span>
               </p>
 
-              <p className="text-[0.625rem] font-medium uppercase tracking-[0.16em] text-[var(--text-dim)]">
+              <p>
                 {daysLeft !== null &&
                 daysLeft > 0 &&
                 isAcceptingSupport ? (
                   <>
-                    <span className="numeric text-[var(--text)]">
-                      {daysLeft}
-                    </span>{' '}
+                    <span>{daysLeft}</span>{' '}
                     {timeLabel}
                   </>
                 ) : (
@@ -106,15 +110,13 @@ export async function FundingPanel({
         </div>
 
         {objective ? (
-          <div className="mt-8 border-t border-[var(--line)] pt-7">
-            <p className="max-w-[76ch] text-base leading-7 text-[var(--text-dim)]">
-              {objective}
-            </p>
-          </div>
+          <p className="song-v2-funding-objective">
+            {objective}
+          </p>
         ) : null}
 
         {sponsorNote ? (
-          <p className="mt-4 max-w-[76ch] text-xs leading-5 text-[var(--text-faint)]">
+          <p className="song-v2-sponsor-note">
             {sponsorNote}
           </p>
         ) : null}
