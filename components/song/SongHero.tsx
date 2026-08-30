@@ -1,7 +1,4 @@
-import {
-  ArrowDown,
-  Disc3,
-} from 'lucide-react';
+import { Disc3 } from 'lucide-react';
 import { AudioPreview } from '@/components/song/AudioPreview';
 import { StatusBadge } from '@/components/primitives/StatusBadge';
 import { text } from '@/lib/copy/site-copy';
@@ -19,7 +16,7 @@ const STATUS_COPY: Record<string, CopyKey> = {
 export async function SongHero({
   song,
   campaign,
-  cover: _cover,
+  cover,
   audio,
 }: Pick<
   SongPageData,
@@ -40,34 +37,58 @@ export async function SongHero({
     text('song.preview_window'),
   ]);
 
+  const artwork =
+    cover?.path ?? '/media/song-hero-mobile.webp';
+
+  const objective =
+    campaign?.objective ?? song.description;
+
   return (
     <header
       aria-labelledby="song-title"
       className="song-v2-hero"
     >
-      <picture className="song-v2-hero-media">
-        <source
-          media="(min-width: 768px)"
-          srcSet="/media/song-hero-desktop.webp"
-        />
-
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/media/song-hero-mobile.webp"
-          alt=""
-          width={1200}
-          height={1500}
-          fetchPriority="high"
-          className="song-v2-hero-image"
-        />
-      </picture>
-
       <div
         aria-hidden
-        className="song-v2-hero-treatment"
-      />
+        className="song-v2-hero-backdrop"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={artwork}
+          alt=""
+          width={1600}
+          height={1600}
+          fetchPriority="high"
+          className="song-v2-hero-backdrop-image"
+        />
+
+        <div className="song-v2-hero-backdrop-treatment" />
+      </div>
 
       <div className="site-shell song-v2-hero-shell">
+        <div className="song-v2-art-column">
+          <div className="song-v2-art-frame">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={artwork}
+              alt=""
+              width={1200}
+              height={1200}
+              fetchPriority="high"
+              className="song-v2-art-image"
+            />
+
+            <div
+              aria-hidden
+              className="song-v2-art-vignette"
+            />
+
+            <span className="song-v2-art-index">
+              {statusLabel}
+            </span>
+          </div>
+        </div>
+
         <div className="song-v2-hero-copy">
           <div className="song-v2-hero-status">
             <StatusBadge
@@ -90,13 +111,9 @@ export async function SongHero({
             {song.title}
           </h1>
 
-          {campaign?.objective ? (
+          {objective ? (
             <p className="song-v2-objective">
-              {campaign.objective}
-            </p>
-          ) : song.description ? (
-            <p className="song-v2-objective">
-              {song.description}
+              {objective}
             </p>
           ) : null}
 
@@ -110,7 +127,7 @@ export async function SongHero({
                 />
               </span>
 
-              <div>
+              <div className="min-w-0">
                 <p>{song.title}</p>
                 <span>{previewLabel}</span>
               </div>
@@ -125,20 +142,6 @@ export async function SongHero({
             />
           </div>
         </div>
-
-        <a
-          href="#campaign"
-          className="song-v2-scroll"
-          aria-label="Continue to campaign details"
-        >
-          <span>EXPLORE</span>
-
-          <ArrowDown
-            aria-hidden
-            size={16}
-            strokeWidth={1.7}
-          />
-        </a>
       </div>
     </header>
   );
