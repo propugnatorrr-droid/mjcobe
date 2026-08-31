@@ -231,7 +231,16 @@ export default async function BackPage({
     secure,
     secureSub,
     stepLabel,
+    paymentSecureBody,
+    paymentNotConfigured,
+    paymentFailed,
+    paymentDeclined,
+    paymentRetry,
+    paymentReturn,
+    paymentProcessing,
+    paymentDoNotClose,
   ] = await Promise.all([
+
     text('checkout.fan.heading'),
     text('checkout.secure_badge'),
     text('checkout.choose_song'),
@@ -263,7 +272,16 @@ export default async function BackPage({
     text('checkout.secure'),
     text('checkout.secure_sub'),
     text('checkout.step_label'),
+    text('checkout.payment.secure_body'),
+    text('checkout.payment.not_configured'),
+    text('checkout.payment.failed'),
+    text('checkout.payment.declined'),
+    text('checkout.payment.retry'),
+    text('checkout.payment.return'),
+    text('checkout.payment.processing'),
+    text('checkout.payment.do_not_close'),
   ]);
+
 
   return (
     <main
@@ -395,7 +413,16 @@ className={[
               secure,
               secureSub,
               stepLabel,
+              paymentSecureBody,
+              paymentNotConfigured,
+              paymentFailed,
+              paymentDeclined,
+              paymentRetry,
+              paymentReturn,
+              paymentProcessing,
+              paymentDoNotClose,
             }}
+
             sponsorHref={
               selectedCampaign.businessSponsorshipEnabled
                 ? `/song/${selectedCampaign.songSlug}/sponsor`
