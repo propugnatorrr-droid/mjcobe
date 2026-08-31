@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
@@ -355,6 +356,7 @@ className={[
         <div className="mt-8 sm:mt-10">
           <FanCheckoutForm
             campaignId={selectedCampaign.campaignId}
+            checkoutAttemptKey={randomUUID()}
             options={options}
             currencySymbol={currencySymbol}
             initialTierId={tierParam}
