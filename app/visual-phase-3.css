@@ -402,6 +402,53 @@
   min-height: 3.75rem !important;
 }
 
+.checkout-v3-stripe button:focus-visible,
+.checkout-v3-stripe a:focus-visible {
+  outline: 2px solid var(--champagne);
+  outline-offset: 4px;
+}
+
+.checkout-v3-stripe button:disabled {
+  cursor: not-allowed;
+}
+
+.checkout-v3-stripe [role="alert"],
+.checkout-v3-stripe [role="status"] {
+  position: relative;
+  isolation: isolate;
+}
+
+.checkout-v3-stripe [role="alert"]::before,
+.checkout-v3-stripe [role="status"]::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px
+    rgba(255, 255, 255, 0.025);
+}
+
+@media (max-width: 639px) {
+  .checkout-v3-stripe {
+    padding:
+      1.25rem
+      1rem
+      max(
+        1.25rem,
+        env(safe-area-inset-bottom)
+      ) !important;
+  }
+
+  .checkout-v3-stripe button,
+  .checkout-v3-stripe a {
+    width: 100%;
+  }
+}
+
+
 /* ---------------------------------------------------------
    Business sponsorship
    --------------------------------------------------------- */
