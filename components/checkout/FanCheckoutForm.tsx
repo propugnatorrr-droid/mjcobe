@@ -139,6 +139,7 @@ function availableInitialId(
 
 export function FanCheckoutForm({
   campaignId,
+  checkoutAttemptKey,
   options,
   labels,
   currencySymbol,
@@ -149,6 +150,7 @@ export function FanCheckoutForm({
   initialTierUnavailable,
 }: {
   campaignId: string;
+  checkoutAttemptKey: string;
   options: AmountOption[];
   labels: FanFormLabels;
   currencySymbol: string;
@@ -220,6 +222,12 @@ className={[
         type="hidden"
         name="campaignId"
         value={campaignId}
+      />
+
+      <input
+        type="hidden"
+        name="checkoutAttemptKey"
+        value={checkoutAttemptKey}
       />
 
       <input
