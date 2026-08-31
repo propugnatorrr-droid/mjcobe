@@ -173,7 +173,31 @@ const copyDefaults = {
   'checkout.error.minimum_to_lead':
     'The #1 position has changed. Enter at least {amount} to claim it.',
 
+  'checkout.payment.secure_body':
+    'Your payment details are securely collected and processed by Stripe.',
+  'checkout.payment.not_configured':
+    'Secure payment is not configured. No charge was made.',
+  'checkout.payment.failed':
+    'The payment could not be completed. Check your payment details and try again.',
+  'checkout.payment.declined':
+    'The payment was declined. Try another payment method or contact your bank.',
+  'checkout.payment.processing':
+    'Stripe is securely processing your payment. Do not submit another contribution.',
+  'checkout.payment.retry':
+    'TRY PAYMENT AGAIN',
+  'checkout.payment.return':
+    'RETURN TO CHECKOUT',
+  'checkout.payment.start_over':
+    'START A NEW CHECKOUT',
+  'checkout.payment.do_not_close':
+    'Keep this page open while the payment is confirmed.',
+  'checkout.payment.no_charge':
+    'No completed charge was recorded.',
+  'checkout.payment.unknown_status':
+    'We could not confirm the final payment status. No successful support benefits will appear unless the payment settles.',
+
   'checkout.choose_song': 'CHOOSE A RECORD',
+
   'checkout.no_open_campaigns': 'No campaigns are open right now.',
   'checkout.unavailable.eyebrow': 'RECORD UNAVAILABLE',
   'checkout.unavailable.title': 'THIS RECORD IS NOT ACCEPTING SUPPORT',
@@ -221,6 +245,26 @@ const copyDefaults = {
     'PAYMENT PROCESSING.',
   'thanks.processing.body':
     'Stripe is confirming your payment. This page will update automatically. Please do not submit another contribution.',
+  'thanks.failed.heading':
+    'PAYMENT NOT COMPLETED.',
+  'thanks.failed.body':
+    'The payment did not complete, and no successful contribution was recorded. Return to checkout to try again.',
+  'thanks.canceled.heading':
+    'PAYMENT CANCELED.',
+  'thanks.canceled.body':
+    'The payment was canceled. No successful contribution was recorded.',
+  'thanks.refunded.heading':
+    'PAYMENT REFUNDED.',
+  'thanks.refunded.body':
+    'This payment has been refunded. It is no longer included in campaign totals or rankings.',
+  'thanks.disputed.heading':
+    'PAYMENT UNDER REVIEW.',
+  'thanks.disputed.body':
+    'The payment is being reviewed by the payment provider. It is not currently included in public campaign totals or rankings.',
+  'thanks.unknown.heading':
+    'PAYMENT STATUS UNAVAILABLE.',
+  'thanks.unknown.body':
+    'We could not confirm the final payment status. No supporter benefits will appear unless the payment successfully settles.',
   'thanks.share': 'SHARE MY SUPPORT',
   'thanks.view_song': 'VIEW SONG JOURNEY',
   'thanks.back_another': 'BACK ANOTHER RECORD',
