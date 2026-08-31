@@ -1,6 +1,9 @@
 import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import {
+  settlementModerationForName,
+} from '@/lib/moderation/settlement';
+import {
   and,
   eq,
   inArray,
@@ -711,18 +714,122 @@ export async function settleContribution(transactionId: string): Promise<SettleR
         'Contribution not found during settlement.',
       );
     }
+    /*
+     * Public identity is decided only after
+     * settlement. Anonymous support may count
+     * financially while revealing no identity.
+     */
+    if (
+      contribution.supportType ===
+      'fan'
+    ) {
+      const moderation =
+        settlementModerationForName(
+          contribution
+            .displayNameSnapshot,
+        );
+
+      await t
+        .update(
+          s.contributions,
+        )
+        .set({
+          moderation,
+          leaderboardVisible:
+            moderation ===
+              'approved',
+        })
+        .where(
+          eq(
+            s.contributions.id,
+            contribution.id,
+          ),
+        );
+
+      if (
+        contribution.supporterId
+      ) {
+        await t
+          .update(
+            s.supporters,
+          )
+          .set({
+            moderation,
+          })
+          .where(
+            eq(
+              s.supporters.id,
+              contribution
+                .supporterId,
+            ),
+          );
+      }
+    } else {
+      /*
+       * A business reaches settlement only
+       * after automatic approval or a manual
+       * capture approved by management.
+       */
+      await t
+        .update(
+          s.contributions,
+        )
+        .set({
+          moderation:
+            'approved',
+          leaderboardVisible:
+            true,
+        })
+        .where(
+          eq(
+            s.contributions.id,
+            contribution.id,
+          ),
+        );
+
+      if (
+        contribution.sponsorId
+      ) {
+        await t
+          .update(s.sponsors)
+          .set({
+            moderation:
+              'approved',
+          })
+          .where(
+            eq(
+              s.sponsors.id,
+              contribution
+                .sponsorId,
+            ),
+          );
+      }
+    }
 
 
-    await t.insert(s.ledgerEntries).values({
-      campaignId: contribution.campaignId,
-      contributionId: contribution.id,
-      transactionId,
-      supporterId: contribution.supporterId,
-      sponsorId: contribution.sponsorId,
-      kind: 'contribution',
-      amountCents: contribution.amountCents,
-      occurredAt: now,
-    });
+    await t
+      .insert(
+        s.ledgerEntries,
+      )
+      .values({
+        campaignId:
+          contribution.campaignId,
+        contributionId:
+          contribution.id,
+        transactionId,
+        supporterId:
+          contribution.supporterId,
+        sponsorId:
+          contribution.sponsorId,
+        kind: 'contribution',
+        amountCents:
+          contribution.amountCents,
+        externalRef:
+          `settlement:${transactionId}`,
+        occurredAt: now,
+      })
+      .onConflictDoNothing();
+
 
     // Sequential per campaign and series. Computed inside the transaction so
     // two simultaneous checkouts cannot be issued the same number.
