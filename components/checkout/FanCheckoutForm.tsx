@@ -54,7 +54,15 @@ export type FanFormLabels = Record<
   | 'tierBenefits'
   | 'secure'
   | 'secureSub'
-  | 'stepLabel',
+  | 'stepLabel'
+  | 'paymentSecureBody'
+  | 'paymentNotConfigured'
+  | 'paymentFailed'
+  | 'paymentDeclined'
+  | 'paymentRetry'
+  | 'paymentReturn'
+  | 'paymentProcessing'
+  | 'paymentDoNotClose',
   string
 >;
 
@@ -195,6 +203,7 @@ export function FanCheckoutForm({
           state.payment
             .returnPath
         }
+        checkoutHref="/back"
         heading={
           labels.payment
         }
@@ -204,9 +213,28 @@ export function FanCheckoutForm({
         workingLabel={
           labels.working
         }
+        labels={{
+          secureBody:
+            labels.paymentSecureBody,
+          notConfigured:
+            labels.paymentNotConfigured,
+          failed:
+            labels.paymentFailed,
+          declined:
+            labels.paymentDeclined,
+          retry:
+            labels.paymentRetry,
+          returnToCheckout:
+            labels.paymentReturn,
+          processing:
+            labels.paymentProcessing,
+          doNotClose:
+            labels.paymentDoNotClose,
+        }}
       />
     );
   }
+
 
   return (
     <form
