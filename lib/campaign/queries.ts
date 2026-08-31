@@ -1,8 +1,4 @@
 import 'server-only';
-import {
-  settledCampaignTotal,
-  settledLeaderboard,
-} from '@/lib/ranking/settled';
 import { cache } from 'react';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
@@ -48,25 +44,6 @@ function rowsFrom(result: unknown): Record<string, unknown>[] {
     ? (result as Record<string, unknown>[])
     : [];
 }
-const raisedCents =
-  await settledCampaignTotal(
-    campaignId,
-  );
-
-const fanLeaders =
-  await settledLeaderboard({
-    campaignId,
-    supportType: 'fan',
-    limit: 100,
-  });
-
-const businessLeaders =
-  await settledLeaderboard({
-    campaignId,
-    supportType: 'business',
-    limit: 100,
-  });
-
 export const getCampaignTotals = cache(
   async (campaignId: string): Promise<CampaignTotals> => {
     const result = await db.execute(sql`
@@ -94,6 +71,7 @@ export const getCampaignTotals = cache(
       join contributions c on c.id = l.contribution_id
       join campaigns cp on cp.id = l.campaign_id
       where l.campaign_id = ${campaignId}
+        and c.is_test = false
     `);
 
     const row = rowsFrom(result)[0];
@@ -168,11 +146,24 @@ async function standingsFor(
       ? sql`max(ma.path)`
       : sql`null::text`;
 
+  const moderationGuard =
+    scope === 'business'
+      ? sql`
+          and c.moderation =
+            'approved'
+          and sp.moderation =
+            'approved'
+        `
+      : sql`
+          and c.moderation =
+            'approved'
+        `;
+
   const result = await db.execute(sql`
     select
       ${identityColumn} as id,
       sum(l.amount_cents)::int as amount_cents,
-      max(l.occurred_at) as reached_at,
+      min(l.occurred_at) as reached_at,
       bool_or(c.is_anonymous) as is_anonymous,
       bool_or(c.hide_amount) as hide_amount,
       max(c.display_name_snapshot) as snapshot_name,
@@ -184,10 +175,10 @@ async function standingsFor(
     ${identityJoin}
     where l.campaign_id = ${campaignId}
       and c.support_type = ${scope}
+      and c.is_test = false
       and c.leaderboard_visible = true
-      and c.moderation <> 'hidden'
-      and c.moderation <> 'blocked'
       and ${identityColumn} is not null
+      ${moderationGuard}
     group by ${identityColumn}
     having sum(l.amount_cents) > 0
   `);
