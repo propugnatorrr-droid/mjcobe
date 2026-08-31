@@ -1,6 +1,12 @@
 import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import {
+  settledLeaderboard,
+} from '@/lib/ranking/settled';
+import {
+  queueOutbidNotification,
+} from '@/lib/notifications/outbid';
+import {
   settlementModerationForName,
 } from '@/lib/moderation/settlement';
 import {
@@ -549,6 +555,32 @@ export async function settleContribution(transactionId: string): Promise<SettleR
             tx.contributionId,
           ),
         );
+  const [settlingContribution] =
+    await dbw
+      .select()
+      .from(s.contributions)
+      .where(
+        eq(
+          s.contributions.id,
+          tx.contributionId,
+        ),
+      )
+      .limit(1);
+
+  const previousLeader =
+    settlingContribution
+      ? (
+          await settledLeaderboard({
+            campaignId:
+              settlingContribution
+                .campaignId,
+            supportType:
+              settlingContribution
+                .supportType,
+            limit: 1,
+          })
+        )[0] ?? null
+      : null;
 
     const result = {
       ok: true as const,
@@ -920,6 +952,25 @@ const nextNumber = async (
     await sendContributionConfirmation(
       transactionId,
     );
+  }
+  if (
+    result.ok &&
+    settlingContribution
+  ) {
+    await queueOutbidNotification({
+      campaignId:
+        settlingContribution
+          .campaignId,
+      supportType:
+        settlingContribution
+          .supportType,
+      winningContributionId:
+        settlingContribution.id,
+      previousLeaderId:
+        previousLeader
+          ?.identityId ??
+        null,
+    });
   }
 
   return result;
