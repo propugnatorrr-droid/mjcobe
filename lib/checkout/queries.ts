@@ -18,6 +18,38 @@ export type OpenCampaign = {
   fanSupportEnabled: boolean;
   businessSponsorshipEnabled: boolean;
 };
+export type CheckoutSong = {
+  songId: string;
+  songSlug: string;
+  songTitle: string;
+};
+
+/**
+ * Resolves only published songs. This lets the checkout show an explicit
+ * unavailable state without exposing drafts or silently changing records.
+ */
+export const getCheckoutSong = cache(
+  async (
+    slug: string,
+  ): Promise<CheckoutSong | null> => {
+    const [song] = await db
+      .select({
+        songId: s.songs.id,
+        songSlug: s.songs.slug,
+        songTitle: s.songs.title,
+      })
+      .from(s.songs)
+      .where(
+        and(
+          eq(s.songs.slug, slug),
+          eq(s.songs.isPublished, true),
+        ),
+      )
+      .limit(1);
+
+    return song ?? null;
+  },
+);
 
 /** Every campaign a visitor may currently pay into. */
 export const getOpenCampaigns = cache(async (): Promise<OpenCampaign[]> => {
