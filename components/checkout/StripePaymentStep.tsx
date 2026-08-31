@@ -13,10 +13,13 @@ import {
 import {
   loadStripe,
   type Appearance,
+  type StripeError,
 } from '@stripe/stripe-js';
 import {
+  ArrowLeft,
   ArrowRight,
   LockKeyhole,
+  RotateCcw,
 } from 'lucide-react';
 
 const publishableKey =
@@ -75,16 +78,69 @@ const appearance: Appearance = {
   },
 };
 
+export type StripePaymentLabels = {
+  secureBody: string;
+  notConfigured: string;
+  failed: string;
+  declined: string;
+  retry: string;
+  returnToCheckout: string;
+  processing: string;
+  doNotClose: string;
+};
+
+function safeStripeError(
+  error: StripeError,
+  labels: StripePaymentLabels,
+): string {
+  const declineCodes = new Set([
+    'card_declined',
+    'do_not_honor',
+    'expired_card',
+    'incorrect_cvc',
+    'incorrect_number',
+    'insufficient_funds',
+    'invalid_cvc',
+    'lost_card',
+    'pickup_card',
+    'stolen_card',
+  ]);
+
+  if (
+    error.decline_code &&
+    declineCodes.has(
+      error.decline_code,
+    )
+  ) {
+    return labels.declined;
+  }
+
+  if (
+    error.code &&
+    declineCodes.has(
+      error.code,
+    )
+  ) {
+    return labels.declined;
+  }
+
+  return labels.failed;
+}
+
 function StripePaymentForm({
   returnPath,
+  checkoutHref,
   heading,
   submitLabel,
   workingLabel,
+  labels,
 }: {
   returnPath: string;
+  checkoutHref: string;
   heading: string;
   submitLabel: string;
   workingLabel: string;
+  labels: StripePaymentLabels;
 }) {
   const stripe =
     useStripe();
@@ -127,51 +183,69 @@ function StripePaymentForm({
         window.location.origin,
       ).toString();
 
-    const result =
-      await stripe
-        .confirmPayment({
-          elements,
-          confirmParams: {
-            return_url:
-              returnUrl,
-          },
-          redirect:
-            'if_required',
-        });
+    try {
+      const result =
+        await stripe
+          .confirmPayment({
+            elements,
+            confirmParams: {
+              return_url:
+                returnUrl,
+            },
+            redirect:
+              'if_required',
+          });
 
-    if (result.error) {
+      if (result.error) {
+        setError(
+          safeStripeError(
+            result.error,
+            labels,
+          ),
+        );
+
+        setProcessing(false);
+        return;
+      }
+
+      /*
+       * Redirect-required payment methods are
+       * handled by Stripe. Cards and other
+       * immediate methods arrive here.
+       *
+       * Settlement remains webhook-backed.
+       * The confirmation page does not display
+       * supporter benefits until ledger value
+       * exists.
+       */
+      window.location.assign(
+        returnPath,
+      );
+    } catch {
       setError(
-        result.error.message ??
-          'The payment could not be completed.',
+        labels.failed,
       );
 
       setProcessing(false);
-      return;
     }
+  }
 
-    /*
-     * Redirect-required payment methods are
-     * handled by Stripe. Cards and other
-     * immediate methods reach this branch.
-     * Settlement remains webhook-backed.
-     */
-    window.location.assign(
-      returnPath,
-    );
+  function retryPayment() {
+    setError(null);
   }
 
   return (
     <form
       onSubmit={submit}
-className={[
-  'checkout-v3-stripe',
-  'mx-auto w-full max-w-2xl',
-  'rounded-[var(--radius-panel)]',
-  'border border-[rgba(201,162,39,0.42)]',
-  'bg-[var(--ink-2)] p-5',
-  'shadow-[var(--shadow-panel)]',
-  'sm:p-8',
-].join(' ')}
+      className={[
+        'checkout-v3-stripe',
+        'mx-auto w-full max-w-2xl',
+        'rounded-[var(--radius-panel)]',
+        'border border-[rgba(201,162,39,0.42)]',
+        'bg-[var(--ink-2)] p-5',
+        'shadow-[var(--shadow-panel)]',
+        'sm:p-8',
+      ].join(' ')}
     >
       <div className="mb-7 flex items-start gap-4">
         <span
@@ -195,9 +269,7 @@ className={[
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-[var(--text-dim)]">
-            Your payment details are
-            securely collected and
-            processed by Stripe.
+            {labels.secureBody}
           </p>
         </div>
       </div>
@@ -212,6 +284,27 @@ className={[
         }}
       />
 
+      {processing ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className={[
+            'mt-6 rounded-[var(--radius-panel)]',
+            'border border-[rgba(201,162,39,0.35)]',
+            'bg-[rgba(201,162,39,0.07)]',
+            'px-4 py-3',
+          ].join(' ')}
+        >
+          <p className="text-sm leading-6 text-[var(--text)]">
+            {labels.processing}
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-[var(--text-dim)]">
+            {labels.doNotClose}
+          </p>
+        </div>
+      ) : null}
+
       {error ? (
         <div
           role="alert"
@@ -220,12 +313,38 @@ className={[
             'mt-6 rounded-[var(--radius-panel)]',
             'border border-[rgba(198,93,98,0.5)]',
             'bg-[rgba(198,93,98,0.08)]',
-            'px-4 py-3',
+            'px-4 py-4',
           ].join(' ')}
         >
           <p className="text-sm leading-6 text-[var(--status-danger)]">
             {error}
           </p>
+
+          <button
+            type="button"
+            onClick={retryPayment}
+            className={[
+              'mt-4 inline-flex min-h-11',
+              'items-center justify-center gap-2',
+              'rounded-full border',
+              'border-[rgba(255,255,255,0.16)]',
+              'px-5 py-2',
+              'font-ui text-[0.625rem]',
+              'font-semibold uppercase',
+              'tracking-[0.14em]',
+              'text-[var(--text)]',
+              'transition-[border-color,color]',
+              'hover:border-[var(--champagne)]',
+              'hover:text-[var(--champagne)]',
+            ].join(' ')}
+          >
+            <RotateCcw
+              aria-hidden
+              size={14}
+            />
+
+            {labels.retry}
+          </button>
         </div>
       ) : null}
 
@@ -273,6 +392,31 @@ className={[
           size={16}
         />
       </button>
+
+      <a
+        href={checkoutHref}
+        className={[
+          'mt-4 inline-flex min-h-11 w-full',
+          'items-center justify-center gap-2',
+          'rounded-full border',
+          'border-[var(--line)]',
+          'px-6 py-3',
+          'font-ui text-[0.625rem]',
+          'font-semibold uppercase',
+          'tracking-[0.14em]',
+          'text-[var(--text-dim)]',
+          'transition-[border-color,color]',
+          'hover:border-[var(--champagne)]',
+          'hover:text-[var(--champagne)]',
+        ].join(' ')}
+      >
+        <ArrowLeft
+          aria-hidden
+          size={14}
+        />
+
+        {labels.returnToCheckout}
+      </a>
     </form>
   );
 }
@@ -280,15 +424,19 @@ className={[
 export function StripePaymentStep({
   clientSecret,
   returnPath,
+  checkoutHref,
   heading,
   submitLabel,
   workingLabel,
+  labels,
 }: {
   clientSecret: string;
   returnPath: string;
+  checkoutHref: string;
   heading: string;
   submitLabel: string;
   workingLabel: string;
+  labels: StripePaymentLabels;
 }) {
   if (
     !stripePromise ||
@@ -297,20 +445,43 @@ export function StripePaymentStep({
     return (
       <div
         role="alert"
-className={[
-  'checkout-v3-stripe',
-  'mx-auto w-full max-w-2xl',
-  'rounded-[var(--radius-panel)]',
-  'border border-[rgba(198,93,98,0.5)]',
-  'bg-[rgba(198,93,98,0.08)]',
-  'px-5 py-4',
-].join(' ')}
+        className={[
+          'checkout-v3-stripe',
+          'mx-auto w-full max-w-2xl',
+          'rounded-[var(--radius-panel)]',
+          'border border-[rgba(198,93,98,0.5)]',
+          'bg-[rgba(198,93,98,0.08)]',
+          'px-5 py-5',
+        ].join(' ')}
       >
         <p className="text-sm leading-6 text-[var(--status-danger)]">
-          Secure payment is not
-          configured. No charge was
-          made.
+          {labels.notConfigured}
         </p>
+
+        <a
+          href={checkoutHref}
+          className={[
+            'mt-4 inline-flex min-h-11',
+            'items-center justify-center gap-2',
+            'rounded-full border',
+            'border-[rgba(255,255,255,0.16)]',
+            'px-5 py-2',
+            'font-ui text-[0.625rem]',
+            'font-semibold uppercase',
+            'tracking-[0.14em]',
+            'text-[var(--text)]',
+            'transition-[border-color,color]',
+            'hover:border-[var(--champagne)]',
+            'hover:text-[var(--champagne)]',
+          ].join(' ')}
+        >
+          <ArrowLeft
+            aria-hidden
+            size={14}
+          />
+
+          {labels.returnToCheckout}
+        </a>
       </div>
     );
   }
@@ -327,11 +498,15 @@ className={[
     >
       <StripePaymentForm
         returnPath={returnPath}
+        checkoutHref={
+          checkoutHref
+        }
         heading={heading}
         submitLabel={submitLabel}
         workingLabel={
           workingLabel
         }
+        labels={labels}
       />
     </Elements>
   );
