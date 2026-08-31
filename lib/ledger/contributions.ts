@@ -533,9 +533,30 @@ export async function cancelContribution(
  * issues supporter numbers. Idempotent by transaction id — a webhook retry
  * must never mint a second supporter number.
  */
-export async function settleContribution(transactionId: string): Promise<SettleResult> {
-  const [tx] = await dbw.select().from(s.transactions).where(eq(s.transactions.id, transactionId)).limit(1);
-  if (!tx) return { ok: false, code: 'not_found', message: 'Transaction not found.' };
+export async function settleContribution(
+  transactionId: string,
+): Promise<SettleResult> {
+  const [tx] =
+    await dbw
+      .select()
+      .from(s.transactions)
+      .where(
+        eq(
+          s.transactions.id,
+          transactionId,
+        ),
+      )
+      .limit(1);
+
+  if (!tx) {
+    return {
+      ok: false,
+      code: 'not_found',
+      message:
+        'Transaction not found.',
+    };
+  }
+
   if (
     tx.state ===
     'settled'
@@ -544,17 +565,56 @@ export async function settleContribution(transactionId: string): Promise<SettleR
       await dbw
         .select({
           seriesKey:
-            s.supporterNumbers.seriesKey,
+            s.supporterNumbers
+              .seriesKey,
           number:
-            s.supporterNumbers.number,
+            s.supporterNumbers
+              .number,
         })
-        .from(s.supporterNumbers)
+        .from(
+          s.supporterNumbers,
+        )
         .where(
           eq(
-            s.supporterNumbers.contributionId,
+            s.supporterNumbers
+              .contributionId,
             tx.contributionId,
           ),
         );
+
+    const result = {
+      ok: true as const,
+
+      supporterNumber:
+        existing.find(
+          (number) =>
+            number.seriesKey ===
+            'supporter',
+        )?.number ?? null,
+
+      foundingNumber:
+        existing.find(
+          (number) =>
+            number.seriesKey ===
+            'founding',
+        )?.number ?? null,
+    };
+
+    /*
+     * This repairs the confirmation outbox if
+     * settlement succeeded previously but the
+     * process stopped before enqueueing email.
+     *
+     * Do not enqueue an outbid notification here:
+     * this branch may be reached by webhook retries.
+     */
+    await sendContributionConfirmation(
+      transactionId,
+    );
+
+    return result;
+  }
+
   const [settlingContribution] =
     await dbw
       .select()
@@ -582,37 +642,9 @@ export async function settleContribution(transactionId: string): Promise<SettleR
         )[0] ?? null
       : null;
 
-    const result = {
-      ok: true as const,
+  const provider =
+    getProvider(tx.provider);
 
-      supporterNumber:
-        existing.find(
-          (number) =>
-            number.seriesKey ===
-            'supporter',
-        )?.number ?? null,
-
-      foundingNumber:
-        existing.find(
-          (number) =>
-            number.seriesKey ===
-            'founding',
-        )?.number ?? null,
-    };
-
-    /*
-     * This also repairs the notification outbox
-     * if settlement succeeded previously but the
-     * process stopped before enqueueing email.
-     */
-    await sendContributionConfirmation(
-      transactionId,
-    );
-
-    return result;
-  }
-
-  const provider = getProvider(tx.provider);
   const outcome = await provider.capture(tx.providerRef ?? '');
 
   if (outcome.status === 'failed') {
