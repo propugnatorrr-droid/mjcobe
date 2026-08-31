@@ -1,5 +1,8 @@
 import 'server-only';
-
+import {
+  settledCampaignTotal,
+  settledLeaderboard,
+} from '@/lib/ranking/settled';
 import { cache } from 'react';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
@@ -45,6 +48,24 @@ function rowsFrom(result: unknown): Record<string, unknown>[] {
     ? (result as Record<string, unknown>[])
     : [];
 }
+const raisedCents =
+  await settledCampaignTotal(
+    campaignId,
+  );
+
+const fanLeaders =
+  await settledLeaderboard({
+    campaignId,
+    supportType: 'fan',
+    limit: 100,
+  });
+
+const businessLeaders =
+  await settledLeaderboard({
+    campaignId,
+    supportType: 'business',
+    limit: 100,
+  });
 
 export const getCampaignTotals = cache(
   async (campaignId: string): Promise<CampaignTotals> => {
