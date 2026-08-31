@@ -74,81 +74,161 @@ export default async function ThanksPage({
     notFound();
   }
 
-  if (!confirmation.settled) {
+   if (!confirmation.settled) {
     const isBusiness =
       confirmation.supportType ===
       'business';
 
+    const state =
+      confirmation.transactionState;
+
     const isUnderReview =
       isBusiness &&
-      confirmation.transactionState ===
-        'authorized';
+      state === 'authorized';
+
+    const isProcessing =
+      state === 'initiated' ||
+      state === 'captured';
+
+    const isFailed =
+      state === 'failed';
+
+    const isCanceled =
+      state === 'canceled';
+
+    const isRefunded =
+      state === 'refunded';
+
+    const isDisputed =
+      state === 'disputed' ||
+      state === 'charged_back';
+
+    let headingKey:
+      | 'thanks.pending.heading'
+      | 'thanks.processing.heading'
+      | 'thanks.failed.heading'
+      | 'thanks.canceled.heading'
+      | 'thanks.refunded.heading'
+      | 'thanks.disputed.heading'
+      | 'thanks.unknown.heading';
+
+    let bodyKey:
+      | 'thanks.pending.body'
+      | 'thanks.processing.body'
+      | 'thanks.failed.body'
+      | 'thanks.canceled.body'
+      | 'thanks.refunded.body'
+      | 'thanks.disputed.body'
+      | 'thanks.unknown.body';
+
+    if (isUnderReview) {
+      headingKey =
+        'thanks.pending.heading';
+      bodyKey =
+        'thanks.pending.body';
+    } else if (isProcessing) {
+      headingKey =
+        'thanks.processing.heading';
+      bodyKey =
+        'thanks.processing.body';
+    } else if (isFailed) {
+      headingKey =
+        'thanks.failed.heading';
+      bodyKey =
+        'thanks.failed.body';
+    } else if (isCanceled) {
+      headingKey =
+        'thanks.canceled.heading';
+      bodyKey =
+        'thanks.canceled.body';
+    } else if (isRefunded) {
+      headingKey =
+        'thanks.refunded.heading';
+      bodyKey =
+        'thanks.refunded.body';
+    } else if (isDisputed) {
+      headingKey =
+        'thanks.disputed.heading';
+      bodyKey =
+        'thanks.disputed.body';
+    } else {
+      headingKey =
+        'thanks.unknown.heading';
+      bodyKey =
+        'thanks.unknown.body';
+    }
 
     return (
       <main className="thanks-v3-page surface-ink min-h-screen">
         <SimulationRibbon />
         <SiteNav />
 
-        {!isUnderReview ? (
+        {isProcessing ? (
           <PaymentStatusRefresh />
         ) : null}
 
-<section className="thanks-v3-processing site-shell">
-  <div>
-          <Eyebrow>
-            {isBusiness
-              ? await text(
-                  'checkout.business.heading',
-                )
-              : await text(
-                  'checkout.fan.heading',
-                )}
-          </Eyebrow>
-
-          <div className="mt-8">
-            <Display>
-              {isUnderReview
+        <section className="thanks-v3-processing site-shell">
+          <div>
+            <Eyebrow>
+              {isBusiness
                 ? await text(
-                    'thanks.pending.heading',
+                    'checkout.business.heading',
                   )
                 : await text(
-                    'thanks.processing.heading',
+                    'checkout.fan.heading',
                   )}
-            </Display>
-          </div>
+            </Eyebrow>
 
-          <p className="mt-8 max-w-[62ch] text-body text-[var(--text-dim)]">
-            {isUnderReview
-              ? await text(
-                  'thanks.pending.body',
-                )
-              : await text(
-                  'thanks.processing.body',
+            <div className="mt-8">
+              <Display>
+                {await text(
+                  headingKey,
                 )}
-          </p>
+              </Display>
+            </div>
 
-          <div className="mt-12">
-            <ButtonLink
-              href={`/song/${confirmation.songSlug}`}
-              variant="ghost"
-            >
+            <p className="mt-8 max-w-[62ch] text-body text-[var(--text-dim)]">
               {await text(
-                'thanks.view_song',
+                bodyKey,
               )}
-            </ButtonLink>
-          </div>
-        </div>
-      </section>
+            </p>
 
-      <SiteFooter />
+            <div className="mt-12 flex flex-col gap-3 sm:flex-row">
+              <ButtonLink
+                href={`/song/${confirmation.songSlug}`}
+                variant="ghost"
+              >
+                {await text(
+                  'thanks.view_song',
+                )}
+              </ButtonLink>
+
+              {!isUnderReview &&
+              !isRefunded &&
+              !isDisputed ? (
+                <ButtonLink
+                  href={
+                    isBusiness
+                      ? `/song/${confirmation.songSlug}/sponsor`
+                      : `/back?song=${confirmation.songSlug}`
+                  }
+                  variant="primary"
+                  glow
+                >
+                  {await text(
+                    'checkout.payment.start_over',
+                  )}
+                </ButtonLink>
+              ) : null}
+            </div>
+          </div>
+        </section>
+
+        <SiteFooter />
       </main>
     );
   }
 
-
-  const isBusiness =
-    confirmation.supportType ===
-    'business';
 
   const displayedNumber =
     confirmation.foundingNumber ??
