@@ -35,6 +35,16 @@ export type ConfirmationPayload = {
   rank: number | null;
   thanksToken: string | null;
 };
+export type OutbidPayload = {
+  songTitle: string;
+  songSlug: string;
+  scope:
+    | 'fan'
+    | 'business';
+  leadingAmountCents: number;
+  minimumToReclaimCents:
+    number;
+};
 
 function escapeHtml(
   value: string,
@@ -246,6 +256,90 @@ function confirmationEmail(
     text,
   };
 }
+function outbidEmail(
+  recipientEmail: string,
+  payload: OutbidPayload,
+): EmailMessage {
+  const destination =
+    payload.scope === 'business'
+      ? `${siteUrl()}/song/${encodeURIComponent(payload.songSlug)}/sponsor`
+      : `${siteUrl()}/back?song=${encodeURIComponent(payload.songSlug)}`;
+
+  const subject =
+    `The lead changed — ${payload.songTitle}`;
+
+  const reclaim =
+    money(
+      payload
+        .minimumToReclaimCents,
+    );
+
+  const leading =
+    money(
+      payload
+        .leadingAmountCents,
+    );
+
+  const text = [
+    'THE LEAD CHANGED',
+    '',
+    `Another supporter now leads ${payload.songTitle} at ${leading}.`,
+    `Add ${reclaim} or more to reclaim first place.`,
+    '',
+    destination,
+    '',
+    'MJ COBE',
+  ].join('\n');
+
+  const html = `<!doctype html>
+<html lang="en">
+  <body style="margin:0;background:#090909;color:#f5f0e7;font-family:Arial,Helvetica,sans-serif">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td align="center" style="padding:32px 16px">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;border-top:2px solid #d6b979;border-bottom:1px solid #3e372b">
+            <tr>
+              <td style="padding:36px 0">
+                <div style="font-size:10px;letter-spacing:3px;color:#d6b979">
+                  LEADERBOARD UPDATE
+                </div>
+
+                <h1 style="margin:18px 0;font-family:Georgia,Times,serif;font-size:38px;font-weight:400">
+                  The lead changed.
+                </h1>
+
+                <p style="font-size:16px;line-height:1.7;color:#c8c0b2">
+                  Another supporter now leads
+                  <strong>${escapeHtml(payload.songTitle)}</strong>
+                  at ${escapeHtml(leading)}.
+                </p>
+
+                <p style="font-size:16px;line-height:1.7;color:#c8c0b2">
+                  Add ${escapeHtml(reclaim)} or more to reclaim first place.
+                </p>
+
+                <p style="margin-top:30px">
+                  <a href="${escapeHtml(destination)}" style="display:inline-block;border-bottom:1px solid #d6b979;padding:8px 0;color:#f5f0e7;text-decoration:none;font-size:11px;font-weight:bold;letter-spacing:2px">
+                    RETURN TO THE RECORD →
+                  </a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  return {
+    to: recipientEmail,
+    from: fromAddress(),
+    subject,
+    text,
+    html,
+  };
+}
 
 export function buildNotificationEmail(
   kind: NotificationKind,
@@ -263,6 +357,12 @@ export function buildNotificationEmail(
     return confirmationEmail(
       recipientEmail,
       payload as ConfirmationPayload,
+    );
+  }
+  if (kind === 'outbid') {
+    return outbidEmail(
+      recipientEmail,
+      payload as OutbidPayload,
     );
   }
 
