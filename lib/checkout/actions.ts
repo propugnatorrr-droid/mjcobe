@@ -27,6 +27,9 @@ import {
 import {
   grantSupporterAccess,
 } from '@/lib/supporter/access';
+import {
+  referralLinkForCampaign,
+} from '@/lib/checkout/referrals';
 
 
 export type CheckoutState = {
@@ -165,8 +168,25 @@ export async function submitFanContribution(
 
   if (!campaignId) return { error: await text('checkout.error.closed') };
 
-  const campaign = await loadPayableCampaign(campaignId, 'fan');
-  if (!campaign) return { error: await text('checkout.error.closed') };
+  const campaign =
+    await loadPayableCampaign(
+      campaignId,
+      'fan',
+    );
+
+  if (!campaign) {
+    return {
+      error:
+        await text(
+          'checkout.error.closed',
+        ),
+    };
+  }
+
+  const referralLinkId =
+    await referralLinkForCampaign(
+      campaign.id,
+    );
 
   const min = await setting('minContributionCents');
   const max = await setting('maxContributionCents');
@@ -233,6 +253,7 @@ export async function submitFanContribution(
       supportType: 'fan',
       amountCents,
       tierId,
+      referralLinkId,
       supporter: {
         email,
         displayName: displayNameRaw,
@@ -378,8 +399,26 @@ export async function submitSponsorship(
 
   if (!campaignId) return { error: await text('checkout.error.closed') };
 
-  const campaign = await loadPayableCampaign(campaignId, 'business');
-  if (!campaign) return { error: await text('checkout.error.closed') };
+  const campaign =
+    await loadPayableCampaign(
+      campaignId,
+      'business',
+    );
+
+  if (!campaign) {
+    return {
+      error:
+        await text(
+          'checkout.error.closed',
+        ),
+    };
+  }
+
+  const referralLinkId =
+    await referralLinkForCampaign(
+      campaign.id,
+    );
+
 
   const min = await setting('sponsorMinContributionCents');
   const max = await setting('maxContributionCents');
@@ -593,6 +632,7 @@ if (logoValidation.file) {
           'business',
         amountCents,
         sponsorId,
+        referralLinkId,
         consent: {
           version:
             consent.version,
