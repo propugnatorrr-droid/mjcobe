@@ -74,11 +74,11 @@ export default async function ThanksPage({
     notFound();
   }
 
-   if (!confirmation.settled) {
-    const isBusiness =
-      confirmation.supportType ===
-      'business';
+  const isBusiness =
+    confirmation.supportType ===
+    'business';
 
+  if (!confirmation.settled) {
     const state =
       confirmation.transactionState;
 
