@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { ShieldCheck } from 'lucide-react';
 import { SimulationRibbon } from '@/components/SimulationRibbon';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
 import { Display } from '@/components/primitives/Display';
 import { FanCheckoutForm } from '@/components/checkout/FanCheckoutForm';
+import { CheckoutUnavailable } from '@/components/checkout/CheckoutUnavailable';
 import type { AmountOption } from '@/components/checkout/AmountChooser';
 import {
+  getCheckoutSong,
   getOpenCampaigns,
   getTiersFor,
 } from '@/lib/checkout/queries';
@@ -76,8 +77,61 @@ export default async function BackPage({
     (songParam ? undefined : payableCampaigns[0]);
 
   if (!selectedCampaign) {
-    redirect('/back');
+    const requestedSong = songParam
+      ? await getCheckoutSong(songParam)
+      : null;
+
+    const [
+      navLabel,
+      eyebrow,
+      unavailableTitle,
+      unavailableNamed,
+      unavailableBody,
+      chooseAvailable,
+      viewSong,
+    ] = await Promise.all([
+      text('nav.cta'),
+      text('checkout.unavailable.eyebrow'),
+      text('checkout.unavailable.title'),
+      requestedSong
+        ? text('checkout.unavailable.named', {
+            song: requestedSong.songTitle,
+          })
+        : text('checkout.unavailable.title'),
+      text('checkout.unavailable.body'),
+      text('checkout.unavailable.choose'),
+      text('checkout.unavailable.view_song'),
+    ]);
+
+    return (
+      <main
+        id="main-content"
+        className="checkout-v3-page surface-ink min-h-screen"
+      >
+        <SimulationRibbon />
+        <SiteNav sub={navLabel} />
+
+        <div className="checkout-v3-shell">
+          <CheckoutUnavailable
+            song={requestedSong}
+            campaigns={payableCampaigns}
+            labels={{
+              eyebrow,
+              title: requestedSong
+                ? unavailableNamed
+                : unavailableTitle,
+              body: unavailableBody,
+              choose: chooseAvailable,
+              viewSong,
+            }}
+          />
+        </div>
+
+        <SiteFooter />
+      </main>
+    );
   }
+
 
   const tiers = await getTiersFor(
     selectedCampaign.campaignId,
@@ -94,10 +148,18 @@ export default async function BackPage({
     disabled: !tier.isAvailable,
   }));
 
-  const [locale, currency] = await Promise.all([
+  const [
+    locale,
+    currency,
+    minContributionCents,
+    maxContributionCents,
+  ] = await Promise.all([
     setting('locale'),
     setting('currency'),
+    setting('minContributionCents'),
+    setting('maxContributionCents'),
   ]);
+
 
   const currencySymbol =
     new Intl.NumberFormat(locale, {
@@ -107,6 +169,34 @@ export default async function BackPage({
       .formatToParts(0)
       .find((part) => part.type === 'currency')
       ?.value ?? '';
+  const customMin = (
+    minContributionCents / 100
+  ).toFixed(2);
+
+  const customMax = (
+    maxContributionCents / 100
+  ).toFixed(2);
+
+  const customRange = await text(
+    'checkout.custom_range',
+    {
+      min: formatCents(
+        cents(minContributionCents),
+      ),
+      max: formatCents(
+        cents(maxContributionCents),
+      ),
+    },
+  );
+
+  const initialTierUnavailable = Boolean(
+    tierParam &&
+      !options.some(
+        (option) =>
+          option.id === tierParam &&
+          !option.disabled,
+      ),
+  );
 
   const [
     heading,
@@ -117,6 +207,8 @@ export default async function BackPage({
     payment,
     custom,
     customPlaceholder,
+    tierUnavailable,
+    tierChanged,
     email,
     displayName,
     instagram,
@@ -147,6 +239,8 @@ export default async function BackPage({
     text('checkout.step.payment'),
     text('checkout.custom_amount'),
     text('checkout.custom_placeholder'),
+    text('checkout.tier_unavailable'),
+    text('checkout.tier_changed'),
     text('checkout.field.email'),
     text('checkout.field.display_name'),
     text('checkout.field.instagram'),
@@ -264,12 +358,20 @@ className={[
             options={options}
             currencySymbol={currencySymbol}
             initialTierId={tierParam}
+            customMin={customMin}
+            customMax={customMax}
+            initialTierUnavailable={
+              initialTierUnavailable
+            }
             labels={{
               amount,
               identity,
               payment,
               custom,
               customPlaceholder,
+              customRange,
+              tierUnavailable,
+              tierChanged,
               email,
               displayName,
               instagram,
