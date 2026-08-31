@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { SimulationRibbon } from '@/components/SimulationRibbon';
@@ -192,6 +193,7 @@ export default async function SponsorPage({
       <div className="site-shell py-10 sm:py-14 lg:py-16">
         <SponsorForm
           campaignId={data.campaign.id}
+          checkoutAttemptKey={randomUUID()}
           options={options}
           currencySymbol={currencySymbol}
           claimTop={claimTop}
