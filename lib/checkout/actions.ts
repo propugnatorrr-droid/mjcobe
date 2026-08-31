@@ -37,7 +37,36 @@ export type CheckoutState = {
   };
 };
 
-const sha = (v: string) => createHash('sha256').update(v).digest('hex');
+const sha = (v: string) =>
+  createHash('sha256')
+    .update(v)
+    .digest('hex');
+
+const CHECKOUT_ATTEMPT_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function checkoutAttemptKey(
+  formData: FormData,
+  scope: 'fan' | 'business',
+): string | null {
+  const attemptId = str(
+    formData.get(
+      'checkoutAttemptKey',
+    ),
+    36,
+  );
+
+  if (
+    !attemptId ||
+    !CHECKOUT_ATTEMPT_RE.test(
+      attemptId,
+    )
+  ) {
+    return null;
+  }
+
+  return `${scope}:${attemptId}`;
+}
 
 async function requestFingerprint() {
   const h = await headers();
