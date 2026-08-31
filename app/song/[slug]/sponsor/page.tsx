@@ -300,6 +300,30 @@ export default async function SponsorPage({
             claimBody: await text(
               'checkout.business.claim_body',
             ),
+            paymentSecureBody: await text(
+              'checkout.payment.secure_body',
+            ),
+            paymentNotConfigured: await text(
+              'checkout.payment.not_configured',
+            ),
+            paymentFailed: await text(
+              'checkout.payment.failed',
+            ),
+            paymentDeclined: await text(
+              'checkout.payment.declined',
+            ),
+            paymentRetry: await text(
+              'checkout.payment.retry',
+            ),
+            paymentReturn: await text(
+              'checkout.payment.return',
+            ),
+            paymentProcessing: await text(
+              'checkout.payment.processing',
+            ),
+            paymentDoNotClose: await text(
+              'checkout.payment.do_not_close',
+            ),
           }}
         />
       </div>
