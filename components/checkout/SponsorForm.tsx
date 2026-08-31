@@ -63,6 +63,7 @@ export type SponsorFormLabels = Record<
 
 type SponsorFormProps = {
   campaignId: string;
+  checkoutAttemptKey: string;
   options: AmountOption[];
   labels: SponsorFormLabels;
   currencySymbol: string;
@@ -74,6 +75,7 @@ type SponsorFormProps = {
 
 export function SponsorForm({
   campaignId,
+  checkoutAttemptKey,
   options,
   labels,
   currencySymbol,
@@ -146,6 +148,12 @@ export function SponsorForm({
         type="hidden"
         name="campaignId"
         value={campaignId}
+      />
+
+      <input
+        type="hidden"
+        name="checkoutAttemptKey"
+        value={checkoutAttemptKey}
       />
 
       <input
