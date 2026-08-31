@@ -127,11 +127,42 @@ export async function submitFanContribution(
   formData: FormData,
 ): Promise<CheckoutState> {
   // Honeypot: a real person never fills a hidden field.
-  if (str(formData.get('company_website_confirm'))) {
-    return { error: await text('checkout.error.blocked') };
+  if (
+    str(
+      formData.get(
+        'company_website_confirm',
+      ),
+    )
+  ) {
+    return {
+      error:
+        await text(
+          'checkout.error.blocked',
+        ),
+    };
   }
 
-  const campaignId = str(formData.get('campaignId'));
+  const idempotencyKey =
+    checkoutAttemptKey(
+      formData,
+      'fan',
+    );
+
+  if (!idempotencyKey) {
+    return {
+      error:
+        await text(
+          'checkout.error.generic',
+        ),
+    };
+  }
+
+  const campaignId = str(
+    formData.get(
+      'campaignId',
+    ),
+  );
+
   if (!campaignId) return { error: await text('checkout.error.closed') };
 
   const campaign = await loadPayableCampaign(campaignId, 'fan');
@@ -220,6 +251,7 @@ export async function submitFanContribution(
       customerEmail: email,
       description:
         `Fan support for ${campaign.id}`,
+      idempotencyKey,
       simulateCard:
         str(
           formData.get(
@@ -308,11 +340,42 @@ export async function submitSponsorship(
   _prev: CheckoutState,
   formData: FormData,
 ): Promise<CheckoutState> {
-  if (str(formData.get('company_website_confirm'))) {
-    return { error: await text('checkout.error.blocked') };
+  if (
+    str(
+      formData.get(
+        'company_website_confirm',
+      ),
+    )
+  ) {
+    return {
+      error:
+        await text(
+          'checkout.error.blocked',
+        ),
+    };
   }
 
-  const campaignId = str(formData.get('campaignId'));
+  const idempotencyKey =
+    checkoutAttemptKey(
+      formData,
+      'business',
+    );
+
+  if (!idempotencyKey) {
+    return {
+      error:
+        await text(
+          'checkout.error.generic',
+        ),
+    };
+  }
+
+  const campaignId = str(
+    formData.get(
+      'campaignId',
+    ),
+  );
+
   if (!campaignId) return { error: await text('checkout.error.closed') };
 
   const campaign = await loadPayableCampaign(campaignId, 'business');
@@ -542,6 +605,7 @@ if (logoValidation.file) {
           email,
         description:
           `Sponsorship from ${businessName}`,
+        idempotencyKey,
         captureMethod:
           needsReview
             ? 'manual'
