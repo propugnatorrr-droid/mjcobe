@@ -175,6 +175,21 @@ const copyDefaults = {
 
   'checkout.choose_song': 'CHOOSE A RECORD',
   'checkout.no_open_campaigns': 'No campaigns are open right now.',
+  'checkout.unavailable.eyebrow': 'RECORD UNAVAILABLE',
+  'checkout.unavailable.title': 'THIS RECORD IS NOT ACCEPTING SUPPORT',
+  'checkout.unavailable.named':
+    '{song} is not accepting fan support right now.',
+  'checkout.unavailable.body':
+    'The campaign may be closed, scheduled for later, or limited to business sponsorship.',
+  'checkout.unavailable.choose':
+    'CHOOSE AN AVAILABLE RECORD',
+  'checkout.unavailable.view_song':
+    'VIEW SONG JOURNEY',
+  'checkout.custom_range':
+    'Custom support must be between {min} and {max}.',
+  'checkout.tier_unavailable': 'SOLD OUT',
+  'checkout.tier_changed':
+    'That support level is no longer available. Choose another level or enter a custom amount.',
   'checkout.minimum_to_lead': 'Minimum to take #1 is {amount}.',
   'checkout.packages': 'SPONSORSHIP PACKAGES',
   'checkout.choose_role': 'CHOOSE YOUR ROLE',
