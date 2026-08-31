@@ -17,28 +17,79 @@ export function PaymentStatusRefresh() {
 
   useEffect(() => {
     let refreshes = 0;
+    let timeout:
+      number | null = null;
+    let stopped = false;
 
-    const interval =
-      window.setInterval(
-        () => {
-          refreshes += 1;
-          router.refresh();
+    function clearScheduledRefresh() {
+      if (timeout !== null) {
+        window.clearTimeout(
+          timeout,
+        );
 
-          if (
-            refreshes >=
-            MAX_REFRESHES
-          ) {
-            window.clearInterval(
-              interval,
-            );
-          }
-        },
-        REFRESH_INTERVAL_MS,
-      );
+        timeout = null;
+      }
+    }
+
+    function scheduleRefresh() {
+      clearScheduledRefresh();
+
+      if (
+        stopped ||
+        refreshes >=
+          MAX_REFRESHES ||
+        document.visibilityState !==
+          'visible'
+      ) {
+        return;
+      }
+
+      timeout =
+        window.setTimeout(
+          () => {
+            if (
+              stopped ||
+              document
+                .visibilityState !==
+                'visible'
+            ) {
+              return;
+            }
+
+            refreshes += 1;
+            router.refresh();
+            scheduleRefresh();
+          },
+          REFRESH_INTERVAL_MS,
+        );
+    }
+
+    function handleVisibilityChange() {
+      if (
+        document.visibilityState ===
+        'visible'
+      ) {
+        scheduleRefresh();
+      } else {
+        clearScheduledRefresh();
+      }
+    }
+
+    document.addEventListener(
+      'visibilitychange',
+      handleVisibilityChange,
+    );
+
+    scheduleRefresh();
 
     return () => {
-      window.clearInterval(
-        interval,
+      stopped = true;
+
+      clearScheduledRefresh();
+
+      document.removeEventListener(
+        'visibilitychange',
+        handleVisibilityChange,
       );
     };
   }, [router]);
