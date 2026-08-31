@@ -1,55 +1,176 @@
-import { createHash } from 'node:crypto';
-import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
-import { notFound } from 'next/navigation';
+import {
+  createHash,
+} from 'node:crypto';
+import {
+  NextRequest,
+  NextResponse,
+} from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { dbw } from '@/lib/db/write';
 import * as s from '@/lib/db/schema';
+import {
+  createReferralCookie,
+  newReferralSessionId,
+  REFERRAL_COOKIE,
+  REFERRAL_SESSION_COOKIE,
+  REFERRAL_TTL_SECONDS,
+} from '@/lib/checkout/referrals';
 
-/** A tracked promo link (PRD §39): `mjcobe.com/r/ABC` logs a real visit
- * then forwards to the song it points at. No fabricated click counts —
- * the admin view counts these rows directly. */
+function hash(
+  value: string,
+): string {
+  return createHash(
+    'sha256',
+  )
+    .update(value)
+    .digest('hex');
+}
+
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ code: string }> },
+  request: NextRequest,
+  context: {
+    params:
+      Promise<{
+        code: string;
+      }>;
+  },
 ) {
-  const { code } = await params;
+  const { code } =
+    await context.params;
 
-  const [link] = await db
-    .select({ id: s.referralLinks.id, campaignId: s.referralLinks.campaignId })
-    .from(s.referralLinks)
-    .where(eq(s.referralLinks.code, code))
-    .limit(1);
-  if (!link) notFound();
+  const normalizedCode =
+    code.trim().toLowerCase();
 
-  let songSlug: string | null = null;
-  if (link.campaignId) {
-    const [campaign] = await db
-      .select({ songId: s.campaigns.songId })
-      .from(s.campaigns)
-      .where(eq(s.campaigns.id, link.campaignId))
+  const [link] =
+    await db
+      .select({
+        id:
+          s.referralLinks.id,
+        campaignId:
+          s.referralLinks
+            .campaignId,
+        songSlug:
+          s.songs.slug,
+      })
+      .from(
+        s.referralLinks,
+      )
+      .leftJoin(
+        s.campaigns,
+        eq(
+          s.campaigns.id,
+          s.referralLinks
+            .campaignId,
+        ),
+      )
+      .leftJoin(
+        s.songs,
+        eq(
+          s.songs.id,
+          s.campaigns.songId,
+        ),
+      )
+      .where(
+        eq(
+          s.referralLinks.code,
+          normalizedCode,
+        ),
+      )
       .limit(1);
-    if (campaign) {
-      const [song] = await db
-        .select({ slug: s.songs.slug })
-        .from(s.songs)
-        .where(eq(s.songs.id, campaign.songId))
-        .limit(1);
-      songSlug = song?.slug ?? null;
-    }
+
+  if (
+    !link ||
+    !link.campaignId ||
+    !link.songSlug
+  ) {
+    return NextResponse.redirect(
+      new URL('/', request.url),
+      302,
+    );
   }
 
-  const h = await headers();
-  const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim();
+  const existingSession =
+    request.cookies.get(
+      REFERRAL_SESSION_COOKIE,
+    )?.value;
 
-  await dbw.insert(s.referralVisits).values({
-    referralLinkId: link.id,
-    sessionId: crypto.randomUUID(),
-    ipHash: ip ? createHash('sha256').update(ip).digest('hex') : null,
-    userAgent: h.get('user-agent') ?? null,
-  });
+  const sessionId =
+    existingSession &&
+    /^[0-9a-f-]{36}$/i.test(
+      existingSession,
+    )
+      ? existingSession
+      : newReferralSessionId();
 
-  const destination = new URL(songSlug ? `/song/${songSlug}` : '/', request.url);
-  return NextResponse.redirect(destination, { status: 302 });
+  const forwarded =
+    request.headers
+      .get('x-forwarded-for')
+      ?.split(',')[0]
+      ?.trim();
+
+  await dbw
+    .insert(
+      s.referralVisits,
+    )
+    .values({
+      referralLinkId:
+        link.id,
+      sessionId,
+      ipHash:
+        forwarded
+          ? hash(forwarded)
+          : null,
+      userAgent:
+        request.headers
+          .get('user-agent')
+          ?.slice(0, 500) ??
+        null,
+    });
+
+  const response =
+    NextResponse.redirect(
+      new URL(
+        `/song/${link.songSlug}`,
+        request.url,
+      ),
+      302,
+    );
+
+  const secure =
+    process.env.NODE_ENV ===
+    'production';
+
+  response.cookies.set(
+    REFERRAL_SESSION_COOKIE,
+    sessionId,
+    {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure,
+      maxAge:
+        REFERRAL_TTL_SECONDS,
+      path: '/',
+    },
+  );
+
+  response.cookies.set(
+    REFERRAL_COOKIE,
+    createReferralCookie({
+      referralLinkId:
+        link.id,
+      campaignId:
+        link.campaignId,
+    }),
+    {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure,
+      maxAge:
+        REFERRAL_TTL_SECONDS,
+      path: '/',
+    },
+  );
+
+  return response;
 }
