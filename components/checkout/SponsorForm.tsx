@@ -57,7 +57,15 @@ export type SponsorFormLabels = Record<
   | 'customSponsorship'
   | 'approvalHeading'
   | 'claimHeading'
-  | 'claimBody',
+  | 'claimBody'
+  | 'paymentSecureBody'
+  | 'paymentNotConfigured'
+  | 'paymentFailed'
+  | 'paymentDeclined'
+  | 'paymentRetry'
+  | 'paymentReturn'
+  | 'paymentProcessing'
+  | 'paymentDoNotClose',
   string
 >;
 
@@ -128,6 +136,7 @@ export function SponsorForm({
           state.payment
             .returnPath
         }
+        checkoutHref="/partners"
         heading={
           labels.payment
         }
@@ -137,9 +146,28 @@ export function SponsorForm({
         workingLabel={
           labels.working
         }
+        labels={{
+          secureBody:
+            labels.paymentSecureBody,
+          notConfigured:
+            labels.paymentNotConfigured,
+          failed:
+            labels.paymentFailed,
+          declined:
+            labels.paymentDeclined,
+          retry:
+            labels.paymentRetry,
+          returnToCheckout:
+            labels.paymentReturn,
+          processing:
+            labels.paymentProcessing,
+          doNotClose:
+            labels.paymentDoNotClose,
+        }}
       />
     );
   }
+
 
   return (
 
