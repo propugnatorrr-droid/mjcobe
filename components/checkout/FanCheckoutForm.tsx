@@ -31,6 +31,9 @@ export type FanFormLabels = Record<
   | 'payment'
   | 'custom'
   | 'customPlaceholder'
+  | 'customRange'
+  | 'tierUnavailable'
+  | 'tierChanged'
   | 'email'
   | 'displayName'
   | 'instagram'
@@ -116,18 +119,23 @@ function availableInitialId(
   options: AmountOption[],
   requestedId?: string,
 ) {
-  const requested = options.find(
-    (option) =>
-      option.id === requestedId &&
-      !option.disabled,
-  );
+  if (requestedId) {
+    return (
+      options.find(
+        (option) =>
+          option.id === requestedId &&
+          !option.disabled,
+      )?.id ?? null
+    );
+  }
 
   return (
-    requested?.id ??
-    options.find((option) => !option.disabled)?.id ??
-    null
+    options.find(
+      (option) => !option.disabled,
+    )?.id ?? null
   );
 }
+
 
 export function FanCheckoutForm({
   campaignId,
@@ -136,6 +144,9 @@ export function FanCheckoutForm({
   currencySymbol,
   sponsorHref,
   initialTierId,
+  customMin,
+  customMax,
+  initialTierUnavailable,
 }: {
   campaignId: string;
   options: AmountOption[];
@@ -143,6 +154,9 @@ export function FanCheckoutForm({
   currencySymbol: string;
   sponsorHref: string | null;
   initialTierId?: string;
+  customMin: string;
+  customMax: string;
+  initialTierUnavailable: boolean;
 }) {
   const [state, action] = useActionState<
     CheckoutState,
@@ -218,6 +232,22 @@ className={[
       />
 
       <div className="flex min-w-0 flex-col gap-6">
+        {initialTierUnavailable ? (
+          <div
+            role="alert"
+            className={[
+              'rounded-[var(--radius-panel)]',
+              'border border-[rgba(201,162,39,0.42)]',
+              'bg-[rgba(201,162,39,0.07)]',
+              'px-5 py-4',
+            ].join(' ')}
+          >
+            <p className="text-sm leading-6 text-[var(--text)]">
+              {labels.tierChanged}
+            </p>
+          </div>
+        ) : null}
+
         <CheckoutStep
           number={1}
           title={labels.chooseRole}
@@ -308,13 +338,24 @@ className={[
             options={options}
             fieldName="tierId"
             customLabel={labels.custom}
-            customPlaceholder={labels.customPlaceholder}
+            customPlaceholder={
+              labels.customPlaceholder
+            }
             currencySymbol={currencySymbol}
             selectedId={selectedId}
             onSelect={setSelectedId}
-            onCustomAmountChange={setCustomAmount}
+            onCustomAmountChange={
+              setCustomAmount
+            }
+            customMin={customMin}
+            customMax={customMax}
+            customRange={labels.customRange}
+            unavailableLabel={
+              labels.tierUnavailable
+            }
             showSummary={false}
           />
+
         </CheckoutStep>
 
         <CheckoutStep
