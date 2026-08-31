@@ -496,6 +496,16 @@ invoiceStatuses: {
     create: 'CREATE LINK',
     duplicate: 'That code is already in use.',
     url: 'URL',
+        uniqueSessions:
+      'UNIQUE VISITORS',
+    conversions:
+      'SETTLED SUPPORT',
+    conversionRate:
+      'CONVERSION',
+    revenue:
+      'SETTLED REVENUE',
+    averageContribution:
+      'AVERAGE SUPPORT',
   },
 
   offline: {
