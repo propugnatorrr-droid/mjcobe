@@ -58,6 +58,10 @@ export function AmountChooser({
   onSelect,
   onCustomAmountChange,
   customDefaultValue,
+  customMin,
+  customMax,
+  customRange,
+  unavailableLabel,
   showSummary = true,
 }: {
   options: AmountOption[];
@@ -69,8 +73,13 @@ export function AmountChooser({
   onSelect?: (id: string | null) => void;
   onCustomAmountChange?: (amount: string) => void;
   customDefaultValue?: string;
+  customMin?: string;
+  customMax?: string;
+  customRange?: string;
+  unavailableLabel?: string;
   showSummary?: boolean;
 }) {
+
   const [ownSelected, setOwnSelected] = useState<string | null>(
     firstAvailableId(options),
   );
@@ -176,6 +185,13 @@ export function AmountChooser({
                 >
                   {option.label}
                 </span>
+
+                {option.disabled &&
+                unavailableLabel ? (
+                  <span className="mt-2 block text-[0.5625rem] font-bold uppercase tracking-[0.16em] text-[var(--status-danger)]">
+                    {unavailableLabel}
+                  </span>
+                ) : null}
               </span>
 
               {active ? (
@@ -301,13 +317,20 @@ export function AmountChooser({
 
             <input
               name="amount"
+              type="number"
               inputMode="decimal"
+              min={customMin}
+              max={customMax}
+              step="0.01"
               required
               defaultValue={customDefaultValue}
               placeholder={customPlaceholder}
               onChange={(event) => {
-                onCustomAmountChange?.(event.currentTarget.value);
+                onCustomAmountChange?.(
+                  event.currentTarget.value,
+                );
               }}
+
               className={[
                 'min-w-0 flex-1 bg-transparent py-3',
                 'numeric font-serif text-2xl text-[var(--text)]',
@@ -316,6 +339,12 @@ export function AmountChooser({
               ].join(' ')}
             />
           </span>
+
+          {customRange ? (
+            <span className="text-xs leading-5 text-[var(--text-dim)]">
+              {customRange}
+            </span>
+          ) : null}
         </label>
       ) : showSummary && activeOption?.benefits?.length ? (
         <div
