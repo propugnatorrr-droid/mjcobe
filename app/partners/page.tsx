@@ -15,6 +15,9 @@ import { getImageByPath } from '@/lib/media/queries';
 import { getPartnersPage } from '@/lib/partners/queries';
 import { text } from '@/lib/copy/site-copy';
 import { cents, formatCents } from '@/lib/money/cents';
+import {
+  sponsorCheckoutHref,
+} from '@/lib/checkout/sponsor-selection';
 
 export const revalidate = 60;
 
@@ -113,7 +116,9 @@ export default async function PartnersPage() {
             {data.accepting.map((c) => (
               <Link
                 key={c.campaignId}
-                href={`/song/${c.songSlug}`}
+href={sponsorCheckoutHref(
+  c.songSlug,
+)}
                 className="group flex gap-4 overflow-hidden rounded-[var(--radius-panel)] border p-4 transition-colors [transition-duration:var(--duration-signature)] hover:border-[var(--champagne)]"
                 style={{ borderColor: 'var(--line)', background: 'var(--ink-2)' }}
               >
@@ -200,12 +205,39 @@ export default async function PartnersPage() {
 
                 <ul className="flex flex-1 flex-col gap-2.5">
                   {pkg.deliverables.map((d) => (
-                    <li key={d} className="flex items-start gap-2 font-ui text-xs text-[var(--text-dim)]">
-                      <Check aria-hidden size={13} color="var(--champagne)" className="mt-0.5 shrink-0" />
+                    <li
+                      key={d}
+                      className="flex items-start gap-2 font-ui text-xs text-[var(--text-dim)]"
+                    >
+                      <Check
+                        aria-hidden
+                        size={13}
+                        color="var(--champagne)"
+                        className="mt-0.5 shrink-0"
+                      />
+
                       {d}
                     </li>
                   ))}
                 </ul>
+
+                <p className="mt-6 border-t border-[var(--line)] pt-4 text-center font-ui text-[0.5625rem] font-semibold uppercase tracking-[0.16em] text-[var(--text-dim)]">
+                  {pkg.songTitle}
+                </p>
+
+                <ButtonLink
+                  href={sponsorCheckoutHref(
+                    pkg.songSlug,
+                    {
+                      packageId:
+                        pkg.id,
+                    },
+                  )}
+                  variant="primary"
+                  className="mt-4 w-full !rounded-sm"
+                >
+                  {applyLabel}
+                </ButtonLink>
               </div>
             );
           })}
