@@ -351,6 +351,12 @@ const copyDefaults = {
     'Pause {song} preview',
   'song.audio.seek':
     'Seek through {song} preview',
+  'music.audio.play':
+    'Play song preview',
+  'music.audio.pause':
+    'Pause song preview',
+  'music.audio.seek':
+    'Seek through song preview',
   'song.listen.heading':
     'LISTEN & WATCH',
   'song.listen.spotify':
