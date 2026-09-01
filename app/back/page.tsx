@@ -7,6 +7,9 @@ import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
 import { Display } from '@/components/primitives/Display';
 import { FanCheckoutForm } from '@/components/checkout/FanCheckoutForm';
+import {
+  AnalyticsEvent,
+} from '@/components/analytics/AnalyticsEvent';
 import { CheckoutUnavailable } from '@/components/checkout/CheckoutUnavailable';
 import type { AmountOption } from '@/components/checkout/AmountChooser';
 import {
@@ -290,6 +293,17 @@ export default async function BackPage({
     >
       <SimulationRibbon />
       <SiteNav sub={heading} />
+
+      <AnalyticsEvent
+        kind="checkout_start"
+        campaignId={
+          selectedCampaign
+            .campaignId
+        }
+        meta={{
+          scope: 'fan',
+        }}
+      />
 
       <div className="checkout-v3-shell">
         <header
