@@ -285,6 +285,8 @@ const copyDefaults = {
   'thanks.share': 'SHARE MY SUPPORT',
     'thanks.view_partner':
     'VIEW YOUR PARTNER PROFILE',
+  'thanks.view_profile':
+    'VIEW YOUR SUPPORTER PROFILE',
   'thanks.view_song': 'VIEW SONG JOURNEY',
   'thanks.back_another': 'BACK ANOTHER RECORD',
   'thanks.copy_link': 'COPY LINK',
