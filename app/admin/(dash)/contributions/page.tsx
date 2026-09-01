@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import { listContributions } from '@/lib/admin/queries';
-import { moderateContribution, blockFromContribution } from '@/lib/admin/actions';
+import {
+  moderateContribution,
+  blockFromContribution,
+  resolveFlaggedSponsor,
+} from '@/lib/admin/actions';
 import { RefundForm } from '@/components/admin/RefundForm';
 import { AdminHeading, Table, Td, InlineAction, StateDot, AdminInput } from '@/components/admin/ui';
 import { admin } from '@/lib/copy/admin';
@@ -51,12 +55,90 @@ export default async function ContributionsPage({ searchParams }: Props) {
           <tr key={row.contributionId}>
             <Td mono dim>{await formatDay(row.occurredAt)}</Td>
             <Td>
-              <form action={moderateContribution} className="flex items-center gap-3">
-                <input type="hidden" name="contributionId" value={row.contributionId} />
-                <input type="hidden" name="action" value="rename" />
-                <AdminInput name="displayName" defaultValue={row.name} />
-                <InlineAction>{admin.actions.rename}</InlineAction>
-              </form>
+              {row.supportType ===
+                'business' &&
+              row.sponsorId &&
+              row.moderation ===
+                'flagged' ? (
+                <form
+                  action={
+                    resolveFlaggedSponsor
+                  }
+                  className="flex flex-wrap items-center gap-3"
+                >
+                  <input
+                    type="hidden"
+                    name="contributionId"
+                    value={
+                      row.contributionId
+                    }
+                  />
+
+                  <AdminInput
+                    name="businessName"
+                    defaultValue={row.name}
+                  />
+
+                  <button
+                    type="submit"
+                    name="action"
+                    value="approve"
+                  >
+                    <InlineAction>
+                      {
+                        admin.actions
+                          .approve
+                      }
+                    </InlineAction>
+                  </button>
+
+                  <button
+                    type="submit"
+                    name="action"
+                    value="block"
+                  >
+                    <InlineAction danger>
+                      {
+                        admin.actions
+                          .block
+                      }
+                    </InlineAction>
+                  </button>
+                </form>
+              ) : (
+                <form
+                  action={
+                    moderateContribution
+                  }
+                  className="flex items-center gap-3"
+                >
+                  <input
+                    type="hidden"
+                    name="contributionId"
+                    value={
+                      row.contributionId
+                    }
+                  />
+
+                  <input
+                    type="hidden"
+                    name="action"
+                    value="rename"
+                  />
+
+                  <AdminInput
+                    name="displayName"
+                    defaultValue={row.name}
+                  />
+
+                  <InlineAction>
+                    {
+                      admin.actions
+                        .rename
+                    }
+                  </InlineAction>
+                </form>
+              )}
             </Td>
             <Td dim>{row.songTitle}</Td>
             <Td mono dim>{row.supportType}</Td>
@@ -66,7 +148,20 @@ export default async function ContributionsPage({ searchParams }: Props) {
             <Td mono dim>{row.moderation}</Td>
             <Td>
               <div className="flex flex-wrap items-center gap-4">
-                {(['approve', 'flag', row.leaderboardVisible ? 'hide' : 'unhide'] as const).map(
+                {!(
+                  row.supportType ===
+                    'business' &&
+                  row.sponsorId &&
+                  row.moderation ===
+                    'flagged'
+                )
+                  ? ([
+                      'approve',
+                      'flag',
+                      row.leaderboardVisible
+                        ? 'hide'
+                        : 'unhide',
+                    ] as const).map(
                   (act) => (
                     <form key={act} action={moderateContribution}>
                       <input type="hidden" name="contributionId" value={row.contributionId} />
@@ -82,7 +177,8 @@ export default async function ContributionsPage({ searchParams }: Props) {
                       </InlineAction>
                     </form>
                   ),
-                )}
+                )
+                  : null}
 
                 {row.email ? (
                   <form action={blockFromContribution}>
