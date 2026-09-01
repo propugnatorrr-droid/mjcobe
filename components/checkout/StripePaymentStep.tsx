@@ -152,7 +152,6 @@ function StripePaymentForm({
   summary,
   labels,
 }: {
-  clientSecret: string;
   returnPath: string;
   checkoutHref: string;
   heading: string;
@@ -540,6 +539,7 @@ export function StripePaymentStep({
   summary,
   labels,
 }: {
+  clientSecret: string;
   returnPath: string;
   checkoutHref: string;
   heading: string;
@@ -553,6 +553,7 @@ export function StripePaymentStep({
     StripePaymentSummary;
   labels: StripePaymentLabels;
 }) {
+
 
 
   if (
