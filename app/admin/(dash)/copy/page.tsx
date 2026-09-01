@@ -63,10 +63,7 @@ export default async function CopyPage({
         {rows.map((row) => (
           <form
             key={row.key}
-            action={saveCopyOverride.bind(
-              null,
-              {},
-            )}
+            action={saveCopyOverride}
             className="rounded-sm border border-[var(--line)] bg-[var(--ink-2)] p-4"
           >
             <input
