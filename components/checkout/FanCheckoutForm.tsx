@@ -46,6 +46,7 @@ export type FanFormLabels = Record<
   | 'hideAmount'
   | 'consentBody'
   | 'consentCheckbox'
+  | 'continue'
   | 'submit'
   | 'working'
   | 'chooseRole'
@@ -65,7 +66,11 @@ export type FanFormLabels = Record<
   | 'paymentRetry'
   | 'paymentReturn'
   | 'paymentProcessing'
-  | 'paymentDoNotClose',
+  | 'paymentDoNotClose'
+  | 'paymentSummary'
+  | 'paymentRecord'
+  | 'paymentSelection'
+  | 'paymentAmount',
   string
 >;
 
@@ -150,6 +155,7 @@ function availableInitialId(
 
 export function FanCheckoutForm({
   campaignId,
+  songTitle,
   checkoutAttemptKey,
   options,
   labels,
@@ -162,6 +168,7 @@ export function FanCheckoutForm({
   initialTierUnavailable,
 }: {
   campaignId: string;
+  songTitle: string;
   checkoutAttemptKey: string;
   options: AmountOption[];
   labels: FanFormLabels;
@@ -229,6 +236,22 @@ export function FanCheckoutForm({
         heading={
           labels.payment
         }
+        summary={{
+          heading:
+            labels.paymentSummary,
+          recordLabel:
+            labels.paymentRecord,
+          record:
+            songTitle,
+          selectionLabel:
+            labels.paymentSelection,
+          selection:
+            selectedLabel,
+          amountLabel:
+            labels.paymentAmount,
+          amount:
+            selectedAmount,
+        }}
         submitLabel={
           labels.submit
         }
@@ -486,7 +509,7 @@ className={[
           </div>
 
           <SubmitRow
-            label={labels.submit}
+            label={labels.continue}
             workingLabel={labels.working}
             error={state.error}
           />
