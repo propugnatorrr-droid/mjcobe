@@ -63,7 +63,15 @@ export const badgeGrants = pgTable('badge_grants', {
   supporterId: uuid('supporter_id').references(() => supporters.id, { onDelete: 'cascade' }).notNull(),
   campaignId: uuid('campaign_id').references(() => campaigns.id, { onDelete: 'set null' }),
   grantedAt: timestamp('granted_at', { withTimezone: true }).defaultNow().notNull(),
-}, (t) => [index('badge_grants_supporter_idx').on(t.supporterId)]);
+}, (t) => [
+  index('badge_grants_supporter_idx').on(t.supporterId),
+  /** One grant per badge, per supporter, per campaign. */
+  uniqueIndex('badge_grants_unique_idx').on(
+    t.badgeId,
+    t.supporterId,
+    t.campaignId,
+  ),
+]);
 
 /**
  * Written on every rank recomputation. This is what makes "you held #1 for
