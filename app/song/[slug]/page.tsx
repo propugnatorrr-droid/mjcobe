@@ -13,6 +13,9 @@ import { UpdateList } from '@/components/song/UpdateList';
 import { JourneyList } from '@/components/song/JourneyList';
 import { SupportBar } from '@/components/song/SupportBar';
 import { ButtonLink } from '@/components/primitives/Button';
+import {
+  AnalyticsEvent,
+} from '@/components/analytics/AnalyticsEvent';
 import { getSongPage } from '@/lib/song/queries';
 import {
   supporterAccessForCampaign,
@@ -139,7 +142,17 @@ export default async function SongPage({
       <SimulationRibbon />
       <SiteNav sub={navLabel} />
 
+      <AnalyticsEvent
+        kind="song_page_view"
+        songId={song.id}
+        campaignId={
+          campaign?.id
+        }
+        watchClicks
+      />
+
       <SongHero
+
         song={song}
         campaign={campaign}
         cover={cover}
@@ -173,7 +186,10 @@ export default async function SongPage({
                 href={`/back?song=${song.slug}`}
                 variant="primary"
                 glow
+                data-analytics-kind="support_click"
+                data-analytics-source="song_action_band"
               >
+
                 {supportLabel}
               </ButtonLink>
             ) : null}
@@ -182,7 +198,10 @@ export default async function SongPage({
               <ButtonLink
                 href={`/song/${song.slug}/sponsor`}
                 variant="ghost"
+                data-analytics-kind="sponsor_click"
+                data-analytics-source="song_action_band"
               >
+
                 {sponsorLabel}
               </ButtonLink>
             ) : null}
