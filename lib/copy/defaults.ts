@@ -88,6 +88,8 @@ const copyDefaults = {
   'song.tiers.custom': 'CUSTOM AMOUNT',
 
   'song.updates.locked': 'Unlocks at {amount} support.',
+  'song.updates.unlock_hint':
+    'Back this record at that level to read it.',
   'song.updates.locked_label': 'SUPPORTER ONLY',
   'song.updates.unlocked_label': 'SUPPORTER ACCESS',
 
