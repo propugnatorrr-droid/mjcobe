@@ -436,7 +436,7 @@ export default async function ThanksPage({
 
             {isBusiness
               ? await text(
-                  'partners.heading',
+                  'partners.title',
                 )
               : await text(
                   'thanks.back_another',
