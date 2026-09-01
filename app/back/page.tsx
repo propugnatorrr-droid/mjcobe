@@ -387,8 +387,17 @@ className={[
 
         <div className="mt-8 sm:mt-10">
           <FanCheckoutForm
-            campaignId={selectedCampaign.campaignId}
-            checkoutAttemptKey={randomUUID()}
+            campaignId={
+              selectedCampaign.campaignId
+            }
+            checkoutAttemptKey={
+              randomUUID()
+            }
+            checkoutHref={
+              `/back?song=${encodeURIComponent(
+                selectedCampaign.songSlug,
+              )}`
+            }
             options={options}
             currencySymbol={currencySymbol}
             initialTierId={tierParam}
