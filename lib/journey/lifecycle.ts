@@ -10,13 +10,15 @@ import * as s from '@/lib/db/schema';
  */
 export async function recordCampaignLifecycle(
   input: {
-    songId: string;
+    /** Nullable in the schema; absent means a campaign with no song. */
+    songId: string | null | undefined;
     campaignId: string;
     previousStatus: string;
     nextStatus: string;
     campaignName: string;
   },
 ): Promise<void> {
+
   if (
     input.previousStatus ===
     input.nextStatus
@@ -40,12 +42,12 @@ export async function recordCampaignLifecycle(
   await dbw
     .insert(s.journeyEvents)
     .values({
-      songId: input.songId,
+      songId: input.songId ?? null,
       campaignId: input.campaignId,
       kind:
         input.nextStatus === 'live'
-          ? 'campaign_open'
-          : 'campaign_close',
+          ? 'campaign_opened'
+          : 'campaign_closed',
       title,
       occurredAt: new Date(),
       isAuto: true,
