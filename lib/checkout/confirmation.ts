@@ -26,6 +26,7 @@ export type ConfirmationData = {
   songTitle: string;
   songSlug: string;
   businessName: string | null;
+  sponsorSlug: string | null;
   supporterNumber: number | null;
   foundingNumber: number | null;
   rank: number | null;
@@ -68,6 +69,8 @@ export async function getConfirmationData(
       songSlug: s.songs.slug,
       businessName:
         s.sponsors.businessName,
+      sponsorSlug:
+        s.sponsors.slug,
       transactionState:
         s.transactions.state,
     })
@@ -149,6 +152,8 @@ export async function getConfirmationData(
     songSlug: row.songSlug,
     businessName:
       row.businessName ?? null,
+    sponsorSlug:
+      row.sponsorSlug ?? null,
     transactionState:
       row.transactionState ?? null,
   };
