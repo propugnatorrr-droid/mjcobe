@@ -411,6 +411,19 @@ export default async function ThanksPage({
             </ButtonLink>
           )}
 
+          {!isBusiness &&
+          confirmation.supporterProfileId ? (
+            <ButtonLink
+              href={`/supporter/${confirmation.supporterProfileId}`}
+              variant="ghost"
+              className="!rounded-sm"
+            >
+              {await text(
+                'thanks.view_profile',
+              )}
+            </ButtonLink>
+          ) : null}
+
           <ButtonLink
             href={
               isBusiness
@@ -420,6 +433,7 @@ export default async function ThanksPage({
             variant="ghost"
             className="!rounded-sm"
           >
+
             {isBusiness
               ? await text(
                   'partners.heading',
