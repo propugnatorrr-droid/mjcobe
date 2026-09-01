@@ -24,6 +24,9 @@ import {
   StripePaymentStep,
 } from '@/components/checkout/StripePaymentStep';
 import { interpolate } from '@/lib/copy/defaults';
+import {
+  AnalyticsEvent,
+} from '@/components/analytics/AnalyticsEvent';
 
 export type FanFormLabels = Record<
   | 'amount'
@@ -194,7 +197,18 @@ export function FanCheckoutForm({
 
   if (state.payment) {
     return (
-      <StripePaymentStep
+      <>
+        <AnalyticsEvent
+          kind="payment_step_view"
+          campaignId={
+            campaignId
+          }
+          meta={{
+            scope: 'fan',
+          }}
+        />
+
+        <StripePaymentStep
         clientSecret={
           state.payment
             .clientSecret
@@ -231,10 +245,10 @@ export function FanCheckoutForm({
           doNotClose:
             labels.paymentDoNotClose,
         }}
-      />
+        />
+      </>
     );
   }
-
 
   return (
     <form
