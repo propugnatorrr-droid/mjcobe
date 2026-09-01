@@ -133,7 +133,26 @@ export const getSongPage = cache(async (slug: string): Promise<SongPageData | nu
       db.select().from(s.sponsorPackages)
         .where(and(eq(s.sponsorPackages.campaignId, campaign.id), eq(s.sponsorPackages.isActive, true)))
         .orderBy(asc(s.sponsorPackages.sortIndex)),
-      db.select().from(s.songUpdates)
+      db.select({
+        id: s.songUpdates.id,
+        songId: s.songUpdates.songId,
+        campaignId:
+          s.songUpdates.campaignId,
+        title: s.songUpdates.title,
+        /*
+         * A gated body is withheld at the query,
+         * not hidden in the markup. The caller
+         * re-attaches it only for a supporter who
+         * has actually paid past the threshold.
+         */
+        body: s.songUpdates.body,
+        minTierCents:
+          s.songUpdates.minTierCents,
+        publishedAt:
+          s.songUpdates.publishedAt,
+        isVisible:
+          s.songUpdates.isVisible,
+      }).from(s.songUpdates)
         .where(and(
           eq(s.songUpdates.songId, song.id),
           eq(s.songUpdates.isVisible, true),
