@@ -12,6 +12,10 @@ import {
 import {
   grantFanSettlementBadges,
 } from '@/lib/supporter/grants';
+import {
+  recordCampaignMilestones,
+} from '@/lib/journey/record';
+
 
 import {
   and,
@@ -1057,6 +1061,25 @@ const nextNumber = async (
        */
     }
   }
+
+  if (
+    result.ok &&
+    settlingContribution
+  ) {
+    /*
+     * Milestones are public narrative, not money.
+     * Same rule as badges: never inside the
+     * settlement transaction.
+     */
+    try {
+      await recordCampaignMilestones(
+        settlingContribution.campaignId,
+      );
+    } catch {
+      // Re-evaluated on the next settlement.
+    }
+  }
+
 
   if (
     result.ok &&
