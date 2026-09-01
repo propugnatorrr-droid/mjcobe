@@ -1714,13 +1714,14 @@ export async function updateCampaign(_prev: AdminState, formData: FormData): Pro
 
   if (before.status !== status) {
     await recordCampaignLifecycle({
-      songId,
+      songId: songId ?? before.songId,
       campaignId: id,
       previousStatus: before.status,
       nextStatus: status,
       campaignName: name,
     });
   }
+
 
 
   const [song] = await db.select({ slug: s.songs.slug }).from(s.songs).where(eq(s.songs.id, songId)).limit(1);
