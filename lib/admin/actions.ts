@@ -1883,7 +1883,13 @@ export async function updateCampaign(_prev: AdminState, formData: FormData): Pro
 
   const name = str(formData.get('name'), 200) ?? before.name;
   const goalCents = parseAmountCents(formData.get('goal')) ?? before.goalCents;
-  const status = (str(formData.get('status')) ?? before.status) as typeof s.campaigns.$inferInsert.status;
+  const status:
+    typeof s.campaigns.$inferSelect.status =
+    (
+      str(
+        formData.get('status'),
+      ) ?? before.status
+    ) as typeof s.campaigns.$inferSelect.status;
 
   const patch = {
     name,
