@@ -97,14 +97,87 @@ export const newsletterSubscribers = pgTable('newsletter_subscribers', {
   unsubscribedAt: timestamp('unsubscribed_at', { withTimezone: true }),
 }, (t) => [uniqueIndex('newsletter_subscribers_email_idx').on(t.email)]);
 
-export const analyticsEvents = pgTable('analytics_events', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  kind: text('kind').notNull(),                    // 'page_view' | 'audio_play' | 'checkout_start'
-  songId: uuid('song_id'),
-  campaignId: uuid('campaign_id'),
-  sessionId: text('session_id').notNull(),
-  path: text('path'),
-  referrer: text('referrer'),
-  meta: jsonb('meta').$type<Record<string, unknown>>().default({}).notNull(),
-  occurredAt: timestamp('occurred_at', { withTimezone: true }).defaultNow().notNull(),
-}, (t) => [index('analytics_events_kind_idx').on(t.kind, t.occurredAt)]);
+export const analyticsEvents =
+  pgTable(
+    'analytics_events',
+    {
+      id:
+        uuid('id')
+          .primaryKey()
+          .defaultRandom(),
+
+      eventKey:
+        text('event_key'),
+
+      kind:
+        text('kind')
+          .notNull(),
+
+      songId:
+        uuid('song_id'),
+
+      campaignId:
+        uuid('campaign_id'),
+
+      sessionId:
+        text('session_id')
+          .notNull(),
+
+      path:
+        text('path'),
+
+      referrer:
+        text('referrer'),
+
+      meta:
+        jsonb('meta')
+          .$type<
+            Record<
+              string,
+              unknown
+            >
+          >()
+          .default({})
+          .notNull(),
+
+      occurredAt:
+        timestamp(
+          'occurred_at',
+          {
+            withTimezone: true,
+          },
+        )
+          .defaultNow()
+          .notNull(),
+    },
+    (table) => [
+      index(
+        'analytics_events_kind_idx',
+      ).on(
+        table.kind,
+        table.occurredAt,
+      ),
+
+      uniqueIndex(
+        'analytics_events_event_key_idx',
+      ).on(
+        table.eventKey,
+      ),
+
+      index(
+        'analytics_events_session_time_idx',
+      ).on(
+        table.sessionId,
+        table.occurredAt,
+      ),
+
+      index(
+        'analytics_events_campaign_kind_idx',
+      ).on(
+        table.campaignId,
+        table.kind,
+        table.occurredAt,
+      ),
+    ],
+  );
+
