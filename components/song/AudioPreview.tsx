@@ -42,6 +42,9 @@ export function AudioPreview({
   previewEndMs,
   allowFullPlayback,
   comingSoonLabel,
+  playLabel,
+  pauseLabel,
+  seekLabel,
 }: {
   src: string | null;
   songId: string;
@@ -51,7 +54,11 @@ export function AudioPreview({
   previewEndMs: number;
   allowFullPlayback: boolean;
   comingSoonLabel: string;
+  playLabel: string;
+  pauseLabel: string;
+  seekLabel: string;
 }) {
+
 
   const audioRef =
     useRef<HTMLAudioElement | null>(
@@ -361,7 +368,9 @@ export function AudioPreview({
         type="button"
         onClick={toggle}
         aria-label={
-          playing ? 'Pause' : 'Play'
+          playing
+            ? pauseLabel
+            : playLabel
         }
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--champagne)] text-[var(--ink)]"
       >
@@ -393,7 +402,7 @@ export function AudioPreview({
             ) / rectangle.width,
           );
         }}
-        aria-label="Seek"
+        aria-label={seekLabel}
         className="flex h-8 flex-1 items-center gap-[2px]"
       >
         {(
