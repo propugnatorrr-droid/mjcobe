@@ -136,10 +136,29 @@ async function standingsFor(
       ? sql`max(sp.business_name)`
       : sql`max(su.display_name)`;
 
-  const sponsorSlug =
+  /*
+   * A fan row links to a public profile only when
+   * the supporter is approved and not anonymous.
+   * Anonymous support still counts financially
+   * while revealing no identity and no link.
+   */
+  const identitySlug =
     scope === 'business'
       ? sql`max(sp.slug)`
-      : sql`null::text`;
+      : sql`
+          case
+            when bool_or(c.is_anonymous)
+              or bool_or(
+                coalesce(
+                  su.moderation::text,
+                  ''
+                ) <> 'approved'
+              )
+            then null
+            else max(su.id::text)
+          end
+        `;
+
 
   const sponsorLogo =
     scope === 'business'
@@ -168,7 +187,7 @@ async function standingsFor(
       bool_or(c.hide_amount) as hide_amount,
       max(c.display_name_snapshot) as snapshot_name,
       ${liveName} as live_name,
-      ${sponsorSlug} as slug,
+      ${identitySlug} as slug,
       ${sponsorLogo} as logo_path
     from ledger_entries l
     join contributions c on c.id = l.contribution_id
