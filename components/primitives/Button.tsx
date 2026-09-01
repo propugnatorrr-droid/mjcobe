@@ -57,11 +57,18 @@ type ButtonLinkProps = {
   variant?: Variant;
   className?: string;
   glow?: boolean;
-  target?: React.HTMLAttributeAnchorTarget;
+  target?:
+    React.HTMLAttributeAnchorTarget;
   rel?: string;
-  download?: boolean | string;
+  download?:
+    boolean | string;
   'aria-label'?: string;
+  'data-analytics-kind'?:
+    string;
+  'data-analytics-source'?:
+    string;
 };
+
 
 export function ButtonLink({
   children,
