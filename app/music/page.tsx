@@ -34,6 +34,9 @@ export default async function MusicPage() {
     emptyLabel,
     supportersLabel,
     previewComingSoon,
+    playPreview,
+    pausePreview,
+    seekPreview,
   ] = await Promise.all([
     listCatalog(),
     text('music.title'),
@@ -50,7 +53,11 @@ export default async function MusicPage() {
     text('music.empty_section'),
     text('home.supporters'),
     text('song.preview_coming_soon'),
+    text('music.audio.play'),
+    text('music.audio.pause'),
+    text('music.audio.seek'),
   ]);
+
 
   const released = catalog.filter(
     (song) => song.status === 'released',
@@ -93,6 +100,9 @@ export default async function MusicPage() {
             supporters: supportersLabel,
             joinJourney,
             previewComingSoon,
+            playPreview,
+            pausePreview,
+            seekPreview,
           }}
         />
 
@@ -105,6 +115,9 @@ export default async function MusicPage() {
             supporters: supportersLabel,
             joinJourney,
             previewComingSoon,
+            playPreview,
+            pausePreview,
+            seekPreview,
           }}
         />
 
@@ -117,6 +130,9 @@ export default async function MusicPage() {
             supporters: supportersLabel,
             joinJourney,
             previewComingSoon,
+            playPreview,
+            pausePreview,
+            seekPreview,
           }}
         />
 
