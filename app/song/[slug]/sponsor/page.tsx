@@ -5,6 +5,9 @@ import { SimulationRibbon } from '@/components/SimulationRibbon';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SponsorForm } from '@/components/checkout/SponsorForm';
+import {
+  AnalyticsEvent,
+} from '@/components/analytics/AnalyticsEvent';
 import type { AmountOption } from '@/components/checkout/AmountChooser';
 import { getSongPage } from '@/lib/song/queries';
 import { getPackagesFor } from '@/lib/checkout/queries';
@@ -137,6 +140,18 @@ export default async function SponsorPage({
     <main className="sponsor-v3-page surface-ink min-h-screen">
       <SimulationRibbon />
       <SiteNav sub="BUSINESS SPONSORSHIP" />
+
+      <AnalyticsEvent
+        kind="checkout_start"
+        songId={data.song.id}
+        campaignId={
+          data.campaign.id
+        }
+        meta={{
+          scope:
+            'business',
+        }}
+      />
 
       <section className="sponsor-v3-hero relative overflow-hidden border-b border-[var(--line)]">
         <div
