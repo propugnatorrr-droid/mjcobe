@@ -27,6 +27,9 @@ import { SponsorLogoUpload } from './SponsorLogoUpload';
 import {
   StripePaymentStep,
 } from './StripePaymentStep';
+import {
+  AnalyticsEvent,
+} from '@/components/analytics/AnalyticsEvent';
 
 
 export type SponsorFormLabels = Record<
@@ -127,7 +130,19 @@ export function SponsorForm({
 
   if (state.payment) {
     return (
-      <StripePaymentStep
+      <>
+        <AnalyticsEvent
+          kind="payment_step_view"
+          campaignId={
+            campaignId
+          }
+          meta={{
+            scope:
+              'business',
+          }}
+        />
+
+        <StripePaymentStep
         clientSecret={
           state.payment
             .clientSecret
@@ -164,7 +179,8 @@ export function SponsorForm({
           doNotClose:
             labels.paymentDoNotClose,
         }}
-      />
+        />
+      </>
     );
   }
 
