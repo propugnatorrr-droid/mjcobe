@@ -2,7 +2,7 @@ import {
   ExternalLink,
   Headphones,
   Music2,
-  Youtube,
+  PlayCircle,
 } from 'lucide-react';
 import {
   Eyebrow,
@@ -61,7 +61,7 @@ export async function ReleaseLinks({
     links.push({
       href: song.youtubeUrl,
       label: youtubeLabel,
-      icon: Youtube,
+      icon: PlayCircle,
     });
   }
 
@@ -69,7 +69,7 @@ export async function ReleaseLinks({
     links.push({
       href: song.musicVideoUrl,
       label: musicVideoLabel,
-      icon: Youtube,
+      icon: PlayCircle,
     });
   }
 
