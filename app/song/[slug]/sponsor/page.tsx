@@ -376,9 +376,9 @@ export default async function SponsorPage({
             paymentRecord: await text(
               'checkout.payment.record',
             ),
-            paymentSelection: await text(
-              'checkout.payment.selection',
-            ),
+paymentSelection: await text(
+  'checkout.package.includes',
+),
             paymentAmount: await text(
               'checkout.payment.amount',
             ),
