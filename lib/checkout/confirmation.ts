@@ -27,6 +27,7 @@ export type ConfirmationData = {
   songSlug: string;
   businessName: string | null;
   sponsorSlug: string | null;
+  supporterProfileId: string | null;
   supporterNumber: number | null;
   foundingNumber: number | null;
   rank: number | null;
@@ -71,6 +72,8 @@ export async function getConfirmationData(
         s.sponsors.businessName,
       sponsorSlug:
         s.sponsors.slug,
+      supporterModeration:
+        s.supporters.moderation,
       transactionState:
         s.transactions.state,
     })
@@ -89,6 +92,14 @@ export async function getConfirmationData(
         s.contributions.sponsorId,
       ),
     )
+    .leftJoin(
+      s.supporters,
+      eq(
+        s.supporters.id,
+        s.contributions.supporterId,
+      ),
+    )
+
     .leftJoin(
       s.transactions,
       eq(
@@ -154,9 +165,22 @@ export async function getConfirmationData(
       row.businessName ?? null,
     sponsorSlug:
       row.sponsorSlug ?? null,
+    /*
+     * Only offer the profile link when that
+     * profile will actually render publicly.
+     */
+    supporterProfileId:
+      row.supportType === 'fan' &&
+      row.supporterId &&
+      !row.isAnonymous &&
+      row.supporterModeration ===
+        'approved'
+        ? row.supporterId
+        : null,
     transactionState:
       row.transactionState ?? null,
   };
+
 
   if (!settled) {
     return {
