@@ -71,11 +71,31 @@ export const getPartnersPage = cache(async (): Promise<PartnersPageData> => {
       order by cp.created_at desc
     `),
     db.execute(sql`
-      select sum(l.amount_cents)::int as cents
+      select
+        coalesce(
+          sum(
+            l.amount_cents
+          ),
+          0
+        )::int as cents
       from ledger_entries l
-      join contributions c on c.id = l.contribution_id
-      where c.support_type = 'business'
+      join contributions c
+        on c.id =
+          l.contribution_id
+      join sponsors sp
+        on sp.id =
+          c.sponsor_id
+      where
+        c.support_type =
+          'business'
+        and c.is_test =
+          false
+        and c.moderation =
+          'approved'
+        and sp.moderation =
+          'approved'
     `),
+
     db.execute(sql`
       select
         count(distinct c.supporter_id)::int as supporters,
@@ -172,7 +192,40 @@ export const getPartnersPage = cache(async (): Promise<PartnersPageData> => {
       })
       .from(s.sponsors)
       .leftJoin(s.mediaAssets, eq(s.mediaAssets.id, s.sponsors.logoAssetId))
-      .where(and(eq(s.sponsors.moderation, 'approved')))
+      .where(
+        and(
+          eq(
+            s.sponsors.moderation,
+            'approved',
+          ),
+          sql`
+            exists (
+              select 1
+              from contributions c
+              join ledger_entries l
+                on l.contribution_id =
+                  c.id
+              where
+                c.sponsor_id =
+                  ${s.sponsors.id}
+                and c.support_type =
+                  'business'
+                and c.is_test =
+                  false
+                and c.moderation =
+                  'approved'
+                and c.leaderboard_visible =
+                  true
+              group by
+                c.sponsor_id
+              having
+                sum(
+                  l.amount_cents
+                ) > 0
+            )
+          `,
+        ),
+      )
       .orderBy(desc(s.sponsors.supportedSince)),
   ]);
 
