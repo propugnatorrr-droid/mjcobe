@@ -17,8 +17,16 @@ export async function TierGrid({
 }) {
   if (tiers.length === 0) return null;
 
-  const selectLabel = await text('song.tiers.select');
-  const soldOut = await text('song.tiers.sold_out');
+  const [
+    selectLabel,
+    soldOut,
+    campaignClosed,
+  ] = await Promise.all([
+    text('song.tiers.select'),
+    text('song.tiers.sold_out'),
+    text('song.tiers.closed'),
+  ]);
+
 
   return (
     <section className="song-v2-tiers py-16 md:py-24">
@@ -72,7 +80,9 @@ export async function TierGrid({
                 </ButtonLink>
               ) : (
                 <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">
-                  {exhausted ? soldOut : ''}
+                  {exhausted
+                    ? soldOut
+                    : campaignClosed}
                 </span>
               )}
             </div>
