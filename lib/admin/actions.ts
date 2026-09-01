@@ -29,6 +29,10 @@ import {
   validateSponsorLogo,
 } from '@/lib/media/sponsor-logo';
 import type { RefundReasonCode } from '@/lib/payments';
+import {
+  sponsorApprovalAction,
+  sponsorDeclineAction,
+} from '@/lib/sponsor/review';
 
 export type AdminState = {
   error?: string;
@@ -449,41 +453,63 @@ export async function approveSponsor(
     return;
   }
 
+  const approvalAction =
+    sponsorApprovalAction({
+      transactionState:
+        review.transaction.state,
+      contributionModeration:
+        review.contribution
+          .moderation,
+    });
+
   if (
-    review.contribution.moderation === 'blocked' ||
-    review.contribution.moderation === 'hidden'
+    approvalAction ===
+    'complete'
   ) {
+    revalidateSponsorSurfaces({
+      songSlug:
+        review.song.slug,
+      sponsorSlug:
+        review.sponsor.slug,
+    });
+
     return;
   }
 
   /*
-   * Stripe manual-capture payments become
-   * authorized only after the customer has
-   * completed payment confirmation. Never
-   * attempt approval while checkout is still
-   * incomplete.
+   * Stripe manual-capture payments may only
+   * be approved after authorization. Hidden
+   * and blocked contributions must never be
+   * captured through this action.
    */
   if (
-    review.transaction.state !==
-    'authorized'
+    approvalAction !==
+    'capture'
   ) {
     await recordAudit({
       adminUserId: me.id,
       action:
-        'sponsor.approve_not_authorized',
-      entity: 'contribution',
-      entityId: contributionId,
+        'sponsor.approve_not_ready',
+      entity:
+        'contribution',
+      entityId:
+        contributionId,
       after: {
         transactionId:
           review.transaction.id,
         transactionState:
           review.transaction.state,
+        contributionModeration:
+          review.contribution
+            .moderation,
       },
-      ipHash: await ipHash(),
+      ipHash:
+        await ipHash(),
     });
 
     return;
   }
+
 
   const before = {
     contributionModeration:
@@ -601,47 +627,96 @@ export async function declineSponsor(
       review.transaction.state,
   };
 
-  if (
-    review.transaction.state === 'settled' ||
-    review.transaction.state ===
-      'partially_refunded'
-  ) {
-    const [balance] = await db
-      .select({
-        total: sql<number>`
-          coalesce(
-            sum(${s.ledgerEntries.amountCents}),
-            0
-          )::int
-        `,
-      })
-      .from(s.ledgerEntries)
-      .where(
-        eq(
-          s.ledgerEntries.transactionId,
-          review.transaction.id,
-        ),
-      );
-
-    const remainingCents = Number(
-      balance?.total ?? 0,
+    const declineAction =
+    sponsorDeclineAction(
+      review.transaction.state,
     );
 
-    if (remainingCents > 0) {
-      const refunded = await refundContribution({
+  if (
+    declineAction ===
+    'wait'
+  ) {
+    await recordAudit({
+      adminUserId: me.id,
+      action:
+        'sponsor.decline_not_ready',
+      entity:
+        'contribution',
+      entityId:
+        contributionId,
+      before,
+      after: {
         transactionId:
           review.transaction.id,
-        amountCents: remainingCents,
-        reason,
-        adminUserId: me.id,
-      });
+        transactionState:
+          review.transaction.state,
+      },
+      reason,
+      ipHash:
+        await ipHash(),
+    });
 
-      if (!refunded.ok) {
+    return;
+  }
+
+  if (
+    declineAction ===
+    'refund'
+  ) {
+    const [balance] =
+      await db
+        .select({
+          total: sql<number>`
+            coalesce(
+              sum(
+                ${s.ledgerEntries.amountCents}
+              ),
+              0
+            )::int
+          `,
+        })
+        .from(
+          s.ledgerEntries,
+        )
+        .where(
+          eq(
+            s.ledgerEntries
+              .transactionId,
+            review.transaction.id,
+          ),
+        );
+
+    const remainingCents =
+      Number(
+        balance?.total ?? 0,
+      );
+
+    if (
+      remainingCents > 0
+    ) {
+      const refunded =
+        await refundContribution({
+          transactionId:
+            review.transaction.id,
+          amountCents:
+            remainingCents,
+          reason,
+          adminUserId:
+            me.id,
+        });
+
+      if (
+        !refunded.ok
+      ) {
         await recordAudit({
-          adminUserId: me.id,
-          action: 'sponsor.decline_failed',
-          entity: 'contribution',
-          entityId: contributionId,
+          adminUserId:
+            me.id,
+          action:
+            'sponsor.decline_failed',
+          entity:
+            'contribution',
+          entityId:
+            contributionId,
           before,
           after: {
             message:
@@ -649,45 +724,52 @@ export async function declineSponsor(
               'Refund failed.',
           },
           reason,
-          ipHash: await ipHash(),
+          ipHash:
+            await ipHash(),
         });
 
         return;
       }
     }
-  } else if (
-    review.transaction.state ===
-      'initiated' ||
-    review.transaction.state ===
-      'authorized' ||
-    review.transaction.state ===
-      'failed'
+  }
+
+  if (
+    declineAction ===
+    'cancel'
   ) {
     const canceled =
       await cancelContribution(
         review.transaction.id,
       );
 
-    if (!canceled.ok) {
+    if (
+      !canceled.ok
+    ) {
       await recordAudit({
-        adminUserId: me.id,
+        adminUserId:
+          me.id,
         action:
           'sponsor.decline_failed',
-        entity: 'contribution',
-        entityId: contributionId,
+        entity:
+          'contribution',
+        entityId:
+          contributionId,
         before,
         after: {
-          code: canceled.code,
+          code:
+            canceled.code,
           message:
             canceled.message,
         },
         reason,
-        ipHash: await ipHash(),
+        ipHash:
+          await ipHash(),
       });
 
       return;
     }
   }
+
 
   await dbw
     .update(s.contributions)
