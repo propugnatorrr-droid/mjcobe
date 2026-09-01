@@ -22,11 +22,15 @@ export async function SongHero({
   SongPageData,
   'song' | 'campaign' | 'cover' | 'audio'
 >) {
-  const [
+   const [
     comingSoonLabel,
     artistName,
     statusLabel,
     previewLabel,
+    artworkAlt,
+    playLabel,
+    pauseLabel,
+    seekLabel,
   ] = await Promise.all([
     text('song.preview_coming_soon'),
     text('hero.artist_name'),
@@ -35,13 +39,23 @@ export async function SongHero({
         'music.vault',
     ),
     text('song.preview_window'),
+    text('song.cover_alt', {
+      song: song.title,
+    }),
+    text('song.audio.play', {
+      song: song.title,
+    }),
+    text('song.audio.pause', {
+      song: song.title,
+    }),
+    text('song.audio.seek', {
+      song: song.title,
+    }),
   ]);
+
 
   const artwork =
     cover?.path ?? '/media/song-hero-mobile.webp';
-
-  const objective =
-    campaign?.objective ?? song.description;
 
   return (
     <header
@@ -69,9 +83,9 @@ export async function SongHero({
         <div className="song-v2-art-column">
           <div className="song-v2-art-frame">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+                       <img
               src={artwork}
-              alt=""
+              alt={artworkAlt}
               width={1200}
               height={1200}
               fetchPriority="high"
@@ -111,11 +125,7 @@ export async function SongHero({
             {song.title}
           </h1>
 
-          {objective ? (
-            <p className="song-v2-objective">
-              {objective}
-            </p>
-          ) : null}
+
 
           <div className="song-v2-player">
             <div className="song-v2-player-heading">
@@ -140,10 +150,21 @@ export async function SongHero({
                 campaign?.id ??
                 null
               }
-              previewStartMs={song.previewStartMs}
-              previewEndMs={song.previewEndMs}
-              allowFullPlayback={song.allowFullPlayback}
-              comingSoonLabel={comingSoonLabel}
+              previewStartMs={
+                song.previewStartMs
+              }
+              previewEndMs={
+                song.previewEndMs
+              }
+              allowFullPlayback={
+                song.allowFullPlayback
+              }
+              comingSoonLabel={
+                comingSoonLabel
+              }
+              playLabel={playLabel}
+              pauseLabel={pauseLabel}
+              seekLabel={seekLabel}
             />
           </div>
         </div>
