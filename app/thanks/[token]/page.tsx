@@ -163,9 +163,11 @@ export default async function ThanksPage({
         <SimulationRibbon />
         <SiteNav />
 
-        {isProcessing ? (
+        {isProcessing ||
+        isUnderReview ? (
           <PaymentStatusRefresh />
         ) : null}
+
 
         <section className="thanks-v3-processing site-shell">
           <div>
@@ -384,25 +386,47 @@ export default async function ThanksPage({
         </div>
 
         <div className="thanks-v3-actions mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <ButtonLink
-            href={`/song/${confirmation.songSlug}`}
-            variant="primary"
-            glow
-            className="!rounded-sm"
-          >
-            {await text(
-              'thanks.view_song',
-            )}
-          </ButtonLink>
+          {isBusiness &&
+          confirmation.sponsorSlug ? (
+            <ButtonLink
+              href={`/partner/${confirmation.sponsorSlug}`}
+              variant="primary"
+              glow
+              className="!rounded-sm"
+            >
+              {await text(
+                'thanks.view_partner',
+              )}
+            </ButtonLink>
+          ) : (
+            <ButtonLink
+              href={`/song/${confirmation.songSlug}`}
+              variant="primary"
+              glow
+              className="!rounded-sm"
+            >
+              {await text(
+                'thanks.view_song',
+              )}
+            </ButtonLink>
+          )}
 
           <ButtonLink
-            href="/back"
+            href={
+              isBusiness
+                ? '/partners'
+                : '/back'
+            }
             variant="ghost"
             className="!rounded-sm"
           >
-            {await text(
-              'thanks.back_another',
-            )}
+            {isBusiness
+              ? await text(
+                  'partners.heading',
+                )
+              : await text(
+                  'thanks.back_another',
+                )}
           </ButtonLink>
         </div>
       </div>
