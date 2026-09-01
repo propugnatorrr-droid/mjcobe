@@ -561,9 +561,23 @@ const [existing] = await db
 let sponsorId = existing?.id ?? null;
 let logoAssetId: string | null = null;
 
+/*
+ * A sponsor logo is an arbitrary uploaded image
+ * placed on public song pages. With
+ * sponsorLogoAutoPublish on it goes live with the
+ * payment; turn the setting off in admin to route
+ * uploads through review instead. The setting
+ * exists so this can change without a deploy.
+ */
+const autoPublishLogo =
+  await setting(
+    'sponsorLogoAutoPublish',
+  );
+
 if (logoValidation.file) {
   try {
     if (
+      !autoPublishLogo &&
       existing &&
       (
         existing.moderation ===
@@ -591,6 +605,7 @@ if (logoValidation.file) {
   }
 }
 
+
     if (!sponsorId) {
       const [created] = await dbw
         .insert(s.sponsors)
@@ -613,15 +628,31 @@ if (logoValidation.file) {
             1000,
           ),
           logoAssetId,
-          moderation: 'pending',
+          /*
+           * Provisional. Settlement re-decides via
+           * sponsorAutoDecision, and an unsettled
+           * sponsor has no ledger balance so it is
+           * invisible on every public surface
+           * regardless of this value.
+           */
+          moderation: 'approved',
         })
         .returning({ id: s.sponsors.id });
       sponsorId = created.id;
+
 } else if (
   logoAssetId &&
-  existing?.moderation !== 'approved' &&
-  existing?.moderation !== 'hidden'
+  (
+    autoPublishLogo ||
+    (
+      existing?.moderation !==
+        'approved' &&
+      existing?.moderation !==
+        'hidden'
+    )
+  )
 ) {
+
   await dbw
     .update(s.sponsors)
     .set({
@@ -635,16 +666,7 @@ if (logoValidation.file) {
     );
 }
 
-    const threshold =
-      campaign
-        .sponsorApprovalThresholdCents ??
-      (await setting(
-        'sponsorApprovalThresholdCents',
-      ));
-
-    const needsReview =
-      !campaign.sponsorAutoApprove &&
-      amountCents >= threshold;
+/* * Sponsorship is fully automated. Payment * captures immediately, settles immediately, * and the sponsor is published by the * settlement path itself. Screening happens * through pure name rules and the blocklist, * both of which already ran above — not * through a human queue. */
 
     const created =
       await createContribution({
@@ -670,10 +692,7 @@ if (logoValidation.file) {
         description:
           `Sponsorship from ${businessName}`,
         idempotencyKey,
-        captureMethod:
-          needsReview
-            ? 'manual'
-            : 'automatic',
+        captureMethod: 'automatic',
         simulateCard:
           str(
             formData.get(
@@ -709,30 +728,25 @@ if (logoValidation.file) {
       };
     }
 
-    /*
-     * Held sponsorships get no ledger entry,
-     * so they cannot reach the leaderboard
-     * before management approval.
-     */
-    if (!needsReview) {
-      const settled =
-        await settleContribution(
-          created.transactionId,
-        );
-
-      if (!settled.ok) {
-        return {
-          error:
-            await text(
-              'checkout.error.declined',
-            ),
-        };
-      }
-
-      revalidatePath(
-        `/song/${slug}`,
+    const settled =
+      await settleContribution(
+        created.transactionId,
       );
+
+    if (!settled.ok) {
+      return {
+        error:
+          await text(
+            'checkout.error.declined',
+          ),
+      };
     }
+
+    revalidatePath(
+      `/song/${slug}`,
+    );
+    revalidatePath('/partners');
+
   } catch {
     return { error: await text('checkout.error.generic') };
   }
