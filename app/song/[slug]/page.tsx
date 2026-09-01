@@ -227,8 +227,10 @@ export default async function SongPage({
           moreKey="leaderboard.more_supporters"
           rows={fan.rows}
           totalCount={fan.totalCount}
+          linkPrefix="/supporter"
           moreHref={`/song/${song.slug}/supporters`}
         />
+
 
         <LeaderboardPanel
           headingKey="leaderboard.business_heading"
