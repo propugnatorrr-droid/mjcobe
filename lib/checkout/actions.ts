@@ -20,7 +20,7 @@ import {
   storeSponsorLogo,
   validateSponsorLogo,
 } from '@/lib/media/sponsor-logo';
-import { bool, EMAIL_RE, normalizeHandle, parseAmountCents, slugify, str } from './validate';
+import {   bool,   normalizeEmail,   normalizeHandle,   parseAmountCents,   slugify,   str, } from './validate';
 import {
   getSelectableTier,
 } from '@/lib/tiers/queries';
@@ -226,8 +226,20 @@ export async function submitFanContribution(
     };
   }
 
-  const email = str(formData.get('email'), 254);
-  if (!email || !EMAIL_RE.test(email)) return { error: await text('checkout.error.email') };
+  const email =
+    normalizeEmail(
+      formData.get('email'),
+    );
+
+  if (!email) {
+    return {
+      error:
+        await text(
+          'checkout.error.email',
+        ),
+    };
+  }
+
 
   const displayNameRaw = str(formData.get('displayName'), nameMax + 1);
   if (displayNameRaw && displayNameRaw.length > nameMax) {
@@ -484,8 +496,20 @@ export async function submitSponsorship(
 
   if (!businessName) return { error: await text('checkout.error.business_name') };
 
-  const email = str(formData.get('email'), 254);
-  if (!email || !EMAIL_RE.test(email)) return { error: await text('checkout.error.email') };
+  const email =
+    normalizeEmail(
+      formData.get('email'),
+    );
+
+  if (!email) {
+    return {
+      error:
+        await text(
+          'checkout.error.email',
+        ),
+    };
+  }
+
 
   if (!bool(formData.get('consent'))) return { error: await text('checkout.error.consent') };
 
