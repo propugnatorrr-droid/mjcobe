@@ -1,6 +1,12 @@
 import 'server-only';
 import { cache } from 'react';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import {
+  and,
+  desc,
+  eq,
+  getTableColumns,
+  sql,
+} from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import * as s from '@/lib/db/schema';
 import { getCampaignTotals } from '@/lib/campaign/queries';
@@ -17,7 +23,11 @@ export type AcceptingCampaign = {
   objective: string | null;
 };
 
-export type SponsorPackage = typeof s.sponsorPackages.$inferSelect;
+export type SponsorPackage =
+  typeof s.sponsorPackages.$inferSelect & {
+    songSlug: string;
+    songTitle: string;
+  };
 
 export type PartnerSponsor = {
   id: string;
@@ -74,10 +84,83 @@ export const getPartnersPage = cache(async (): Promise<PartnersPageData> => {
       join contributions c on c.id = l.contribution_id
     `),
     db
-      .select()
+      .select({
+        ...getTableColumns(
+          s.sponsorPackages,
+        ),
+        songSlug:
+          s.songs.slug,
+        songTitle:
+          s.songs.title,
+      })
       .from(s.sponsorPackages)
-      .where(eq(s.sponsorPackages.isActive, true))
-      .orderBy(s.sponsorPackages.sortIndex),
+      .innerJoin(
+        s.campaigns,
+        eq(
+          s.campaigns.id,
+          s.sponsorPackages
+            .campaignId,
+        ),
+      )
+      .innerJoin(
+        s.songs,
+        eq(
+          s.songs.id,
+          s.campaigns.songId,
+        ),
+      )
+      .where(
+        and(
+          eq(
+            s.sponsorPackages
+              .isActive,
+            true,
+          ),
+          eq(
+            s.campaigns.status,
+            'live',
+          ),
+          eq(
+            s.campaigns
+              .acceptSupport,
+            true,
+          ),
+          eq(
+            s.campaigns
+              .businessSponsorshipEnabled,
+            true,
+          ),
+          eq(
+            s.songs.isPublished,
+            true,
+          ),
+          sql`
+            (
+              ${s.campaigns.startsAt}
+                is null
+              or
+              ${s.campaigns.startsAt}
+                <= now()
+            )
+          `,
+          sql`
+            (
+              ${s.campaigns.endsAt}
+                is null
+              or
+              ${s.campaigns.endsAt}
+                > now()
+            )
+          `,
+        ),
+      )
+      .orderBy(
+        s.sponsorPackages
+          .sortIndex,
+        s.sponsorPackages
+          .priceCents,
+      ),
+
     db
       .select({
         id: s.sponsors.id,
