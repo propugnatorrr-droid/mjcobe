@@ -135,10 +135,14 @@ const copyDefaults = {
   'checkout.step_label': 'STEP {number}',
   'checkout.custom_amount': 'OTHER AMOUNT',
   'checkout.custom_placeholder': 'Enter an amount',
-  'checkout.submit.fan': 'COMPLETE SUPPORT',
-  'checkout.submit.business': 'SUBMIT SPONSORSHIP',
-  'checkout.working': 'WORKING',
-
+  'checkout.continue.fan':
+    'CONTINUE TO SECURE PAYMENT',
+  'checkout.submit.fan':
+    'COMPLETE SUPPORT',
+  'checkout.submit.business':
+    'SUBMIT SPONSORSHIP',
+  'checkout.working':
+    'WORKING',
   'checkout.field.email': 'EMAIL',
   'checkout.field.display_name': 'DISPLAY NAME',
   'checkout.field.instagram': 'INSTAGRAM',
@@ -174,8 +178,18 @@ const copyDefaults = {
   'checkout.error.minimum_to_lead':
     'The #1 position has changed. Enter at least {amount} to claim it.',
 
+  'checkout.payment.summary':
+    'PAYMENT SUMMARY',
+  'checkout.payment.record':
+    'RECORD',
+  'checkout.payment.selection':
+    'SUPPORT LEVEL',
+  'checkout.payment.amount':
+    'AMOUNT',
+  'checkout.view_song':
+    'RETURN TO SONG JOURNEY',
   'checkout.payment.secure_body':
-    'Your payment details are securely collected and processed by Stripe.',
+    'Review your selection, then complete payment securely through Stripe.',
   'checkout.payment.not_configured':
     'Secure payment is not configured. No charge was made.',
   'checkout.payment.failed':
