@@ -17,6 +17,18 @@ export const FAN_BADGE_THRESHOLDS = {
   topTenRank: 10,
 } as const;
 
+/**
+ * Widened deliberately. FAN_BADGE_THRESHOLDS is `as const` so the shipped
+ * values are literals, but a caller (and every test) must be free to pass
+ * ordinary numbers.
+ */
+export type FanBadgeThresholds = {
+  dayOneNumber: number;
+  innerCircleCents: number;
+  goldCents: number;
+  topTenRank: number;
+};
+
 export type FanBadgeInput = {
   /** The amount of the contribution that just settled. */
   amountCents: number;
@@ -26,8 +38,9 @@ export type FanBadgeInput = {
   foundingNumber: number | null;
   /** Campaign rank after settlement, or null when unranked. */
   rank: number | null;
-  thresholds?: typeof FAN_BADGE_THRESHOLDS;
+  thresholds?: FanBadgeThresholds;
 };
+
 
 /** Declared order is the grant order, so output is deterministic. */
 const BADGE_ORDER = [
