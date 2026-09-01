@@ -2,15 +2,51 @@
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-export function parseAmountCents(raw: unknown): number | null {
-  if (typeof raw !== 'string') return null;
-  const cleaned = raw.replace(/[^0-9.]/g, '');
-  if (!cleaned) return null;
-  const value = Number(cleaned);
-  if (!Number.isFinite(value) || value <= 0) return null;
-  // Round at the edge, once, so no float ever reaches the database.
-  return Math.round(value * 100);
+export function parseAmountCents(
+  raw: unknown,
+): number | null {
+  if (
+    typeof raw !== 'string'
+  ) {
+    return null;
+  }
+
+  const value = raw.trim();
+
+  /*
+   * Accept only a plain positive decimal
+   * with no more than two fractional digits.
+   *
+   * Do not strip characters: doing so would
+   * turn "-50" into "50" or "$25" into "25".
+   */
+  if (
+    !/^(?:\d+|\d+\.\d{1,2}|\.\d{1,2})$/.test(
+      value,
+    )
+  ) {
+    return null;
+  }
+
+  const [whole = '0', fraction = ''] =
+    value.split('.');
+
+  const cents =
+    Number(whole) * 100 +
+    Number(
+      fraction.padEnd(2, '0'),
+    );
+
+  if (
+    !Number.isSafeInteger(cents) ||
+    cents <= 0
+  ) {
+    return null;
+  }
+
+  return cents;
 }
+
 
 export function str(raw: unknown, max = 200): string | null {
   if (typeof raw !== 'string') return null;
