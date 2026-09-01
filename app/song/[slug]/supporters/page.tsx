@@ -49,6 +49,11 @@ export default async function AllSupportersPage({ params }: Props) {
                 isTop={row.rank === 1}
                 hideAmount={row.hideAmount}
                 hiddenLabel={hidden}
+                href={
+                  row.slug
+                    ? `/supporter/${row.slug}`
+                    : null
+                }
               />
             ))
           )}
