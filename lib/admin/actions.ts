@@ -1713,14 +1713,25 @@ export async function updateCampaign(_prev: AdminState, formData: FormData): Pro
   await dbw.update(s.campaigns).set(patch).where(eq(s.campaigns.id, id));
 
   if (before.status !== status) {
+    const lifecycleSongId:
+      string =
+      songId || before.songId;
+
+    const lifecycleName:
+      string =
+      name || before.name;
+
     await recordCampaignLifecycle({
-      songId: songId ?? before.songId,
+      songId: lifecycleSongId,
       campaignId: id,
-      previousStatus: before.status,
+      previousStatus:
+        before.status,
       nextStatus: status,
-      campaignName: name,
+      campaignName:
+        lifecycleName,
     });
   }
+
 
 
 
