@@ -9,6 +9,10 @@ import {
   Pause,
   Play,
 } from 'lucide-react';
+import {
+  trackAnalytics,
+} from '@/components/analytics/AnalyticsEvent';
+
 
 const BAR_COUNT = 56;
 
@@ -32,21 +36,33 @@ function formatClock(ms: number) {
 
 export function AudioPreview({
   src,
+  songId,
+  campaignId,
   previewStartMs,
   previewEndMs,
   allowFullPlayback,
   comingSoonLabel,
 }: {
   src: string | null;
+  songId: string;
+  campaignId:
+    string | null;
   previewStartMs: number;
   previewEndMs: number;
   allowFullPlayback: boolean;
   comingSoonLabel: string;
 }) {
+
   const audioRef =
     useRef<HTMLAudioElement | null>(
       null,
     );
+
+  const playTracked =
+    useRef(false);
+
+  const completeTracked =
+    useRef(false);
 
   const [playing, setPlaying] =
     useState(false);
@@ -286,9 +302,26 @@ export function AudioPreview({
             effectiveStartMs,
           );
         }}
-        onPlay={() =>
-          setPlaying(true)
-        }
+        onPlay={() => {
+          setPlaying(true);
+
+          if (
+            !playTracked.current
+          ) {
+            playTracked.current =
+              true;
+
+            trackAnalytics({
+              kind:
+                'audio_play',
+              songId,
+              campaignId:
+                campaignId ??
+                undefined,
+            });
+          }
+        }}
+
         onPause={() =>
           setPlaying(false)
         }
@@ -303,6 +336,22 @@ export function AudioPreview({
             milliseconds >=
             effectiveEndMs
           ) {
+            if (
+              !completeTracked.current
+            ) {
+              completeTracked.current =
+                true;
+
+              trackAnalytics({
+                kind:
+                  'audio_complete',
+                songId,
+                campaignId:
+                  campaignId ??
+                  undefined,
+              });
+            }
+
             event.currentTarget.pause();
           }
         }}
