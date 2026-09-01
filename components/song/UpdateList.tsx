@@ -108,6 +108,14 @@ export async function UpdateList({
                             )
                           : update.body}
                       </p>
+
+                      {locked ? (
+                        <p className="mt-3 font-ui text-[0.5625rem] uppercase tracking-[0.18em] text-[var(--text-faint)]">
+                          {await text(
+                            'song.updates.unlock_hint',
+                          )}
+                        </p>
+                      ) : null}
                     </div>
                   </article>
                 );
