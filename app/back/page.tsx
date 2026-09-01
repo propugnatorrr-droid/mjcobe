@@ -222,6 +222,7 @@ export default async function BackPage({
     hideAmount,
     consentBody,
     consentCheckbox,
+    continueLabel,
     submit,
     working,
     chooseRole,
@@ -242,7 +243,13 @@ export default async function BackPage({
     paymentReturn,
     paymentProcessing,
     paymentDoNotClose,
+    paymentSummary,
+    paymentRecord,
+    paymentSelection,
+    paymentAmount,
+    viewSong,
   ] = await Promise.all([
+
 
     text('checkout.fan.heading'),
     text('checkout.secure_badge'),
@@ -263,6 +270,7 @@ export default async function BackPage({
     text('checkout.field.hide_amount'),
     text('checkout.consent.fan'),
     text('checkout.consent.fan_checkbox'),
+    text('checkout.continue.fan'),
     text('checkout.submit.fan'),
     text('checkout.working'),
     text('checkout.choose_role'),
@@ -283,6 +291,11 @@ export default async function BackPage({
     text('checkout.payment.return'),
     text('checkout.payment.processing'),
     text('checkout.payment.do_not_close'),
+    text('checkout.payment.summary'),
+    text('checkout.payment.record'),
+    text('checkout.payment.selection'),
+    text('checkout.payment.amount'),
+    text('checkout.view_song'),
   ]);
 
 
@@ -327,6 +340,30 @@ className={[
             >
               {selectedCampaign.songTitle}
             </h1>
+
+            <Link
+              href={
+                `/song/${selectedCampaign.songSlug}`
+              }
+              className={[
+                'mt-5 inline-flex min-h-11',
+                'items-center',
+                'font-ui text-[0.625rem]',
+                'font-semibold uppercase',
+                'tracking-[0.14em]',
+                'text-[var(--text-dim)]',
+                'underline decoration-[var(--line-strong)]',
+                'underline-offset-4',
+                'transition-colors',
+                'hover:text-[var(--champagne)]',
+                'focus-visible:outline',
+                'focus-visible:outline-2',
+                'focus-visible:outline-offset-2',
+                'focus-visible:outline-[var(--champagne)]',
+              ].join(' ')}
+            >
+              {viewSong}
+            </Link>
           </div>
 
           <p className="flex items-center gap-2.5 text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-[var(--text-dim)]">
@@ -390,6 +427,9 @@ className={[
             campaignId={
               selectedCampaign.campaignId
             }
+            songTitle={
+              selectedCampaign.songTitle
+            }
             checkoutAttemptKey={
               randomUUID()
             }
@@ -424,6 +464,8 @@ className={[
               hideAmount,
               consentBody,
               consentCheckbox,
+              continue:
+                continueLabel,
               submit,
               working,
               chooseRole,
@@ -444,6 +486,10 @@ className={[
               paymentReturn,
               paymentProcessing,
               paymentDoNotClose,
+              paymentSummary,
+              paymentRecord,
+              paymentSelection,
+              paymentAmount,
             }}
 
             sponsorHref={
