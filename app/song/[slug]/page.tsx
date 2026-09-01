@@ -12,6 +12,7 @@ import { TierGrid } from '@/components/song/TierGrid';
 import { UpdateList } from '@/components/song/UpdateList';
 import { JourneyList } from '@/components/song/JourneyList';
 import { SupportBar } from '@/components/song/SupportBar';
+import { ReleaseLinks } from '@/components/song/ReleaseLinks';
 import { ButtonLink } from '@/components/primitives/Button';
 import {
   AnalyticsEvent,
@@ -165,7 +166,10 @@ export default async function SongPage({
         isAcceptingSupport={
           data.isAcceptingSupport
         }
-        objective={campaign?.objective}
+        objective={
+          campaign?.objective ??
+          song.description
+        }
       />
 
       <section
@@ -213,7 +217,10 @@ export default async function SongPage({
         )}
       </section>
 
+      <ReleaseLinks song={song} />
+
       <div className="site-shell song-v2-leaderboards">
+
         <LeaderboardPanel
           headingKey="song.section.supporters"
           emptyKey="song.empty.supporters"
