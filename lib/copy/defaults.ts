@@ -83,6 +83,7 @@ const copyDefaults = {
   'song.tiers.heading': 'CHOOSE YOUR LEVEL',
   'song.tiers.select': 'SELECT',
   'song.tiers.sold_out': 'SOLD OUT',
+  'song.tiers.closed': 'CAMPAIGN CLOSED',
   'song.tiers.remaining': '{count} LEFT',
   'song.tiers.custom': 'CUSTOM AMOUNT',
 
@@ -328,6 +329,24 @@ const copyDefaults = {
   'music.released_sub': 'AVAILABLE EVERYWHERE',
   'song.preview_coming_soon': 'PREVIEW COMING SOON',
   'song.preview_window': '30 SECOND PREVIEW',
+  'song.cover_alt':
+    'Cover artwork for {song} by MJ COBE.',
+  'song.audio.play':
+    'Play {song} preview',
+  'song.audio.pause':
+    'Pause {song} preview',
+  'song.audio.seek':
+    'Seek through {song} preview',
+  'song.listen.heading':
+    'LISTEN & WATCH',
+  'song.listen.spotify':
+    'LISTEN ON SPOTIFY',
+  'song.listen.apple_music':
+    'LISTEN ON APPLE MUSIC',
+  'song.listen.youtube':
+    'LISTEN ON YOUTUBE',
+  'song.listen.music_video':
+    'WATCH THE OFFICIAL VIDEO',
   'song.of_goal': 'OF GOAL',
   'song.backed': 'BACKED',
   'song.campaign_goal': 'CAMPAIGN GOAL',
