@@ -236,125 +236,236 @@ pendingLogoPath:
 export async function listAdminSponsors(): Promise<
   AdminSponsor[]
 > {
-  const result = await db.execute(sql`
-    select
-      sp.id,
-      sp.slug,
-      sp.business_name,
-      sp.rep_name,
-      sp.email,
-      sp.phone,
-      sp.website,
-      sp.instagram,
-      sp.shop_url,
-      sp.industry,
-      sp.description,
-      sp.message,
-      sp.moderation::text as moderation,
-      sp.approved_at,
-      sp.supported_since,
-      sp.created_at,
-ma.path as logo_path,
-pma.id as pending_logo_asset_id,
-pma.path as pending_logo_path,
-      count(distinct c.id)
-        filter (
-          where l.id is not null
-        )::int as contribution_count,
-      coalesce(
-        sum(l.amount_cents),
-        0
-      )::int as net_cents
-    from sponsors sp
-left join media_assets ma
-  on ma.id = sp.logo_asset_id
-left join lateral (
-  select
-    pending.id,
-    pending.path
-  from media_assets pending
-  where pending.role = 'sponsor-logo-pending'
-    and pending.derivatives
-      ->> 'pendingSponsorId' = sp.id::text
-  order by pending.created_at desc
-  limit 1
-) pma on true
-left join contributions c
-  on c.sponsor_id = sp.id
-    left join ledger_entries l
-      on l.contribution_id = c.id
-group by
-  sp.id,
-  ma.path,
-  pma.id,
-  pma.path
-    order by
-      case sp.moderation
-        when 'approved' then 0
-        when 'pending' then 1
-        when 'flagged' then 2
-        when 'hidden' then 3
-        else 4
-      end,
-      net_cents desc,
-      sp.created_at desc
-  `);
+  const result =
+    await db.execute(sql`
+      with contribution_balances as (
+        select
+          c.id,
+          c.sponsor_id,
+          coalesce(
+            sum(
+              l.amount_cents
+            ),
+            0
+          )::int as net_cents
+        from contributions c
+        left join ledger_entries l
+          on l.contribution_id =
+            c.id
+        where
+          c.support_type =
+            'business'
+          and c.is_test =
+            false
+        group by
+          c.id,
+          c.sponsor_id
+      )
+      select
+        sp.id,
+        sp.slug,
+        sp.business_name,
+        sp.rep_name,
+        sp.email,
+        sp.phone,
+        sp.website,
+        sp.instagram,
+        sp.shop_url,
+        sp.industry,
+        sp.description,
+        sp.message,
+        sp.moderation::text
+          as moderation,
+        sp.approved_at,
+        sp.supported_since,
+        sp.created_at,
+        ma.path
+          as logo_path,
+        pma.id
+          as pending_logo_asset_id,
+        pma.path
+          as pending_logo_path,
+        count(
+          distinct cb.id
+        ) filter (
+          where
+            cb.net_cents > 0
+        )::int
+          as contribution_count,
+        coalesce(
+          sum(
+            greatest(
+              cb.net_cents,
+              0
+            )
+          ),
+          0
+        )::int
+          as net_cents
+      from sponsors sp
+      left join media_assets ma
+        on ma.id =
+          sp.logo_asset_id
+      left join lateral (
+        select
+          pending.id,
+          pending.path
+        from media_assets pending
+        where
+          pending.role =
+            'sponsor-logo-pending'
+          and pending.derivatives
+            ->> 'pendingSponsorId'
+            = sp.id::text
+        order by
+          pending.created_at
+            desc
+        limit 1
+      ) pma on true
+      left join contribution_balances cb
+        on cb.sponsor_id =
+          sp.id
+      group by
+        sp.id,
+        ma.path,
+        pma.id,
+        pma.path
+      order by
+        case sp.moderation
+          when 'approved'
+            then 0
+          when 'pending'
+            then 1
+          when 'flagged'
+            then 2
+          when 'hidden'
+            then 3
+          else 4
+        end,
+        net_cents desc,
+        sp.created_at desc
+    `);
 
-  return rows(result).map(
+  return rows(
+    result,
+  ).map(
     adminSponsorFromRow,
   );
 }
 
+
 export async function getAdminSponsor(
   id: string,
 ): Promise<AdminSponsor | null> {
-  const result = await db.execute(sql`
-    select
-      sp.id,
-      sp.slug,
-      sp.business_name,
-      sp.rep_name,
-      sp.email,
-      sp.phone,
-      sp.website,
-      sp.instagram,
-      sp.shop_url,
-      sp.industry,
-      sp.description,
-      sp.message,
-      sp.moderation::text as moderation,
-      sp.approved_at,
-      sp.supported_since,
-      sp.created_at,
-ma.path as logo_path,
-pma.id as pending_logo_asset_id,
-pma.path as pending_logo_path,
-      count(distinct c.id)
-        filter (
-          where l.id is not null
-        )::int as contribution_count,
-      coalesce(
-        sum(l.amount_cents),
-        0
-      )::int as net_cents
-    from sponsors sp
-    left join ledger_entries l
-      on l.contribution_id = c.id
-    where sp.id = ${id}
-group by
-  sp.id,
-  ma.path,
-  pma.id,
-  pma.path
-    limit 1
-  `);
+  const result =
+    await db.execute(sql`
+      with contribution_balances as (
+        select
+          c.id,
+          c.sponsor_id,
+          coalesce(
+            sum(
+              l.amount_cents
+            ),
+            0
+          )::int as net_cents
+        from contributions c
+        left join ledger_entries l
+          on l.contribution_id =
+            c.id
+        where
+          c.support_type =
+            'business'
+          and c.is_test =
+            false
+        group by
+          c.id,
+          c.sponsor_id
+      )
+      select
+        sp.id,
+        sp.slug,
+        sp.business_name,
+        sp.rep_name,
+        sp.email,
+        sp.phone,
+        sp.website,
+        sp.instagram,
+        sp.shop_url,
+        sp.industry,
+        sp.description,
+        sp.message,
+        sp.moderation::text
+          as moderation,
+        sp.approved_at,
+        sp.supported_since,
+        sp.created_at,
+        ma.path
+          as logo_path,
+        pma.id
+          as pending_logo_asset_id,
+        pma.path
+          as pending_logo_path,
+        count(
+          distinct cb.id
+        ) filter (
+          where
+            cb.net_cents > 0
+        )::int
+          as contribution_count,
+        coalesce(
+          sum(
+            greatest(
+              cb.net_cents,
+              0
+            )
+          ),
+          0
+        )::int
+          as net_cents
+      from sponsors sp
+      left join media_assets ma
+        on ma.id =
+          sp.logo_asset_id
+      left join lateral (
+        select
+          pending.id,
+          pending.path
+        from media_assets pending
+        where
+          pending.role =
+            'sponsor-logo-pending'
+          and pending.derivatives
+            ->> 'pendingSponsorId'
+            = sp.id::text
+        order by
+          pending.created_at
+            desc
+        limit 1
+      ) pma on true
+      left join contribution_balances cb
+        on cb.sponsor_id =
+          sp.id
+      where
+        sp.id = ${id}
+      group by
+        sp.id,
+        ma.path,
+        pma.id,
+        pma.path
+      limit 1
+    `);
 
-  const row = rows(result)[0];
+  const row =
+    rows(result)[0];
 
   return row
-    ? adminSponsorFromRow(row)
+    ? adminSponsorFromRow(
+        row,
+      )
     : null;
 }
+
 
 export type PendingSponsor = {
   contributionId: string;
