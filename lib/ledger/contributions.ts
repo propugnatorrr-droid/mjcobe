@@ -15,6 +15,10 @@ import {
 import {
   recordCampaignMilestones,
 } from '@/lib/journey/record';
+import {
+  autoApproveSettledSponsor,
+} from '@/lib/sponsor/settle-approval';
+
 
 
 import {
@@ -1079,6 +1083,35 @@ const nextNumber = async (
       // Re-evaluated on the next settlement.
     }
   }
+
+  if (
+    result.ok &&
+    settlingContribution &&
+    settlingContribution.supportType ===
+      'business' &&
+    settlingContribution.sponsorId
+  ) {
+    /*
+     * The payment is the approval. A settled
+     * sponsor goes public immediately unless
+     * its own name trips the screening rules.
+     */
+    try {
+      await autoApproveSettledSponsor({
+        contributionId:
+          settlingContribution.id,
+        sponsorId:
+          settlingContribution.sponsorId,
+      });
+    } catch {
+      /*
+       * Money is already recorded. Placement is
+       * retried by any later settlement, and the
+       * admin override remains available.
+       */
+    }
+  }
+
 
 
   if (
