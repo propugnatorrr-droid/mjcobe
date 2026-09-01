@@ -166,8 +166,13 @@ describe('fanBadgeKeys', () => {
         ...base,
         amountCents: 200,
         thresholds: {
-          ...FAN_BADGE_THRESHOLDS,
+          dayOneNumber:
+            FAN_BADGE_THRESHOLDS.dayOneNumber,
           innerCircleCents: 100,
+          goldCents:
+            FAN_BADGE_THRESHOLDS.goldCents,
+          topTenRank:
+            FAN_BADGE_THRESHOLDS.topTenRank,
         },
       }),
     ).toContain('inner_circle');
