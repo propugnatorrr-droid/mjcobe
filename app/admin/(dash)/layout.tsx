@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {
   Ban,
+  BarChart3,
   Bell,
   CircleDollarSign,
   FileText,
@@ -25,8 +26,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const me = await requireAdmin();
 
   const links = [
-    { href: '/admin', label: admin.nav.overview, icon: LayoutGrid },
-    { href: '/admin/songs', label: admin.nav.songs, icon: Music },
+    {
+      href: '/admin',
+      label:
+        admin.nav.overview,
+      icon: LayoutGrid,
+    },
+    {
+      href:
+        '/admin/analytics',
+      label:
+        admin.nav.analytics,
+      icon: BarChart3,
+    },
+    {
+      href: '/admin/songs',
+      label:
+        admin.nav.songs,
+      icon: Music,
+    },
     {
       href: '/admin/campaigns',
       label: admin.nav.campaigns,
