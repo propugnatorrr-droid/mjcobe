@@ -92,6 +92,17 @@ export type StripePaymentLabels = {
   doNotClose: string;
 };
 
+export type StripePaymentSummary = {
+  heading: string;
+  recordLabel: string;
+  record: string;
+  selectionLabel: string;
+  selection: string;
+  amountLabel: string;
+  amount: string;
+};
+
+
 function safeStripeError(
   error: StripeError,
   labels: StripePaymentLabels,
@@ -138,8 +149,10 @@ function StripePaymentForm({
   workingLabel,
   campaignId,
   supportType,
+  summary,
   labels,
 }: {
+  clientSecret: string;
   returnPath: string;
   checkoutHref: string;
   heading: string;
@@ -149,8 +162,11 @@ function StripePaymentForm({
   supportType:
     | 'fan'
     | 'business';
+  summary?:
+    StripePaymentSummary;
   labels: StripePaymentLabels;
 }) {
+
 
   const stripe =
     useStripe();
@@ -314,6 +330,56 @@ function StripePaymentForm({
         </div>
       </div>
 
+      {summary ? (
+        <section
+          aria-label={
+            summary.heading
+          }
+          className={[
+            'mb-7 overflow-hidden',
+            'rounded-[var(--radius-panel)]',
+            'border border-[var(--line)]',
+            'bg-[var(--panel-soft)]',
+          ].join(' ')}
+        >
+          <p className="border-b border-[var(--line)] px-5 py-3 font-ui text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-dim)]">
+            {summary.heading}
+          </p>
+
+          <dl className="divide-y divide-[var(--line)]">
+            <div className="flex items-start justify-between gap-5 px-5 py-4">
+              <dt className="font-ui text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-dim)]">
+                {summary.recordLabel}
+              </dt>
+
+              <dd className="text-right font-medium text-[var(--text)]">
+                {summary.record}
+              </dd>
+            </div>
+
+            <div className="flex items-start justify-between gap-5 px-5 py-4">
+              <dt className="font-ui text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-dim)]">
+                {summary.selectionLabel}
+              </dt>
+
+              <dd className="text-right font-medium text-[var(--text)]">
+                {summary.selection}
+              </dd>
+            </div>
+
+            <div className="flex items-center justify-between gap-5 px-5 py-4">
+              <dt className="font-ui text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-dim)]">
+                {summary.amountLabel}
+              </dt>
+
+              <dd className="numeric font-serif text-2xl text-[var(--champagne)]">
+                {summary.amount}
+              </dd>
+            </div>
+          </dl>
+        </section>
+      ) : null}
+
       <PaymentElement
         options={{
           layout: {
@@ -323,6 +389,7 @@ function StripePaymentForm({
           },
         }}
       />
+
 
       {processing ? (
         <div
@@ -470,9 +537,9 @@ export function StripePaymentStep({
   workingLabel,
   campaignId,
   supportType,
+  summary,
   labels,
 }: {
-  clientSecret: string;
   returnPath: string;
   checkoutHref: string;
   heading: string;
@@ -482,8 +549,11 @@ export function StripePaymentStep({
   supportType:
     | 'fan'
     | 'business';
+  summary?:
+    StripePaymentSummary;
   labels: StripePaymentLabels;
 }) {
+
 
   if (
     !stripePromise ||
@@ -559,6 +629,7 @@ export function StripePaymentStep({
         supportType={
           supportType
         }
+        summary={summary}
         labels={labels}
       />
     </Elements>
