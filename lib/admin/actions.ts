@@ -231,6 +231,185 @@ export async function moderateContribution(formData: FormData): Promise<void> {
   revalidatePath('/admin/contributions');
   revalidatePath('/', 'layout');
 }
+export async function resolveFlaggedSponsor(
+  formData: FormData,
+): Promise<void> {
+  const me = await requireAdmin();
+
+  const contributionId = str(
+    formData.get(
+      'contributionId',
+    ),
+  );
+
+  const action = str(
+    formData.get('action'),
+  );
+
+  const businessName = str(
+    formData.get(
+      'businessName',
+    ),
+    120,
+  );
+
+  if (
+    !contributionId ||
+    (
+      action !== 'approve' &&
+      action !== 'block'
+    )
+  ) {
+    return;
+  }
+
+  const [row] = await db
+    .select({
+      contributionId:
+        s.contributions.id,
+      sponsorId:
+        s.contributions.sponsorId,
+      songId:
+        s.contributions.songId,
+      contributionModeration:
+        s.contributions.moderation,
+      sponsorSlug:
+        s.sponsors.slug,
+      oldBusinessName:
+        s.sponsors.businessName,
+      sponsorModeration:
+        s.sponsors.moderation,
+    })
+    .from(s.contributions)
+    .innerJoin(
+      s.sponsors,
+      eq(
+        s.sponsors.id,
+        s.contributions.sponsorId,
+      ),
+    )
+    .where(
+      eq(
+        s.contributions.id,
+        contributionId,
+      ),
+    )
+    .limit(1);
+
+  if (!row.sponsorId) {
+    return;
+  }
+
+  if (
+    action === 'approve' &&
+    !businessName
+  ) {
+    return;
+  }
+
+  const nextModeration =
+    action === 'approve'
+      ? 'approved'
+      : 'blocked';
+
+  await dbw.transaction(
+    async (tx) => {
+      await tx
+        .update(s.sponsors)
+        .set({
+          businessName:
+            action === 'approve'
+              ? businessName
+              : row.oldBusinessName,
+          moderation:
+            nextModeration,
+          approvedAt:
+            action === 'approve'
+              ? new Date()
+              : null,
+        })
+        .where(
+          eq(
+            s.sponsors.id,
+            row.sponsorId,
+          ),
+        );
+
+      await tx
+        .update(s.contributions)
+        .set({
+          moderation:
+            nextModeration,
+          leaderboardVisible:
+            action === 'approve',
+          ...(action === 'approve'
+            ? {
+                displayNameSnapshot:
+                  businessName,
+              }
+            : {}),
+
+        })
+        .where(
+          and(
+            eq(
+              s.contributions.sponsorId,
+              row.sponsorId,
+            ),
+            eq(
+              s.contributions.supportType,
+              'business',
+            ),
+          ),
+        );
+    },
+  );
+
+  await recordAudit({
+    adminUserId: me.id,
+    action:
+      action === 'approve'
+        ? 'sponsor.flag_resolved'
+        : 'sponsor.block',
+    entity: 'sponsor',
+    entityId: row.sponsorId,
+    before: {
+      businessName:
+        row.oldBusinessName,
+      sponsorModeration:
+        row.sponsorModeration,
+      contributionModeration:
+        row.contributionModeration,
+    },
+    after: {
+      businessName:
+        action === 'approve'
+          ? businessName
+          : row.oldBusinessName,
+      moderation:
+        nextModeration,
+      leaderboardVisible:
+        action === 'approve',
+    },
+    ipHash:
+      await ipHash(),
+  });
+
+  revalidatePath(
+    '/admin/contributions',
+  );
+
+  revalidatePath(
+    '/admin/sponsors',
+  );
+
+  revalidatePath(
+    `/partner/${row.sponsorSlug}`,
+  );
+
+  revalidatePath('/partners');
+  revalidatePath('/', 'layout');
+}
 
 /** Blocks the identity behind a contribution, then hides it. */
 export async function blockFromContribution(formData: FormData): Promise<void> {
