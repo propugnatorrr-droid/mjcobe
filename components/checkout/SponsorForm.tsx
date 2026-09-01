@@ -53,7 +53,8 @@ export type SponsorFormLabels = Record<
   | 'logoRemove'
   | 'consentBody'
   | 'consentCheckbox'
-  | 'submit'
+  | 'continue'
+  | 'paymentSubmit'
   | 'working'
   | 'summary'
   | 'selectedPackage'
@@ -68,12 +69,20 @@ export type SponsorFormLabels = Record<
   | 'paymentRetry'
   | 'paymentReturn'
   | 'paymentProcessing'
-  | 'paymentDoNotClose',
+  | 'paymentDoNotClose'
+  | 'paymentSummary'
+  | 'paymentRecord'
+  | 'paymentSelection'
+  | 'paymentAmount',
   string
 >;
 
+
 type SponsorFormProps = {
   campaignId: string;
+  songTitle: string;
+  checkoutHref: string;
+  initialPackageId?: string;
   checkoutAttemptKey: string;
   options: AmountOption[];
   labels: SponsorFormLabels;
@@ -86,6 +95,9 @@ type SponsorFormProps = {
 
 export function SponsorForm({
   campaignId,
+  songTitle,
+  checkoutHref,
+  initialPackageId,
   checkoutAttemptKey,
   options,
   labels,
@@ -98,8 +110,21 @@ export function SponsorForm({
   const initialId =
     claimTop
       ? null
-      : options.find((option) => !option.disabled)?.id ??
-        null;
+      : (
+          initialPackageId &&
+          options.some(
+            (option) =>
+              option.id ===
+                initialPackageId &&
+              !option.disabled,
+          )
+        )
+        ? initialPackageId
+        : options.find(
+              (option) =>
+                !option.disabled,
+            )?.id ?? null;
+
 
   const [state, action] = useActionState<
     CheckoutState,
@@ -151,7 +176,9 @@ export function SponsorForm({
           state.payment
             .returnPath
         }
-        checkoutHref="/partners"
+        checkoutHref={
+          checkoutHref
+        }
         campaignId={
           campaignId
         }
@@ -161,11 +188,29 @@ export function SponsorForm({
         }
 
         submitLabel={
-          labels.submit
+          labels.paymentSubmit
         }
+
         workingLabel={
           labels.working
         }
+        summary={{
+          heading:
+            labels.paymentSummary,
+          recordLabel:
+            labels.paymentRecord,
+          record:
+            songTitle,
+          selectionLabel:
+            labels.paymentSelection,
+          selection:
+            selectedOption?.label ??
+            labels.customSponsorship,
+          amountLabel:
+            labels.paymentAmount,
+          amount:
+            summaryAmount,
+        }}
         labels={{
           secureBody:
             labels.paymentSecureBody,
@@ -460,7 +505,7 @@ className={[
 
               <div className="mt-7 xl:hidden">
                 <SubmitRow
-                  label={labels.submit}
+                  label={labels.continue}
                   workingLabel={labels.working}
                   error={state.error}
                 />
@@ -524,7 +569,7 @@ className={[
 
             <div className="border-t border-[var(--line)] p-6">
               <SubmitRow
-                label={labels.submit}
+                label={labels.continue}
                 workingLabel={labels.working}
                 error={state.error}
               />
