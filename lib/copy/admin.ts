@@ -27,9 +27,42 @@ export const admin = {
     referrals: 'REFERRAL LINKS',
     sponsorProfiles: 'PARTNER PROFILES',
     notifications: 'EMAIL DELIVERY',
+    analytics: 'ANALYTICS',
+  },
+
+  analytics: {
+    heading:
+      'CAMPAIGN ANALYTICS',
+    hint:
+      'First-party campaign activity. Revenue and conversions are derived from settled ledger balances, never browser redirects.',
+    campaign:
+      'CAMPAIGN',
+    views:
+      'VIEWS',
+    listeners:
+      'LISTENERS',
+    completions:
+      'COMPLETIONS',
+    supportClicks:
+      'FAN CLICKS',
+    sponsorClicks:
+      'SPONSOR CLICKS',
+    checkoutStarts:
+      'CHECKOUTS',
+    failures:
+      'FAILURES',
+    conversions:
+      'SETTLED',
+    conversionRate:
+      'CONVERSION',
+    revenue:
+      'REVENUE',
+    empty:
+      'No campaign analytics have been recorded yet.',
   },
 
   media: {
+
     heading: 'MEDIA LIBRARY',
     hint:
       'Review every uploaded image and audio file. Existing files can be assigned from each song management page without uploading duplicates.',
