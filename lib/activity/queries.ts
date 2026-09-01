@@ -22,14 +22,26 @@ export const getRecentActivity = cache(async (limit = 6): Promise<ActivityEntry[
     select
       l.id, l.amount_cents, l.occurred_at,
       c.support_type, c.is_anonymous, c.hide_amount,
-      coalesce(c.display_name_snapshot, su.display_name, sp.business_name, 'Someone') as name,
+      case
+        when c.is_anonymous then 'Someone'
+        else coalesce(
+          c.display_name_snapshot,
+          su.display_name,
+          sp.business_name,
+          'Someone'
+        )
+      end as name,
       so.title as song_title
     from ledger_entries l
     join contributions c on c.id = l.contribution_id
     join songs so on so.id = c.song_id
     left join supporters su on su.id = c.supporter_id
     left join sponsors sp on sp.id = c.sponsor_id
-    where c.moderation = 'approved' and l.kind = 'contribution'
+    where c.moderation = 'approved'
+      and l.kind = 'contribution'
+      and l.amount_cents > 0
+      and c.is_test = false
+      and c.leaderboard_visible = true
     order by l.occurred_at desc
     limit ${limit}
   `);
