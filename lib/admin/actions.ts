@@ -296,14 +296,31 @@ export async function resolveFlaggedSponsor(
     )
     .limit(1);
 
-  if (!row.sponsorId) {
+  if (!row?.sponsorId) {
     return;
   }
+
+  /*
+   * Capture narrowed values in immutable constants.
+   * TypeScript does not preserve property narrowing
+   * reliably inside the transaction callback.
+   */
+  const sponsorId = row.sponsorId;
+  const sponsorSlug = row.sponsorSlug;
 
   if (
     action === 'approve' &&
     !businessName
   ) {
+    return;
+  }
+
+  const resolvedBusinessName =
+    action === 'approve'
+      ? businessName
+      : row.oldBusinessName;
+
+  if (!resolvedBusinessName) {
     return;
   }
 
@@ -318,9 +335,7 @@ export async function resolveFlaggedSponsor(
         .update(s.sponsors)
         .set({
           businessName:
-            action === 'approve'
-              ? businessName
-              : row.oldBusinessName,
+            resolvedBusinessName,
           moderation:
             nextModeration,
           approvedAt:
@@ -331,7 +346,7 @@ export async function resolveFlaggedSponsor(
         .where(
           eq(
             s.sponsors.id,
-            row.sponsorId,
+            sponsorId,
           ),
         );
 
@@ -345,16 +360,15 @@ export async function resolveFlaggedSponsor(
           ...(action === 'approve'
             ? {
                 displayNameSnapshot:
-                  businessName,
+                  resolvedBusinessName,
               }
             : {}),
-
         })
         .where(
           and(
             eq(
               s.contributions.sponsorId,
-              row.sponsorId,
+              sponsorId,
             ),
             eq(
               s.contributions.supportType,
@@ -372,7 +386,7 @@ export async function resolveFlaggedSponsor(
         ? 'sponsor.flag_resolved'
         : 'sponsor.block',
     entity: 'sponsor',
-    entityId: row.sponsorId,
+    entityId: sponsorId,
     before: {
       businessName:
         row.oldBusinessName,
@@ -383,9 +397,7 @@ export async function resolveFlaggedSponsor(
     },
     after: {
       businessName:
-        action === 'approve'
-          ? businessName
-          : row.oldBusinessName,
+        resolvedBusinessName,
       moderation:
         nextModeration,
       leaderboardVisible:
@@ -404,12 +416,13 @@ export async function resolveFlaggedSponsor(
   );
 
   revalidatePath(
-    `/partner/${row.sponsorSlug}`,
+    `/partner/${sponsorSlug}`,
   );
 
   revalidatePath('/partners');
   revalidatePath('/', 'layout');
 }
+
 
 /** Blocks the identity behind a contribution, then hides it. */
 export async function blockFromContribution(formData: FormData): Promise<void> {
