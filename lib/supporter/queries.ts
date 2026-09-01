@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { eq, sql } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import * as s from '@/lib/db/schema';
 
@@ -36,34 +36,57 @@ export const getSupporterProfile = cache(async (id: string): Promise<SupporterPr
 
   if (!supporter || supporter.isAnonymous || supporter.moderation !== 'approved') return null;
 
+  /*
+   * Public figures are net ledger balances over
+   * real, non-test, non-anonymous contributions.
+   * A refund removes money from this profile, and
+   * a simulated payment was never money at all.
+   */
   const [totalRows, songRows, badgeRows] = await Promise.all([
     db.execute(sql`
-      select sum(l.amount_cents)::int as cents
+      select coalesce(sum(l.amount_cents), 0)::int as cents
       from ledger_entries l
       join contributions c on c.id = l.contribution_id
-      where c.supporter_id = ${id} and c.support_type = 'fan'
+      where c.supporter_id = ${id}
+        and c.support_type = 'fan'
+        and c.is_test = false
+        and c.is_anonymous = false
     `),
     db.execute(sql`
+      with per_song as (
+        select
+          c.song_id,
+          coalesce(sum(l.amount_cents), 0)::int as contributed_cents
+        from contributions c
+        join ledger_entries l on l.contribution_id = c.id
+        where c.supporter_id = ${id}
+          and c.support_type = 'fan'
+          and c.is_test = false
+          and c.is_anonymous = false
+        group by c.song_id
+        having coalesce(sum(l.amount_cents), 0) > 0
+      )
       select so.id, so.slug, so.title, ma.path as cover_path,
-        sum(l.amount_cents)::int as contributed_cents
-      from contributions c
-      join songs so on so.id = c.song_id
+        per_song.contributed_cents
+      from per_song
+      join songs so on so.id = per_song.song_id
       left join media_assets ma on ma.id = so.cover_asset_id
-      join ledger_entries l on l.contribution_id = c.id
-      where c.supporter_id = ${id} and c.support_type = 'fan'
-      group by so.id, so.slug, so.title, ma.path
-      order by contributed_cents desc
+      order by per_song.contributed_cents desc, so.title asc
     `),
     db
       .select({ key: s.badges.key, label: s.badges.label })
       .from(s.badgeGrants)
       .innerJoin(s.badges, eq(s.badges.id, s.badgeGrants.badgeId))
-      .where(eq(s.badgeGrants.supporterId, id)),
+      .where(eq(s.badgeGrants.supporterId, id))
+      .orderBy(asc(s.badges.sortIndex), asc(s.badges.key)),
   ]);
+
 
   const totalContributionsCents = Number(
     ((totalRows as unknown as { rows: Record<string, unknown>[] }).rows[0]?.cents as number) ?? 0,
   );
+
+  if (totalContributionsCents <= 0) return null;
 
   const songs = (songRows as unknown as { rows: Record<string, unknown>[] }).rows.map((r) => ({
     id: String(r.id),
@@ -82,6 +105,18 @@ export const getSupporterProfile = cache(async (id: string): Promise<SupporterPr
     website: supporter.linksPublic ? supporter.website : null,
     totalContributionsCents,
     songs,
-    badges: badgeRows,
+    /*
+     * The same badge can be earned on several
+     * campaigns. A profile shows each mark once.
+     */
+    badges: [
+      ...new Map(
+        badgeRows.map((badge) => [
+          badge.key,
+          badge,
+        ]),
+      ).values(),
+    ],
   };
 });
+
