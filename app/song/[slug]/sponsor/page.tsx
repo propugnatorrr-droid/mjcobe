@@ -11,6 +11,10 @@ import {
 import type { AmountOption } from '@/components/checkout/AmountChooser';
 import { getSongPage } from '@/lib/song/queries';
 import { getPackagesFor } from '@/lib/checkout/queries';
+import {
+  resolveSponsorPackageId,
+  sponsorCheckoutHref,
+} from '@/lib/checkout/sponsor-selection';
 import { getTopSpot } from '@/lib/campaign/queries';
 import { text } from '@/lib/copy/site-copy';
 import { setting } from '@/lib/config/settings';
@@ -27,6 +31,7 @@ type Props = {
   }>;
   searchParams: Promise<{
     claim?: string;
+    package?: string;
   }>;
 };
 
@@ -115,6 +120,24 @@ export default async function SponsorPage({
               : null,
     }),
   );
+  const initialPackageId =
+    resolveSponsorPackageId(
+      query.package,
+      options.map(
+        (option) => option.id,
+      ),
+      claimTop,
+    );
+
+  const checkoutHref =
+    sponsorCheckoutHref(
+      data.song.slug,
+      {
+        packageId:
+          initialPackageId,
+        claimTop,
+      },
+    );
 
   const currencySymbol =
     new Intl.NumberFormat(locale, {
@@ -208,6 +231,11 @@ export default async function SponsorPage({
       <div className="site-shell py-10 sm:py-14 lg:py-16">
         <SponsorForm
           campaignId={data.campaign.id}
+          songTitle={data.song.title}
+          checkoutHref={checkoutHref}
+          initialPackageId={
+            initialPackageId
+          }
           checkoutAttemptKey={randomUUID()}
           options={options}
           currencySymbol={currencySymbol}
@@ -291,7 +319,10 @@ export default async function SponsorPage({
             consentCheckbox: await text(
               'checkout.consent.business_checkbox',
             ),
-            submit: await text(
+            continue: await text(
+              'checkout.continue.business',
+            ),
+            paymentSubmit: await text(
               'checkout.submit.business',
             ),
             working: await text(
@@ -338,6 +369,18 @@ export default async function SponsorPage({
             ),
             paymentDoNotClose: await text(
               'checkout.payment.do_not_close',
+            ),
+            paymentSummary: await text(
+              'checkout.payment.summary',
+            ),
+            paymentRecord: await text(
+              'checkout.payment.record',
+            ),
+            paymentSelection: await text(
+              'checkout.payment.selection',
+            ),
+            paymentAmount: await text(
+              'checkout.payment.amount',
             ),
           }}
         />
