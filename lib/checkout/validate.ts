@@ -1,6 +1,30 @@
 /** Framework-free validation so it can be unit tested without a request. */
 
-export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+export const EMAIL_RE =
+  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+export function normalizeEmail(
+  raw: unknown,
+): string | null {
+  if (
+    typeof raw !== 'string'
+  ) {
+    return null;
+  }
+
+  const value =
+    raw.trim().toLowerCase();
+
+  if (
+    value.length === 0 ||
+    value.length > 254 ||
+    !EMAIL_RE.test(value)
+  ) {
+    return null;
+  }
+
+  return value;
+}
 
 export function parseAmountCents(
   raw: unknown,
