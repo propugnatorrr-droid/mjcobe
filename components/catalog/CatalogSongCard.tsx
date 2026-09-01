@@ -15,7 +15,11 @@ export type CatalogCardLabels = {
   supporters: string;
   joinJourney: string;
   previewComingSoon: string;
+  playPreview: string;
+  pausePreview: string;
+  seekPreview: string;
 };
+
 
 type CatalogSongCardProps = {
   song: CatalogSong;
@@ -132,11 +136,33 @@ export function CatalogSongCard({
 
         <AudioPreview
           src={song.audioPath}
-          previewStartMs={song.previewStartMs}
-          previewEndMs={song.previewEndMs}
-          allowFullPlayback={song.allowFullPlayback}
-          comingSoonLabel={labels.previewComingSoon}
+          songId={song.id}
+          campaignId={
+            song.campaignId
+          }
+          previewStartMs={
+            song.previewStartMs
+          }
+          previewEndMs={
+            song.previewEndMs
+          }
+          allowFullPlayback={
+            song.allowFullPlayback
+          }
+          comingSoonLabel={
+            labels.previewComingSoon
+          }
+          playLabel={
+            labels.playPreview
+          }
+          pauseLabel={
+            labels.pausePreview
+          }
+          seekLabel={
+            labels.seekPreview
+          }
         />
+
 
         {showCampaign ? (
           <CatalogCampaignStats
