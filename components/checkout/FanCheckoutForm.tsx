@@ -154,6 +154,7 @@ export function FanCheckoutForm({
   options,
   labels,
   currencySymbol,
+  checkoutHref,
   sponsorHref,
   initialTierId,
   customMin,
@@ -165,6 +166,7 @@ export function FanCheckoutForm({
   options: AmountOption[];
   labels: FanFormLabels;
   currencySymbol: string;
+  checkoutHref: string;
   sponsorHref: string | null;
   initialTierId?: string;
   customMin: string;
@@ -217,7 +219,9 @@ export function FanCheckoutForm({
           state.payment
             .returnPath
         }
-        checkoutHref="/back"
+        checkoutHref={
+          checkoutHref
+        }
         campaignId={
           campaignId
         }
