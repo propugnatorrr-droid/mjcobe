@@ -12,6 +12,7 @@ export type ProviderPaymentState =
   | 'captured'
   | 'processing'
   | 'requires_capture'
+  | 'requires_confirmation'
   | 'requires_payment_method'
   | 'requires_action'
   | 'canceled'
@@ -74,13 +75,37 @@ export async function readProviderState(
       },
     );
 
-  if (intent.status === 'canceled') {
-    return 'canceled';
+  if (intent.status !== 'succeeded') {
+    switch (intent.status) {
+      case 'canceled':
+        return 'canceled';
+
+      case 'processing':
+        return 'processing';
+
+      case 'requires_action':
+        return 'requires_action';
+
+      case 'requires_capture':
+        return 'requires_capture';
+
+      case 'requires_confirmation':
+        return 'requires_confirmation';
+
+      case 'requires_payment_method':
+        return 'requires_payment_method';
+
+      default:
+        /*
+         * Stripe types permit future status
+         * strings through OtherString. Unknown
+         * provider states must not trigger an
+         * automatic financial repair.
+         */
+        return null;
+    }
   }
 
-  if (intent.status !== 'succeeded') {
-    return intent.status;
-  }
 
   const charge =
     typeof intent.latest_charge ===
