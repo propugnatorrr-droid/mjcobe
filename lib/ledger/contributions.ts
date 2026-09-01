@@ -10,6 +10,10 @@ import {
   settlementModerationForName,
 } from '@/lib/moderation/settlement';
 import {
+  grantFanSettlementBadges,
+} from '@/lib/supporter/grants';
+
+import {
   and,
   eq,
   inArray,
@@ -1019,9 +1023,47 @@ const nextNumber = async (
   }
   if (
     result.ok &&
+    settlingContribution &&
+    settlingContribution.supportType ===
+      'fan' &&
+    settlingContribution.supporterId
+  ) {
+    /*
+     * Badges are public status, not money. They are
+     * granted after the ledger commits, and a badge
+     * failure must never undo a settled payment.
+     */
+    try {
+      await grantFanSettlementBadges({
+        campaignId:
+          settlingContribution
+            .campaignId,
+        supporterId:
+          settlingContribution
+            .supporterId,
+        amountCents:
+          settlingContribution
+            .amountCents,
+        supporterNumber:
+          result.supporterNumber,
+        foundingNumber:
+          result.foundingNumber,
+      });
+    } catch {
+      /*
+       * A later settlement for the same supporter
+       * re-evaluates every rule, so a transient
+       * failure here is self-healing.
+       */
+    }
+  }
+
+  if (
+    result.ok &&
     settlingContribution
   ) {
     await queueOutbidNotification({
+
       campaignId:
         settlingContribution
           .campaignId,
