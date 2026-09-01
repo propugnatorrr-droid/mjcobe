@@ -152,9 +152,14 @@ export function SponsorForm({
             .returnPath
         }
         checkoutHref="/partners"
+        campaignId={
+          campaignId
+        }
+        supportType="business"
         heading={
           labels.payment
         }
+
         submitLabel={
           labels.submit
         }
