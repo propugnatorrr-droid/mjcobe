@@ -21,6 +21,9 @@ import {
   LockKeyhole,
   RotateCcw,
 } from 'lucide-react';
+import {
+  trackAnalytics,
+} from '@/components/analytics/AnalyticsEvent';
 
 const publishableKey =
   process.env
@@ -133,6 +136,8 @@ function StripePaymentForm({
   heading,
   submitLabel,
   workingLabel,
+  campaignId,
+  supportType,
   labels,
 }: {
   returnPath: string;
@@ -140,8 +145,13 @@ function StripePaymentForm({
   heading: string;
   submitLabel: string;
   workingLabel: string;
+  campaignId: string;
+  supportType:
+    | 'fan'
+    | 'business';
   labels: StripePaymentLabels;
 }) {
+
   const stripe =
     useStripe();
 
@@ -197,12 +207,30 @@ function StripePaymentForm({
           });
 
       if (result.error) {
-        setError(
+        const safeError =
           safeStripeError(
             result.error,
             labels,
-          ),
+          );
+
+        setError(
+          safeError,
         );
+
+        trackAnalytics({
+          kind:
+            'payment_failure',
+          campaignId,
+          meta: {
+            scope:
+              supportType,
+            reason:
+              safeError ===
+              labels.declined
+                ? 'declined'
+                : 'failed',
+          },
+        });
 
         setProcessing(false);
         return;
@@ -225,6 +253,18 @@ function StripePaymentForm({
       setError(
         labels.failed,
       );
+
+      trackAnalytics({
+        kind:
+          'payment_failure',
+        campaignId,
+        meta: {
+          scope:
+            supportType,
+          reason:
+            'unexpected',
+        },
+      });
 
       setProcessing(false);
     }
@@ -428,6 +468,8 @@ export function StripePaymentStep({
   heading,
   submitLabel,
   workingLabel,
+  campaignId,
+  supportType,
   labels,
 }: {
   clientSecret: string;
@@ -436,8 +478,13 @@ export function StripePaymentStep({
   heading: string;
   submitLabel: string;
   workingLabel: string;
+  campaignId: string;
+  supportType:
+    | 'fan'
+    | 'business';
   labels: StripePaymentLabels;
 }) {
+
   if (
     !stripePromise ||
     !publishableKey
@@ -505,6 +552,12 @@ export function StripePaymentStep({
         submitLabel={submitLabel}
         workingLabel={
           workingLabel
+        }
+        campaignId={
+          campaignId
+        }
+        supportType={
+          supportType
         }
         labels={labels}
       />
