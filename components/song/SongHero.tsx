@@ -135,6 +135,11 @@ export async function SongHero({
 
             <AudioPreview
               src={audio?.path ?? null}
+              songId={song.id}
+              campaignId={
+                campaign?.id ??
+                null
+              }
               previewStartMs={song.previewStartMs}
               previewEndMs={song.previewEndMs}
               allowFullPlayback={song.allowFullPlayback}
