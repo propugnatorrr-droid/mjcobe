@@ -218,6 +218,10 @@ export function FanCheckoutForm({
             .returnPath
         }
         checkoutHref="/back"
+        campaignId={
+          campaignId
+        }
+        supportType="fan"
         heading={
           labels.payment
         }
