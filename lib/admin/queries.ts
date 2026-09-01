@@ -81,6 +81,7 @@ export async function getDailyTotals(days = 14): Promise<{ day: string; cents: n
 export type ContributionRow = {
   contributionId: string;
   transactionId: string | null;
+  sponsorId: string | null;
   occurredAt: Date;
   name: string;
   supportType: 'fan' | 'business';
@@ -103,6 +104,7 @@ export async function listContributions(filter?: {
     select
       c.id as contribution_id,
       t.id as transaction_id,
+      c.sponsor_id,
       c.created_at as occurred_at,
       coalesce(sp.business_name, c.display_name_snapshot, su.display_name, '') as name,
       c.support_type,
@@ -128,7 +130,16 @@ export async function listContributions(filter?: {
 
   return rows(result).map((r) => ({
     contributionId: String(r.contribution_id),
-    transactionId: r.transaction_id ? String(r.transaction_id) : null,
+    transactionId:
+      r.transaction_id
+        ? String(
+            r.transaction_id,
+          )
+        : null,
+    sponsorId:
+      r.sponsor_id
+        ? String(r.sponsor_id)
+        : null,
     occurredAt: new Date(String(r.occurred_at)),
     name: String(r.name ?? ''),
     supportType: r.support_type as 'fan' | 'business',
