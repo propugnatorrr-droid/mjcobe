@@ -894,8 +894,40 @@ export async function settleContribution(
       })
       .onConflictDoNothing();
 
+    /*
+     * Successful payment analytics is
+     * settlement-derived. Client redirects
+     * are not proof that money moved.
+     */
+    await t
+      .insert(
+        s.analyticsEvents,
+      )
+      .values({
+        eventKey:
+          `settlement:${transactionId}`,
+        kind:
+          'payment_success',
+        songId:
+          contribution.songId,
+        campaignId:
+          contribution.campaignId,
+        sessionId:
+          `settlement:${contribution.id}`,
+        path:
+          null,
+        referrer:
+          null,
+        meta: {
+          scope:
+            contribution
+              .supportType,
+        },
+        occurredAt: now,
+      })
+      .onConflictDoNothing();
 
-    // Sequential per campaign and series. Computed inside the transaction so
+    // Sequential per campaign and series.
     // two simultaneous checkouts cannot be issued the same number.
 const nextNumber = async (
   seriesKey: string,
