@@ -33,6 +33,10 @@ import {
   sponsorApprovalAction,
   sponsorDeclineAction,
 } from '@/lib/sponsor/review';
+import {
+  recordCampaignLifecycle,
+} from '@/lib/journey/lifecycle';
+
 
 export type AdminState = {
   error?: string;
@@ -433,6 +437,10 @@ function revalidateSponsorSurfaces(args: {
   revalidatePath('/', 'layout');
 }
 
+ /* Override path only. Sponsorship approves itself on settlement; this exists
+ * for the exceptions — a name flagged by screening, or a payment that stalled
+ * in authorized because a provider webhook never arrived.
+ */
 export async function approveSponsor(
   formData: FormData,
 ): Promise<void> {
@@ -1692,10 +1700,28 @@ export async function updateCampaign(_prev: AdminState, formData: FormData): Pro
     objective: str(formData.get('objective'), 500),
     fanSupportEnabled: bool(formData.get('fanSupportEnabled')),
     businessSponsorshipEnabled: bool(formData.get('businessSponsorshipEnabled')),
+    /*
+     * A campaign that is not live must not be
+     * payable. Keeping these in sync here means
+     * closing a campaign genuinely closes
+     * checkout rather than only changing a label.
+     */
+    acceptSupport: status === 'live',
     updatedAt: new Date(),
   };
 
   await dbw.update(s.campaigns).set(patch).where(eq(s.campaigns.id, id));
+
+  if (before.status !== status) {
+    await recordCampaignLifecycle({
+      songId,
+      campaignId: id,
+      previousStatus: before.status,
+      nextStatus: status,
+      campaignName: name,
+    });
+  }
+
 
   const [song] = await db.select({ slug: s.songs.slug }).from(s.songs).where(eq(s.songs.id, songId)).limit(1);
 
