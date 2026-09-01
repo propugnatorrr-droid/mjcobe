@@ -54,12 +54,16 @@ so.allow_full_playback,
       limit 1
     ) cp on true
     left join lateral (
+      -- Public catalog figures are net ledger balances over real money only.
+      -- A simulated payment must never inflate a card on /music or /now.
       select
-        sum(l.amount_cents)::int as cents,
+        coalesce(sum(l.amount_cents), 0)::int as cents,
         count(distinct c.supporter_id)::int as supporters
       from ledger_entries l
       join contributions c on c.id = l.contribution_id
-      where l.campaign_id = cp.id and c.support_type = 'fan'
+      where l.campaign_id = cp.id
+        and c.support_type = 'fan'
+        and c.is_test = false
     ) fan on true
     where so.is_published = true
     order by so.sort_index asc
