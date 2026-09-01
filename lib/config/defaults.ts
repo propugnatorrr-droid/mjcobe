@@ -29,8 +29,18 @@ const configDefaults = {
   maxContributionCents: 5_000_000,
   sponsorMinContributionCents: 25_000,
   displayNameMaxLength: 32,
-  /** Above this, a sponsor is held for manual approval unless the campaign opts out. */
+  /**
+   * Sponsorship is automatic: a settled payment publishes the sponsor.
+   * This threshold no longer holds a payment; it only marks large
+   * sponsorships for attention in the admin queue.
+   */
   sponsorApprovalThresholdCents: 100_000,
+  /**
+   * Sponsor logos publish with the payment. Set false in admin settings to
+   * route every uploaded logo through review instead — no deploy needed.
+   */
+  sponsorLogoAutoPublish: true,
+
 
   // Asset pipeline — widths are capped at each source asset's native
   // resolution (never upscaled); see scripts/process-assets.ts.
