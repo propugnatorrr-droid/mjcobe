@@ -139,8 +139,10 @@ const copyDefaults = {
     'CONTINUE TO SECURE PAYMENT',
   'checkout.submit.fan':
     'COMPLETE SUPPORT',
+  'checkout.continue.business':
+    'CONTINUE TO SECURE PAYMENT',
   'checkout.submit.business':
-    'SUBMIT SPONSORSHIP',
+    'COMPLETE SPONSORSHIP',
   'checkout.working':
     'WORKING',
   'checkout.field.email': 'EMAIL',
