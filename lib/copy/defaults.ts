@@ -283,6 +283,8 @@ const copyDefaults = {
   'thanks.unknown.body':
     'We could not confirm the final payment status. No supporter benefits will appear unless the payment successfully settles.',
   'thanks.share': 'SHARE MY SUPPORT',
+    'thanks.view_partner':
+    'VIEW YOUR PARTNER PROFILE',
   'thanks.view_song': 'VIEW SONG JOURNEY',
   'thanks.back_another': 'BACK ANOTHER RECORD',
   'thanks.copy_link': 'COPY LINK',
