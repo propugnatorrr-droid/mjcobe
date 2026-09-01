@@ -44,15 +44,31 @@ export async function getOverview(): Promise<Overview> {
     `),
   );
 
-  // A business contribution with no ledger entry is money authorized but held.
+  /*
+   * Sponsorship settles automatically. The only
+   * sponsor work queue is now the flagged
+   * exception queue.
+   */
   const [pending] = rows(
     await db.execute(sql`
-      select count(*)::int as n
+      select count(
+        distinct c.id
+      )::int as n
       from contributions c
-      left join ledger_entries l on l.contribution_id = c.id
-      where c.support_type = 'business' and l.id is null
+      left join sponsors sp
+        on sp.id = c.sponsor_id
+      where
+        c.support_type =
+          'business'
+        and (
+          c.moderation =
+            'flagged'
+          or sp.moderation =
+            'flagged'
+        )
     `),
   );
+
 
   return {
     totalCents: num(totals?.total_cents),
