@@ -46,11 +46,6 @@ export default async function HomePage() {
     moreBuildingHeading,
     releasedHeading,
     viewAllMusic,
-    joinJourney,
-    previewComingSoon,
-    playPreview,
-    pausePreview,
-    seekPreview,
     buildingStatusLabel,
     releasedStatusLabel,
     journeyHeading,
@@ -80,11 +75,6 @@ export default async function HomePage() {
     text('home.more_building_heading'),
     text('music.released'),
     text('home.view_all_music'),
-    text('music.join_the_journey'),
-    text('song.preview_coming_soon'),
-    text('music.audio.play'),
-    text('music.audio.pause'),
-    text('music.audio.seek'),
     text('music.building_now'),
     text('music.released'),
     text('home.journey_heading'),
@@ -97,12 +87,9 @@ export default async function HomePage() {
 
   const catalogLabels = {
     supporters: supportersLabel,
-    joinJourney,
-    previewComingSoon,
-    playPreview,
-    pausePreview,
-    seekPreview,
+    viewProject,
   };
+
 
   const [journeyDay, journeyKindLabel] = home.latestJourney
     ? await Promise.all([
