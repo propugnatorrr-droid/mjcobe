@@ -74,13 +74,8 @@
 @import "./styles/song.css";
 
 /*
- * Remaining visual-phase css files (music catalog, checkout, journey/now,
- * admin, song campaign) are imported directly from app/layout.tsx and have
- * not yet been migrated into this app/styles/ structure — see
- * docs/UI_REBUILD_PROGRESS.md for the batch plan. This file used to also
- * carry a duplicate "Visual Phase 1" homepage block (the home hero and
- * home campaign rules, prefixed home-v2- at the time) that a later phase
- * file silently overrode via import order — that dead block, plus the
- * unused catalog-grid/catalog-song and song-hero-backdrop/song-vinyl
- * rules (zero component references), were removed rather than migrated.
+ * Homepage, music and song styles live in app/styles. Checkout, journey/now,
+ * and admin retain their existing phase files until their route-specific
+ * rebuilds are completed and visually approved.
  */
+
