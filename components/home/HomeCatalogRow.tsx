@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import {
-  CatalogSongCard,
-  type CatalogCardLabels,
-} from '@/components/catalog/CatalogSongCard';
+  HomeSongCard,
+  type HomeSongCardLabels,
+} from '@/components/home/HomeSongCard';
 import { SectionHeading } from '@/components/primitives/SectionHeading';
 import type { CatalogSong } from '@/lib/catalog/queries';
 
@@ -11,15 +11,11 @@ type HomeCatalogRowProps = {
   id: string;
   heading: string;
   songs: CatalogSong[];
-  labels: CatalogCardLabels;
+  labels: HomeSongCardLabels;
   viewAllHref: string;
   viewAllLabel: string;
 };
 
-/** The shared card grid behind both the "more building" and "released"
- * homepage rows — same primitive the /music catalog uses, so a song never
- * gets a second, near-identical card design just because it's on the
- * homepage. */
 export function HomeCatalogRow({
   id,
   heading,
@@ -59,7 +55,7 @@ export function HomeCatalogRow({
 
         <div className="home-catalog-row-grid">
           {songs.map((song) => (
-            <CatalogSongCard
+            <HomeSongCard
               key={song.id}
               song={song}
               labels={labels}
