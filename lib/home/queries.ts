@@ -1,14 +1,18 @@
 import 'server-only';
 import { cache } from 'react';
-import { sql } from 'drizzle-orm';
-import { db } from '@/lib/db/client';
 import { listCatalog, type CatalogSong } from '@/lib/catalog/queries';
 import {
   getLeaderboard,
   type LeaderboardRowData,
 } from '@/lib/campaign/queries';
-import { getGlobalJourney, type JourneyEntry } from '@/lib/journey/queries';
-import { getPartnersPage, type PartnerSponsor } from '@/lib/partners/queries';
+import {
+  getGlobalJourney,
+  type JourneyEntry,
+} from '@/lib/journey/queries';
+import {
+  getPartnersPage,
+  type PartnerSponsor,
+} from '@/lib/partners/queries';
 import { setting } from '@/lib/config/settings';
 
 export type HomeComposition = {
@@ -21,30 +25,6 @@ export type HomeComposition = {
   partners: PartnerSponsor[];
 };
 
-/** Newest live campaign's song id — the documented deterministic fallback
- * used when no featured campaign is configured, or the configured one no
- * longer qualifies. Ordered by the campaign's own creation date, never by
- * catalog/sort_index position. */
-const getNewestLiveCampaignSongId = cache(
-  async (): Promise<string | null> => {
-    const result = await db.execute(sql`
-      select so.id
-      from campaigns cp
-      join songs so on so.id = cp.song_id
-      where cp.status = 'live'
-        and cp.accept_support = true
-        and so.is_published = true
-      order by cp.created_at desc
-      limit 1
-    `);
-
-    const row = (result as unknown as { rows: Record<string, unknown>[] })
-      .rows[0];
-
-    return row ? String(row.id) : null;
-  },
-);
-
 function eligibleAsFeatured(song: CatalogSong) {
   return (
     song.campaignId !== null &&
@@ -52,38 +32,29 @@ function eligibleAsFeatured(song: CatalogSong) {
   );
 }
 
-/** Never `catalog.find((s) => s.status === 'building')` as the primary
- * pick — that reads as "whichever building song happens to sort first."
- * Order: admin-configured campaign -> newest live campaign -> first
- * eligible catalog row, in that order, and every step is documented.
+/**
+ * Homepage promotion is an editorial decision.
  *
- * Exported so every "what's the record to back right now" surface (home,
- * /now) picks the same one — a page-specific `catalog.find(...)` copy of
- * this same idea is exactly the bug this replaced. */
+ * Never silently select the first or newest campaign. If the configured
+ * campaign is missing, unpublished, closed, or otherwise ineligible, return
+ * null so the public page does not promote the wrong record.
+ */
 export async function resolveFeaturedCampaign(
   catalog: CatalogSong[],
 ): Promise<CatalogSong | null> {
   const configuredCampaignId = await setting('homeFeaturedCampaignId');
 
-  if (configuredCampaignId) {
-    const configured = catalog.find(
+  if (!configuredCampaignId) {
+    return null;
+  }
+
+  return (
+    catalog.find(
       (song) =>
         song.campaignId === configuredCampaignId &&
         eligibleAsFeatured(song),
-    );
-
-    if (configured) return configured;
-  }
-
-  const fallbackSongId = await getNewestLiveCampaignSongId();
-
-  if (fallbackSongId) {
-    const fallback = catalog.find((song) => song.id === fallbackSongId);
-
-    if (fallback && eligibleAsFeatured(fallback)) return fallback;
-  }
-
-  return catalog.find(eligibleAsFeatured) ?? null;
+    ) ?? null
+  );
 }
 
 export const getHomeComposition = cache(
@@ -118,7 +89,9 @@ export const getHomeComposition = cache(
 
     const buildingSongs = catalog
       .filter(
-        (song) => song.status === 'building' && song.id !== featured?.id,
+        (song) =>
+          song.status === 'building' &&
+          song.id !== featured?.id,
       )
       .slice(0, buildingLimit);
 
@@ -133,7 +106,9 @@ export const getHomeComposition = cache(
       buildingSongs,
       releasedSongs,
       latestJourney:
-        journeyLimit > 0 ? (journeyEntries[0] ?? null) : null,
+        journeyLimit > 0
+          ? (journeyEntries[0] ?? null)
+          : null,
       partners: partnersPage.sponsors.slice(0, partnersLimit),
     };
   },
