@@ -957,3 +957,252 @@
   margin-top: 1.75rem;
   padding: clamp(2rem, 4vw, 2.5rem);
 }
+/* -------------------------------------------------------------------------- */
+/* UI rescue: controlled hero scale and compact editorial song cards          */
+/* -------------------------------------------------------------------------- */
+
+.home-hero-title {
+  max-width: 8ch;
+  font-size: clamp(4.25rem, 19vw, 6.5rem);
+  line-height: 0.82;
+}
+
+.home-hero-copy {
+  max-width: 38rem;
+}
+
+.home-hero-shell {
+  padding-top: clamp(4rem, 12vh, 7rem);
+  padding-bottom: clamp(4rem, 11vh, 6rem);
+}
+
+.home-hero-tagline {
+  font-size: clamp(1.15rem, 5vw, 1.55rem);
+  line-height: 1.2;
+}
+
+.home-catalog-row {
+  padding-block: clamp(3.75rem, 8vw, 6.5rem);
+  border-top: 1px solid var(--line);
+}
+
+.home-catalog-row-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.home-catalog-row-view-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--brand-gold-bright);
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.home-catalog-row-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1.75rem;
+}
+
+.home-song-card {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  background: var(--panel-raised);
+  box-shadow: var(--shadow-panel);
+}
+
+.home-song-card-art-link {
+  position: relative;
+  display: block;
+  min-height: 100%;
+  overflow: hidden;
+  background: var(--ink-2);
+}
+
+.home-song-card-art,
+.home-song-card-placeholder,
+.home-song-card-treatment {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.home-song-card-art {
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
+}
+
+.home-song-card-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--brand-gold);
+  background: var(--ink-2);
+}
+
+.home-song-card-treatment {
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      transparent 45%,
+      rgba(7, 7, 8, 0.7)
+    );
+}
+
+.home-song-card-status {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.65rem;
+  z-index: 2;
+}
+
+.home-song-card-content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.home-song-card-title {
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: clamp(1.35rem, 6vw, 1.8rem);
+  font-weight: 560;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.home-song-card-description {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 0.5rem;
+  color: var(--text-dim);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.home-song-card-funding {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: auto;
+}
+
+.home-song-card-funding-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+.home-song-card-funding-row span:last-child {
+  color: var(--brand-gold-bright);
+}
+
+.home-song-card-supporters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-dim);
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.home-song-card-supporters svg,
+.home-song-card-supporters .numeric {
+  color: var(--brand-gold-bright);
+}
+
+.home-song-card-link {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--brand-gold-bright);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 359px) {
+  .home-song-card {
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+  }
+
+  .home-song-card-content {
+    padding: 0.85rem;
+  }
+
+  .home-song-card-description {
+    display: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .home-catalog-row-heading {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .home-catalog-row-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .home-song-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-song-card-art-link {
+    min-height: auto;
+    aspect-ratio: 16 / 11;
+  }
+
+  .home-song-card-content {
+    padding: 1.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .home-hero-title {
+    font-size: clamp(6rem, 11vw, 9rem);
+  }
+
+  .home-hero-tagline {
+    font-size: clamp(1.4rem, 2.5vw, 2rem);
+  }
+}
+
+@media (min-width: 1180px) {
+  .home-hero-title {
+    font-size: clamp(7rem, 10vw, 10.5rem);
+  }
+
+  .home-catalog-row-grid:has(> :nth-child(3)) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
