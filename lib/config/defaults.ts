@@ -50,6 +50,15 @@ const configDefaults = {
   photoVignetteDarken: 0.12,
   videoMaxBytes: 1_000_000,
 
+  // Homepage composition. An empty homeFeaturedCampaignId means "no
+  // explicit pick" — the home query then falls back to the newest live
+  // campaign (see lib/home/queries.ts), never a first-array-row read.
+  homeFeaturedCampaignId: '',
+  homeBuildingLimit: 3,
+  homeReleasedLimit: 3,
+  homeJourneyLimit: 1,
+  homePartnersLimit: 6,
+
   // Artist-level social profiles for the /now page. Admin-overridable;
   // blank hides that row rather than linking nowhere.
   socialInstagramUrl: 'https://instagram.com/mjcobe',

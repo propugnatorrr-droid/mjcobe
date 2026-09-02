@@ -9,7 +9,6 @@ import './visual-phase-2.css';
 import './visual-phase-3.css';
 import './visual-phase-4.css';
 import './visual-phase-5.css';
-import './visual-phase-6.css';
 import './visual-phase-6-music.css';
 import './visual-phase-7-song.css';
 

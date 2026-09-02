@@ -23,9 +23,9 @@ export function HomeHero({
   return (
     <section
       aria-labelledby="home-hero-heading"
-      className="home-v2-hero"
+      className="home-hero"
     >
-      <picture className="home-v2-hero-media">
+      <picture className="home-hero-media">
         <source
           media="(min-width: 768px)"
           srcSet="/media/home-hero-desktop.webp"
@@ -38,47 +38,47 @@ export function HomeHero({
           width={1200}
           height={1500}
           fetchPriority="high"
-          className="home-v2-hero-image"
+          className="home-hero-image"
         />
       </picture>
 
       <div
         aria-hidden
-        className="home-v2-hero-treatment"
+        className="home-hero-treatment"
       />
 
       <div
         aria-hidden
-        className="home-v2-hero-frame"
+        className="home-hero-frame"
       />
 
-      <div className="site-shell home-v2-hero-shell">
-        <div className="home-v2-hero-copy">
-<p className="home-v2-eyebrow">
+      <div className="site-shell home-hero-shell">
+        <div className="home-hero-copy">
+<p className="home-hero-eyebrow">
   {eyebrow}
 </p>
 
           <h1
             id="home-hero-heading"
-            className="home-v2-title"
+            className="home-hero-title"
           >
             {artistName}
           </h1>
 
-          <p className="home-v2-tagline">
+          <p className="home-hero-tagline">
             {tagline}
           </p>
 
-          <p className="home-v2-subcopy">
+          <p className="home-hero-subcopy">
             {subcopy}
           </p>
 
-          <div className="home-v2-actions">
+          <div className="home-hero-actions">
             <ButtonLink
               href="/back"
               variant="primary"
               glow
-              className="home-v2-primary-action"
+              className="home-hero-primary-action"
             >
               {ctaLabel}
 
@@ -92,7 +92,7 @@ export function HomeHero({
             <ButtonLink
               href="/music"
               variant="ghost"
-              className="home-v2-secondary-action"
+              className="home-hero-secondary-action"
             >
               <Play
                 aria-hidden
@@ -108,7 +108,7 @@ export function HomeHero({
 
         <div
           aria-hidden
-          className="home-v2-index"
+          className="home-hero-index"
         >
           <span>EST.</span>
           <strong>2026</strong>
@@ -117,10 +117,10 @@ export function HomeHero({
 
       <div
         aria-hidden
-        className="home-v2-scroll"
+        className="home-hero-scroll"
       >
         <span>SCROLL TO DISCOVER</span>
-        <span className="home-v2-scroll-line" />
+        <span className="home-hero-scroll-line" />
       </div>
     </section>
   );

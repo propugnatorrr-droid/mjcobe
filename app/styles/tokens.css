@@ -1,0 +1,156 @@
+/*
+ * Design tokens — the single source of truth for color, type, motion,
+ * spacing and radius. Every other stylesheet reads these vars; none of
+ * them re-declare a color or a duration.
+ *
+ * Color values are copied verbatim from docs/DESIGN.md — no additions.
+ * --champagne-paper and the --paper-* triad are this repo's own derivation:
+ * DESIGN.md only specifies ink-surface text/line colors and the paper
+ * background itself, not a paper-surface text system. --champagne-paper
+ * exists because raw --champagne on --paper measures ~2.1:1 (fails 4.5:1);
+ * it's darkened to ~4.6:1 while staying the same hue.
+ *
+ * The brand-gold, control-radius, card-radius, public-header-background,
+ * public-mobile-nav-background tokens above, and the --glow-champagne
+ * override below,
+ * were previously declared a second time inside visual-phase-6.css, which
+ * loaded after this file and silently won every collision. Consolidated
+ * here, once, keeping the values that were actually winning so this merge
+ * does not change rendered output.
+ */
+:root {
+  --ink: #0a0a0b;
+  --ink-2: #121214;
+  --paper: #f2eee7;
+  --paper-2: #e5e0d7;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --text: #edeae4;
+  --text-dim: #8b8983;
+  --text-faint: #56544f;
+  --ember: #8e1d22;
+  --champagne: #c9a227;
+
+  --paper-text: var(--ink);
+  --paper-text-dim: #6b675e;
+  --paper-text-faint: #a39e92;
+  --paper-line: rgba(10, 10, 11, 0.12);
+  --paper-line-strong: rgba(10, 10, 11, 0.28);
+  --champagne-paper: #886615;
+
+  --brand-gold-dark: #8f711f;
+  --brand-gold: #c9a84f;
+  --brand-gold-bright: #e2c670;
+  --brand-gold-pale: #f2dfaa;
+
+  --control-radius: 0.25rem;
+  --card-radius: 0.625rem;
+
+  --public-header-background: rgba(8, 8, 9, 0.985);
+  --public-mobile-nav-background: #0b0b0c;
+}
+
+/*
+ * Primitives read var(--text), var(--line), etc. — never a surface-specific
+ * name — so wrapping any subtree in .surface-paper inverts it for free.
+ * This is the mechanism /partners will use later, and the gallery's paper
+ * section uses now.
+ */
+.surface-ink {
+  background: var(--ink);
+  color: var(--text);
+  /* Button's primary variant is "the inverted block" — light-on-dark here,
+     dark-on-light on paper — without Button ever knowing which surface
+     it's on. */
+  --surface-bg: var(--ink);
+  --surface-invert: var(--text);
+  --surface-invert-hover: var(--paper-2);
+}
+
+.surface-paper {
+  background: var(--paper);
+  color: var(--paper-text);
+  --text: var(--paper-text);
+  --text-dim: var(--paper-text-dim);
+  --text-faint: var(--paper-text-faint);
+  --line: var(--paper-line);
+  --line-strong: var(--paper-line-strong);
+  --champagne: var(--champagne-paper);
+  --surface-bg: var(--paper);
+  --surface-invert: var(--paper-text);
+  --surface-invert-hover: var(--ink-2);
+}
+
+/*
+ * The @theme inline { ... } block that maps these vars to Tailwind
+ * utilities lives in app/globals.css itself, not here. Turbopack's
+ * Tailwind v4 integration only expands @theme when it appears in the file
+ * that directly follows `@import "tailwindcss"` — inside a plain-CSS
+ * @import'd partial like this one it gets passed through as literal
+ * (invalid) CSS and silently dropped, taking every utility that reads
+ * these tokens with it. Verified by build: moving @theme here reproduced
+ * "Unknown at rule: @theme" and the color/spacing/motion utilities used
+ * throughout the app went missing.
+ */
+
+/* Capped glow — one definition, reused. Only the primary hero CTA and the
+   #1 slot/crown moment may use it (see docs/DESIGN.md's "Glow" section).
+   Never on hover-only states, never on more than one element per view. */
+:root {
+  --glow-champagne:
+    0 0 0 1px rgba(226, 198, 112, 0.12),
+    0 12px 38px rgba(201, 168, 79, 0.2);
+
+  /* Metallic gold. The mockups never use flat #C9A227 on a large surface —
+     gold reads as brushed metal: a light band through the middle, darker at
+     the edges. One definition, reused by .text-gold and .bg-gold. */
+  --gold-gradient: linear-gradient(
+    180deg,
+    #8a6b16 0%,
+    #d8b34a 28%,
+    #f4e3a8 50%,
+    #d8b34a 72%,
+    #8a6b16 100%
+  );
+  --gold-gradient-flat: linear-gradient(180deg, #e0be55 0%, #c9a227 55%, #9a7a1c 100%);
+}
+
+/* Gold as a paint, not a color value. Applied to text via background-clip so
+   the metal band follows the glyphs. */
+@layer utilities {
+  .text-gold {
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .bg-gold {
+    background: var(--gold-gradient-flat);
+  }
+
+  /* Hairline gold rule with the fade-to-nothing ends the mockups use to
+     flank section headings. */
+  .rule-gold {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--champagne) 50%,
+      transparent 100%
+    );
+  }
+}
+
+/* Baked into the font token itself so no call site can forget it: every
+   numeral in the app is tabular by construction. */
+@layer utilities {
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--font-ui);
+}

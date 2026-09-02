@@ -332,6 +332,15 @@ const copyDefaults = {
   'home.supporters': 'SUPPORTERS',
   'home.raised_toward': 'raised toward',
   'home.funded': 'FUNDED',
+  'home.more_building_heading': 'MORE IN PROGRESS',
+  'home.view_all_music': 'VIEW FULL CATALOG',
+  'home.journey_heading': 'LATEST JOURNEY UPDATE',
+  'home.journey_cta': 'VIEW FULL JOURNEY',
+  'home.partners_heading': 'OFFICIAL PARTNERS',
+  'home.partners_cta': 'VIEW ALL PARTNERS',
+  'home.final_cta_heading': 'READY TO BACK A RECORD?',
+  'home.final_cta_sub':
+    'Every contribution becomes part of the permanent record — proof you were here before the world caught on.',
 
   // ---- Footer ---------------------------------------------------------------
   'footer.tagline': 'REAL MUSIC. REAL IMPACT.',
