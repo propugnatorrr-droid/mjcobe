@@ -52,38 +52,38 @@ export async function FundingPanel({
     <section
       id="campaign"
       aria-label={backed}
-      className="song-v2-funding"
+      className="song-funding"
     >
-      <div className="site-shell song-v2-funding-shell">
-        <div className="song-v2-funding-grid">
-          <div className="song-v2-funding-stat">
-            <p className="song-v2-funding-figure song-v2-funding-figure--gold">
+      <div className="site-shell song-funding-shell">
+        <div className="song-funding-grid">
+          <div className="song-funding-stat">
+            <p className="song-funding-figure song-funding-figure--gold">
               {formatCents(
                 cents(totals.meterCents),
               )}
             </p>
 
-            <p className="song-v2-funding-label">
+            <p className="song-funding-label">
               {backed}
             </p>
           </div>
 
-          <div className="song-v2-funding-stat">
-            <p className="song-v2-funding-figure">
+          <div className="song-funding-stat">
+            <p className="song-funding-figure">
               <CountUp
                 value={totals.supporterCount}
               />
             </p>
 
-            <p className="song-v2-funding-label">
+            <p className="song-funding-label">
               {supportersLabel}
             </p>
           </div>
 
-          <div className="song-v2-meter-column">
+          <div className="song-meter-column">
             <FundingMeter percent={percent} />
 
-            <div className="song-v2-meter-meta">
+            <div className="song-meter-meta">
               <p>
                 {goalLabel}:{' '}
                 <span>
@@ -110,13 +110,13 @@ export async function FundingPanel({
         </div>
 
         {objective ? (
-          <p className="song-v2-funding-objective">
+          <p className="song-funding-objective">
             {objective}
           </p>
         ) : null}
 
         {sponsorNote ? (
-          <p className="song-v2-sponsor-note">
+          <p className="song-sponsor-note">
             {sponsorNote}
           </p>
         ) : null}

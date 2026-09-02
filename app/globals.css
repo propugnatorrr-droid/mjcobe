@@ -71,6 +71,7 @@
 @import "./styles/navigation.css";
 @import "./styles/home.css";
 @import "./styles/music.css";
+@import "./styles/song.css";
 
 /*
  * Remaining visual-phase css files (music catalog, checkout, journey/now,

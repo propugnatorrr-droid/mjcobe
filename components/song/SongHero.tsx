@@ -60,11 +60,11 @@ export async function SongHero({
   return (
     <header
       aria-labelledby="song-title"
-      className="song-v2-hero"
+      className="song-hero"
     >
       <div
         aria-hidden
-        className="song-v2-hero-backdrop"
+        className="song-hero-backdrop"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -73,15 +73,15 @@ export async function SongHero({
           width={1600}
           height={1600}
           fetchPriority="high"
-          className="song-v2-hero-backdrop-image"
+          className="song-hero-backdrop-image"
         />
 
-        <div className="song-v2-hero-backdrop-treatment" />
+        <div className="song-hero-backdrop-treatment" />
       </div>
 
-      <div className="site-shell song-v2-hero-shell">
-        <div className="song-v2-art-column">
-          <div className="song-v2-art-frame">
+      <div className="site-shell song-hero-shell">
+        <div className="song-art-column">
+          <div className="song-art-frame">
             {/* eslint-disable-next-line @next/next/no-img-element */}
                        <img
               src={artwork}
@@ -89,22 +89,18 @@ export async function SongHero({
               width={1200}
               height={1200}
               fetchPriority="high"
-              className="song-v2-art-image"
+              className="song-art-image"
             />
 
             <div
               aria-hidden
-              className="song-v2-art-vignette"
+              className="song-art-vignette"
             />
-
-            <span className="song-v2-art-index">
-              {statusLabel}
-            </span>
           </div>
         </div>
 
-        <div className="song-v2-hero-copy">
-          <div className="song-v2-hero-status">
+        <div className="song-hero-copy">
+          <div className="song-hero-status">
             <StatusBadge
               status={song.status}
               label={statusLabel}
@@ -112,7 +108,7 @@ export async function SongHero({
 
             <span
               aria-hidden
-              className="song-v2-hero-rule"
+              className="song-hero-rule"
             />
 
             <span>{artistName}</span>
@@ -120,16 +116,16 @@ export async function SongHero({
 
           <h1
             id="song-title"
-            className="song-v2-title"
+            className="song-title"
           >
             {song.title}
           </h1>
 
 
 
-          <div className="song-v2-player">
-            <div className="song-v2-player-heading">
-              <span className="song-v2-player-icon">
+          <div className="song-player">
+            <div className="song-player-heading">
+              <span className="song-player-icon">
                 <Disc3
                   aria-hidden
                   size={18}

@@ -55,7 +55,7 @@ export function SupportBar({
       <aside
         aria-hidden={!docked}
 className={[
-  'song-v2-supportbar',
+  'song-supportbar',
   'fixed inset-x-0 bottom-0 z-40',
           'border-t border-[var(--line)]',
           'bg-[rgba(10,10,11,0.98)]',

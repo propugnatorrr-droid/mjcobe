@@ -29,7 +29,7 @@ export async function TierGrid({
 
 
   return (
-    <section className="song-v2-tiers py-16 md:py-24">
+    <section className="song-tiers py-16 md:py-24">
       <Eyebrow>{await text('song.tiers.heading')}</Eyebrow>
 
       <div className="mt-10 flex flex-col gap-4">

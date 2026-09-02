@@ -287,6 +287,77 @@ assumed. Consolidated rather than deduped-in-place.
   Homepage re-checked afterward since it shares this component — still
   renders correctly.
 
+### ✅ Batch 5 — Song page rebuild (Phase 5)
+
+Third occurrence of the same cascade bug, and this time it took out the
+*entire remaining content* of `visual-phase-2.css`: `visual-phase-7-song.css`
+(imported last) redefined every class name `visual-phase-2.css`'s song-hero
+and funding/crown/tiers sections used. Diffed the two files' top-level
+selectors before touching anything — the only 4 classes unique to
+`visual-phase-2.css` (`song-v2-hero-image`, `-hero-media`, `-hero-treatment`,
+`-scroll`) had zero `.tsx` references anywhere either. So unlike Batches 2
+and 4 (strip the dead part, keep the rest), this file was 100% dead and got
+deleted outright.
+
+- Consolidated `visual-phase-7-song.css` into `app/styles/song.css`,
+  de-versioned `song-v2-*` → `song-*`. Deleted both `visual-phase-2.css`
+  (fully dead) and `visual-phase-7-song.css` (fully migrated), removed both
+  imports from `app/layout.tsx`.
+- Updated `SongHero.tsx`, `FundingPanel.tsx`, `CrownPanel.tsx`,
+  `TierGrid.tsx`, `LeaderboardPanel.tsx`, `SupportBar.tsx`, and
+  `app/song/[slug]/page.tsx` to the new class names (a plain `song-v2-` →
+  `song-` replace-all was safe and correct in every file — verified after
+  with a repo-wide grep that came back with zero remaining `song-v2-`
+  references outside this doc's own history notes).
+- **Fixed the duplicate status rendering the brief calls out**: the song
+  hero was announcing status twice — once as a badge overlay stamped on
+  the cover art (`.song-art-index`, not `aria-hidden`, so a screen reader
+  said "BUILDING" twice back to back) and once in the proper metadata line
+  next to the title (`StatusBadge` inside `.song-hero-status`). Removed
+  the overlay; kept the metadata line, since that's the one with the
+  artist-name context next to it. Removed the now-unused CSS with it.
+- **Found and fixed a real, verified money-display bug, not a UI bug**:
+  `getCampaignTotals()` in `lib/campaign/queries.ts` computed `goal_cents`
+  via `max(cp.goal_cents)` over an inner-join chain anchored at
+  `ledger_entries`. A campaign with zero settled contributions yet has zero
+  matching ledger rows, so the aggregate returned `goal_cents: null` →
+  coalesced to 0 in the calling code — meaning **every campaign with no
+  backers yet displayed "CAMPAIGN GOAL: $0"** regardless of its real
+  configured goal. Live-confirmed on both released songs' campaigns (real
+  goal $25,000 each, displaying as $0) before touching the query, and
+  live-confirmed fixed after (correct $25,000 shown, `/partners`'
+  "accepting campaigns" list re-checked too since it calls the same
+  function — no regression, still correct for the campaign that already
+  had real contributions).
+  - This was **not** the same thing as the "released song looks like an
+    active fundraiser" item from the original brief — worth recording
+    since it looked like it at first. A released song with a real, live,
+    separately-goaled campaign showing support/sponsor CTAs is *correct*
+    per PRD §43 (a song can carry a release campaign, then a later video/
+    remix/tour campaign, without ever being duplicated as a song row) —
+    once the $0-goal display bug was fixed, both released songs' pages
+    read as legitimate active campaigns, not broken ones. Started down the
+    path of adding a page-level "hide fundraiser UI for released songs"
+    guard before realizing the real bug was the query, not the page —
+    reverted that guard rather than shipping an unrequested product-
+    behavior change on top of a data-display fix.
+- Verified: typecheck/lint/build/test all clean (same pre-existing
+  baseline, no new issues). Live-checked `/song/cant-read-your-mind`
+  (funded campaign — unchanged, still correct), `/song/some-real` and
+  `/song/night-shift` (both previously-broken $0-goal campaigns — now
+  correct), and `/partners` (shares the fixed query). No horizontal
+  overflow at 375px, title/player don't overlap, mobile action band is a
+  single full-width button column.
+- **Tooling note for future batches**: this browser pane's
+  `IntersectionObserver` never fires (verified with a bare manual
+  `new IntersectionObserver(...).observe(document.body)` test that timed
+  out with zero callbacks). Anything gated on scroll-into-view — the
+  `CountUp` figures in `FundingPanel`, `SupportBar`'s dock-on-scroll — will
+  look permanently stuck/hidden when checked through this tool. That's a
+  testing-environment limitation, not evidence of an app bug; don't
+  "fix" code based on it without another verification path (code reading,
+  or asking the user to check manually).
+
 ### ⬜ Not done yet — next batches, roughly in priority order
 
 1. **Media/art-direction audit (original brief's Phase 2).** Not started.
@@ -295,22 +366,19 @@ assumed. Consolidated rather than deduped-in-place.
    images were wrong/missing; a quick grep found *no* external/placeholder
    URLs in the codebase, so re-verify this is a real problem on real data
    before spending a migration on it).
-2. **Song page (`/song/[slug]`), Phase 5.** `visual-phase-2.css` (song hero
-   + funding/crown/tiers dashboard) and `visual-phase-7-song.css` still
-   fully versioned (`song-v2-*`). Not touched.
-3. **Checkout (`/back`, fan/sponsor checkout), Phase 6.** `visual-phase-3.css`
+2. **Checkout (`/back`, fan/sponsor checkout), Phase 6.** `visual-phase-3.css`
    (`checkout-v3-*`). Not touched.
-4. **Journey/partners/artist/supporter pages, Phase 7.**
+3. **Journey/partners/artist/supporter pages, Phase 7.**
    `visual-phase-4.css` (`journey-v4-*`, `now-v4-*`). Not touched.
-5. **Admin UX, Phase 8.** `visual-phase-5.css` (`admin-v5-*`). Not touched.
+4. **Admin UX, Phase 8.** `visual-phase-5.css` (`admin-v5-*`). Not touched.
    Note from the audit: `lib/admin/SponsorPackageForm.tsx` is a stray
    byte-for-byte duplicate of `components/admin/SponsorPackageForm.tsx` —
    delete the one in `lib/admin/` when this batch happens (it's a
    `.tsx` file sitting in a folder that otherwise holds only server
    actions/queries).
-6. **Responsive/accessibility/visual QA pass, Phase 9.** Not started
+5. **Responsive/accessibility/visual QA pass, Phase 9.** Not started
    (Playwright not installed).
-7. **Pre-existing cleanup, opportunistic, not blocking:** the 3 pre-existing
+6. **Pre-existing cleanup, opportunistic, not blocking:** the 3 pre-existing
    lint errors and 1 pre-existing failing test listed under Baseline above;
    `lib/lookbook/manifest.ts` (a parallel, soon-redundant static registry
    duplicating two `media_assets` rows); 4 orphaned `site_copy` seed keys in

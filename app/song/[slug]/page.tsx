@@ -136,7 +136,7 @@ export default async function SongPage({
     <main
       id="main-content"
       className={[
-        'surface-ink song-v2-page',
+        'surface-ink song-page',
         showActions ? 'pb-28 sm:pb-24' : '',
       ].join(' ')}
     >
@@ -174,15 +174,15 @@ export default async function SongPage({
 
       <section
         aria-label={supportLabel}
-        className="site-shell song-v2-action-band"
+        className="site-shell song-action-band"
       >
         {showActions ? (
           <div
             className={[
-              'song-v2-actions',
+              'song-actions',
               supportEnabled && sponsorEnabled
                 ? ''
-                : 'song-v2-actions--single',
+                : 'song-actions--single',
             ].join(' ')}
           >
             {supportEnabled ? (
@@ -211,7 +211,7 @@ export default async function SongPage({
             ) : null}
           </div>
         ) : (
-          <p className="song-v2-closed">
+          <p className="song-closed">
             {closedNotice}
           </p>
         )}
@@ -219,7 +219,7 @@ export default async function SongPage({
 
       <ReleaseLinks song={song} />
 
-      <div className="site-shell song-v2-leaderboards">
+      <div className="site-shell song-leaderboards">
 
         <LeaderboardPanel
           headingKey="song.section.supporters"
@@ -243,26 +243,26 @@ export default async function SongPage({
         />
       </div>
 
-      <section className="site-shell song-v2-proof">
-        <div className="song-v2-proof-inner">
+      <section className="site-shell song-proof">
+        <div className="song-proof-inner">
           <span
             aria-hidden
-            className="song-v2-proof-rule"
+            className="song-proof-rule"
           />
 
-          <p className="song-v2-proof-copy">
+          <p className="song-proof-copy">
             {proofLine}
           </p>
 
           <span
             aria-hidden
-            className="song-v2-proof-rule"
+            className="song-proof-rule"
           />
         </div>
 
         <span
           aria-hidden
-          className="song-v2-proof-icon"
+          className="song-proof-icon"
         >
           <Crown
             size={19}
@@ -271,7 +271,7 @@ export default async function SongPage({
         </span>
       </section>
 
-      <div className="site-shell song-v2-content">
+      <div className="site-shell song-content">
         {crown && sponsorEnabled ? (
           <CrownPanel
             crown={crown}

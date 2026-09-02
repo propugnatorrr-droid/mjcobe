@@ -46,8 +46,16 @@ function rowsFrom(result: unknown): Record<string, unknown>[] {
 }
 export const getCampaignTotals = cache(
   async (campaignId: string): Promise<CampaignTotals> => {
+    // Anchored on campaigns, not ledger_entries: goal_cents is campaign
+    // configuration, not a derived money total, so it must be available
+    // even before a campaign's first contribution. The previous inner-join
+    // chain starting at ledger_entries returned goal_cents=0 for any
+    // campaign with zero settled contributions yet — confirmed live on
+    // both released songs' campaigns, which genuinely had real goals but
+    // displayed "CAMPAIGN GOAL: $0" simply for having no backers yet.
     const result = await db.execute(sql`
       select
+        cp.goal_cents::int as goal_cents,
         coalesce(
           sum(case when c.support_type = 'fan' then l.amount_cents end),
           0
@@ -65,13 +73,14 @@ export const getCampaignTotals = cache(
           distinct case
             when c.support_type = 'business' then c.sponsor_id
           end
-        )::int as sponsor_count,
-        max(cp.goal_cents)::int as goal_cents
-      from ledger_entries l
-      join contributions c on c.id = l.contribution_id
-      join campaigns cp on cp.id = l.campaign_id
-      where l.campaign_id = ${campaignId}
+        )::int as sponsor_count
+      from campaigns cp
+      left join ledger_entries l on l.campaign_id = cp.id
+      left join contributions c
+        on c.id = l.contribution_id
         and c.is_test = false
+      where cp.id = ${campaignId}
+      group by cp.id
     `);
 
     const row = rowsFrom(result)[0];
