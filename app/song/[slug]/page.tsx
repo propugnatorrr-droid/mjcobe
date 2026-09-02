@@ -14,13 +14,9 @@ import { JourneyList } from '@/components/song/JourneyList';
 import { SupportBar } from '@/components/song/SupportBar';
 import { ReleaseLinks } from '@/components/song/ReleaseLinks';
 import { ButtonLink } from '@/components/primitives/Button';
-import {
-  AnalyticsEvent,
-} from '@/components/analytics/AnalyticsEvent';
+import { AnalyticsEvent } from '@/components/analytics/AnalyticsEvent';
 import { getSongPage } from '@/lib/song/queries';
-import {
-  supporterAccessForCampaign,
-} from '@/lib/supporter/access';
+import { supporterAccessForCampaign } from '@/lib/supporter/access';
 import { text } from '@/lib/copy/site-copy';
 import {
   cents,
@@ -96,6 +92,13 @@ export default async function SongPage({
   const showActions =
     supportEnabled || sponsorEnabled;
 
+  const hasLeaderboards =
+    fan.totalCount > 0 ||
+    business.totalCount > 0;
+
+  const showProof =
+    totals.supporterCount > 0;
+
   const [
     navLabel,
     supportLabel,
@@ -137,7 +140,9 @@ export default async function SongPage({
       id="main-content"
       className={[
         'surface-ink song-page',
-        showActions ? 'pb-28 sm:pb-24' : '',
+        showActions
+          ? 'song-page--docked'
+          : '',
       ].join(' ')}
     >
       <SimulationRibbon />
@@ -146,34 +151,33 @@ export default async function SongPage({
       <AnalyticsEvent
         kind="song_page_view"
         songId={song.id}
-        campaignId={
-          campaign?.id
-        }
+        campaignId={campaign?.id}
         watchClicks
       />
 
       <SongHero
-
         song={song}
         campaign={campaign}
         cover={cover}
         audio={audio}
       />
 
-      <FundingPanel
-        totals={totals}
-        daysLeft={data.daysLeft}
-        isAcceptingSupport={
-          data.isAcceptingSupport
-        }
-        objective={
-          campaign?.objective ??
-          song.description
-        }
-      />
+      {campaign ? (
+        <FundingPanel
+          totals={totals}
+          daysLeft={data.daysLeft}
+          isAcceptingSupport={
+            data.isAcceptingSupport
+          }
+          objective={
+            campaign.objective ??
+            song.description
+          }
+        />
+      ) : null}
 
       <section
-        aria-label={supportLabel}
+        aria-label={primaryLabel}
         className="site-shell song-action-band"
       >
         {showActions ? (
@@ -193,7 +197,6 @@ export default async function SongPage({
                 data-analytics-kind="support_click"
                 data-analytics-source="song_action_band"
               >
-
                 {supportLabel}
               </ButtonLink>
             ) : null}
@@ -205,7 +208,6 @@ export default async function SongPage({
                 data-analytics-kind="sponsor_click"
                 data-analytics-source="song_action_band"
               >
-
                 {sponsorLabel}
               </ButtonLink>
             ) : null}
@@ -219,77 +221,81 @@ export default async function SongPage({
 
       <ReleaseLinks song={song} />
 
-      <div className="site-shell song-leaderboards">
-
-        <LeaderboardPanel
-          headingKey="song.section.supporters"
-          emptyKey="song.empty.supporters"
-          moreKey="leaderboard.more_supporters"
-          rows={fan.rows}
-          totalCount={fan.totalCount}
-          linkPrefix="/supporter"
-          moreHref={`/song/${song.slug}/supporters`}
-        />
-
-
-        <LeaderboardPanel
-          headingKey="leaderboard.business_heading"
-          emptyKey="song.empty.partners"
-          moreKey="song.partners.more"
-          rows={business.rows}
-          totalCount={business.totalCount}
-          linkPrefix="/partner"
-          moreHref={`/song/${song.slug}/sponsors`}
-        />
-      </div>
-
-      <section className="site-shell song-proof">
-        <div className="song-proof-inner">
-          <span
-            aria-hidden
-            className="song-proof-rule"
-          />
-
-          <p className="song-proof-copy">
-            {proofLine}
-          </p>
-
-          <span
-            aria-hidden
-            className="song-proof-rule"
-          />
-        </div>
-
-        <span
-          aria-hidden
-          className="song-proof-icon"
-        >
-          <Crown
-            size={19}
-            strokeWidth={1.6}
-          />
-        </span>
-      </section>
-
-      <div className="site-shell song-content">
+      <div className="site-shell song-content song-conversion">
         {crown && sponsorEnabled ? (
           <CrownPanel
             crown={crown}
             songSlug={song.slug}
-            isAcceptingSupport={
-              sponsorEnabled
-            }
+            isAcceptingSupport={sponsorEnabled}
           />
         ) : null}
 
         <TierGrid
           tiers={data.tiers}
           songSlug={song.slug}
-          isAcceptingSupport={
-            supportEnabled
-          }
+          isAcceptingSupport={supportEnabled}
         />
+      </div>
 
+      {hasLeaderboards ? (
+        <div className="site-shell song-leaderboards">
+          {fan.totalCount > 0 ? (
+            <LeaderboardPanel
+              headingKey="song.section.supporters"
+              emptyKey="song.empty.supporters"
+              moreKey="leaderboard.more_supporters"
+              rows={fan.rows}
+              totalCount={fan.totalCount}
+              linkPrefix="/supporter"
+              moreHref={`/song/${song.slug}/supporters`}
+            />
+          ) : null}
+
+          {business.totalCount > 0 ? (
+            <LeaderboardPanel
+              headingKey="leaderboard.business_heading"
+              emptyKey="song.empty.partners"
+              moreKey="song.partners.more"
+              rows={business.rows}
+              totalCount={business.totalCount}
+              linkPrefix="/partner"
+              moreHref={`/song/${song.slug}/sponsors`}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
+      {showProof ? (
+        <section className="site-shell song-proof">
+          <div className="song-proof-inner">
+            <span
+              aria-hidden
+              className="song-proof-rule"
+            />
+
+            <p className="song-proof-copy">
+              {proofLine}
+            </p>
+
+            <span
+              aria-hidden
+              className="song-proof-rule"
+            />
+          </div>
+
+          <span
+            aria-hidden
+            className="song-proof-icon"
+          >
+            <Crown
+              size={19}
+              strokeWidth={1.6}
+            />
+          </span>
+        </section>
+      ) : null}
+
+      <div className="site-shell song-content song-story">
         <UpdateList
           updates={data.updates}
           unlockedAmountCents={
