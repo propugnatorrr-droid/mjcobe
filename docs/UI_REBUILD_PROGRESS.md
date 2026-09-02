@@ -214,40 +214,47 @@ recently-deleted CSS file, check for a zombie process first
 (`netstat -ano | grep :3000`, `tasklist | grep node`) before assuming the
 code is broken.
 
+### ✅ Batch 3 — Fixed the same silent-first-row bug on `/now`
+- `lib/home/queries.ts`'s featured-resolution logic exported as
+  `resolveFeaturedCampaign(catalog)` (was a private `resolveFeatured`).
+- `app/now/page.tsx` now calls it instead of its own
+  `catalog.find((s) => s.status === 'building') ?? catalog.find((s) => s.status
+  === 'released') ?? null`. Also fixes a small product-logic issue in the old
+  code: falling back to a *released* song for a "BACK THE NEXT RECORD" panel
+  didn't make sense (you can't back a released song the same way) — the panel
+  now just doesn't render if nothing is currently biddable, via the existing
+  `{featured ? (...) : null}` guard.
+- Verified: typecheck/lint/build all clean, same as Batch 2's bar.
+
 ### ⬜ Not done yet — next batches, roughly in priority order
 
-1. **Fix the same silent-first-row bug at `app/now/page.tsx:92-95`** —
-   `catalog.find((s) => s.status === 'building') ?? catalog.find((s) =>
-   s.status === 'released') ?? null`. Same class of bug as the homepage
-   had; `/now` should probably reuse `getHomeComposition()`'s featured
-   selection instead of its own copy.
-2. **Media/art-direction audit (original brief's Phase 2).** Not started.
+1. **Media/art-direction audit (original brief's Phase 2).** Not started.
    `media_assets` has no focal-point columns — decide whether that's
    actually needed before adding a migration for it (the brief assumed
    images were wrong/missing; a quick grep found *no* external/placeholder
    URLs in the codebase, so re-verify this is a real problem on real data
    before spending a migration on it).
-3. **Music catalog (`/music`), Phase 4.** `visual-phase-2.css` +
+2. **Music catalog (`/music`), Phase 4.** `visual-phase-2.css` +
    `visual-phase-6-music.css` still carry `music-v2-*` (not yet
    de-versioned) — note the audit found `.music-v2-card*` rules
    **defined twice**, identically named, in both files; dedupe when this
    batch happens.
-4. **Song page (`/song/[slug]`), Phase 5.** `visual-phase-2.css` (song hero
+3. **Song page (`/song/[slug]`), Phase 5.** `visual-phase-2.css` (song hero
    + funding/crown/tiers dashboard) and `visual-phase-7-song.css` still
    fully versioned (`song-v2-*`). Not touched.
-5. **Checkout (`/back`, fan/sponsor checkout), Phase 6.** `visual-phase-3.css`
+4. **Checkout (`/back`, fan/sponsor checkout), Phase 6.** `visual-phase-3.css`
    (`checkout-v3-*`). Not touched.
-6. **Journey/partners/artist/supporter pages, Phase 7.**
+5. **Journey/partners/artist/supporter pages, Phase 7.**
    `visual-phase-4.css` (`journey-v4-*`, `now-v4-*`). Not touched.
-7. **Admin UX, Phase 8.** `visual-phase-5.css` (`admin-v5-*`). Not touched.
+6. **Admin UX, Phase 8.** `visual-phase-5.css` (`admin-v5-*`). Not touched.
    Note from the audit: `lib/admin/SponsorPackageForm.tsx` is a stray
    byte-for-byte duplicate of `components/admin/SponsorPackageForm.tsx` —
    delete the one in `lib/admin/` when this batch happens (it's a
    `.tsx` file sitting in a folder that otherwise holds only server
    actions/queries).
-8. **Responsive/accessibility/visual QA pass, Phase 9.** Not started
+7. **Responsive/accessibility/visual QA pass, Phase 9.** Not started
    (Playwright not installed).
-9. **Pre-existing cleanup, opportunistic, not blocking:** the 3 pre-existing
+8. **Pre-existing cleanup, opportunistic, not blocking:** the 3 pre-existing
    lint errors and 1 pre-existing failing test listed under Baseline above;
    `lib/lookbook/manifest.ts` (a parallel, soon-redundant static registry
    duplicating two `media_assets` rows); 4 orphaned `site_copy` seed keys in

@@ -55,8 +55,12 @@ function eligibleAsFeatured(song: CatalogSong) {
 /** Never `catalog.find((s) => s.status === 'building')` as the primary
  * pick — that reads as "whichever building song happens to sort first."
  * Order: admin-configured campaign -> newest live campaign -> first
- * eligible catalog row, in that order, and every step is documented. */
-async function resolveFeatured(
+ * eligible catalog row, in that order, and every step is documented.
+ *
+ * Exported so every "what's the record to back right now" surface (home,
+ * /now) picks the same one — a page-specific `catalog.find(...)` copy of
+ * this same idea is exactly the bug this replaced. */
+export async function resolveFeaturedCampaign(
   catalog: CatalogSong[],
 ): Promise<CatalogSong | null> {
   const configuredCampaignId = await setting('homeFeaturedCampaignId');
@@ -85,7 +89,7 @@ async function resolveFeatured(
 export const getHomeComposition = cache(
   async (): Promise<HomeComposition> => {
     const catalog = await listCatalog();
-    const featured = await resolveFeatured(catalog);
+    const featured = await resolveFeaturedCampaign(catalog);
 
     const [
       leaderboards,

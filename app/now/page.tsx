@@ -11,6 +11,7 @@ import { getLookbookImage } from '@/lib/lookbook/manifest';
 import { getImageByPath } from '@/lib/media/queries';
 import { listCatalog } from '@/lib/catalog/queries';
 import { getLeaderboard } from '@/lib/campaign/queries';
+import { resolveFeaturedCampaign } from '@/lib/home/queries';
 import { getRecentActivity } from '@/lib/activity/queries';
 import { formatRelativeTime } from '@/lib/song/queries';
 import { text } from '@/lib/copy/site-copy';
@@ -89,10 +90,11 @@ export default async function NowPage() {
     .filter((s) => s.status !== 'vault' && s.status !== 'draft')
     .slice(0, 3);
 
-  const featured =
-    catalog.find((s) => s.status === 'building') ??
-    catalog.find((s) => s.status === 'released') ??
-    null;
+  // Same resolution the homepage uses for "the record to back right now"
+  // — an explicit setting, falling back to the newest live campaign, never
+  // a silent first-array-row read. A released song isn't "next to back,"
+  // so unlike the old code this doesn't fall back to one.
+  const featured = await resolveFeaturedCampaign(catalog);
 
   const topSponsor = featured?.campaignId
     ? (await getLeaderboard(featured.campaignId, 'business', 1)).rows[0]
