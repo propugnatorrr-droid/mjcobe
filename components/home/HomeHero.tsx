@@ -54,9 +54,9 @@ export function HomeHero({
 
       <div className="site-shell home-hero-shell">
         <div className="home-hero-copy">
-<p className="home-hero-eyebrow">
-  {eyebrow}
-</p>
+          <p className="home-hero-eyebrow">
+            {eyebrow}
+          </p>
 
           <h1
             id="home-hero-heading"
@@ -105,22 +105,6 @@ export function HomeHero({
             </ButtonLink>
           </div>
         </div>
-
-        <div
-          aria-hidden
-          className="home-hero-index"
-        >
-          <span>EST.</span>
-          <strong>2026</strong>
-        </div>
-      </div>
-
-      <div
-        aria-hidden
-        className="home-hero-scroll"
-      >
-        <span>SCROLL TO DISCOVER</span>
-        <span className="home-hero-scroll-line" />
       </div>
     </section>
   );
