@@ -226,6 +226,67 @@ code is broken.
   `{featured ? (...) : null}` guard.
 - Verified: typecheck/lint/build all clean, same as Batch 2's bar.
 
+### ✅ Batch 4 — Music catalog rebuild (Phase 4)
+
+Same pattern as Batch 2: `visual-phase-6-music.css` fully shadowed
+`visual-phase-2.css`'s music-catalog block via import order (identical
+class names, different values) — confirmed by reading both files, not
+assumed. Consolidated rather than deduped-in-place.
+
+- Created `app/styles/music.css` with `visual-phase-6-music.css`'s values
+  (the ones actually winning), de-versioned `music-v2-*` → `music-*`.
+  Deleted `visual-phase-6-music.css` (fully migrated) and removed its
+  import from `app/layout.tsx`. Stripped the now-dead music-catalog block
+  from the top of `visual-phase-2.css` (`tail -n +477` — kept its song-hero
+  and funding/crown/tiers sections intact for the Phase 5 batch, verified
+  the cut line by grep first).
+- **Restructured `CatalogSongCard.tsx`'s DOM** so mobile gets an
+  intentional layout instead of the collapsed-desktop stack the brief
+  called out. Split the old single `.music-v2-card-content` wrapper into
+  two siblings — `.music-card-heading` (title/description) and
+  `.music-card-body` (audio player, funding-or-streaming-links, CTA) — so
+  below 480px, non-featured cards go 2-column grid (cover left spanning
+  both rows, title/status beside it) with `.music-card-body` spanning full
+  width in its own row underneath. Featured cards keep the full-bleed
+  stacked treatment on mobile (they're meant to be the eye-catching one,
+  not the dense list item). `CatalogVaultCard.tsx` updated to match (uses
+  `.music-card-heading` alone, no body — vault cards have no player/CTA).
+  This component is shared with the homepage's building/released rows
+  (Batch 2), so both surfaces got this for free — verified both still
+  render correctly after the change.
+- **Two real CSS bugs found and fixed while building this, not just
+  planned around:**
+  1. The compact-mobile grid had an item (`.music-card-art-link`) with an
+     explicit `grid-row` but no explicit `grid-column`, left to
+     auto-placement. Live-checked via `getBoundingClientRect()` +
+     `getComputedStyle` in the browser (screenshots are unreliable in this
+     environment — see Batch 2's note) and caught the browser inserting
+     two phantom zero-width implicit columns instead of the intended 2.
+     Fixed by making every grid placement in that block fully explicit
+     (`grid-column` + `grid-row` on each item, no reliance on
+     auto-placement, no `-1` line references).
+  2. Added a 4th grid column tier at `min-width: 1600px` for "up to four
+     cards per row," then live-checked it with the real (sparse) catalog
+     data and found it did exactly what the brief warns against: a
+     2-song release row got 4 empty-feeling narrow columns instead of 2
+     full-width ones. Fixed with `:has(> :nth-child(4))` so the 4th column
+     only applies when a section actually has a 4th card — CSS-only, no
+     query changes needed.
+- **Ambiguity resolved, documented per CLAUDE.md's own rule**: the brief
+  asks for "up to four cards per row" at wide desktop widths but also
+  warns not to force four columns where content gets cramped. Default
+  chosen: 1 col (mobile) → 2 (≥640px) → 3 (≥1320px) → 4 only at ≥1600px
+  *and* only when a section has ≥4 cards. 3 columns already fills the
+  92rem shell width comfortably; treated 4 as a "more breathing room on
+  very wide screens" tier, not a density target.
+- Verified: typecheck/lint/build/test all clean (same pre-existing
+  baseline issues, no new ones). Live-checked in the dev server at mobile
+  (375px, confirmed 2-col compact card layout via DOM geometry), 1440px,
+  and 1680px (confirmed 3-col builds correctly, confirmed no forced empty
+  4th column, confirmed no horizontal overflow at any width tested).
+  Homepage re-checked afterward since it shares this component — still
+  renders correctly.
+
 ### ⬜ Not done yet — next batches, roughly in priority order
 
 1. **Media/art-direction audit (original brief's Phase 2).** Not started.
@@ -234,27 +295,22 @@ code is broken.
    images were wrong/missing; a quick grep found *no* external/placeholder
    URLs in the codebase, so re-verify this is a real problem on real data
    before spending a migration on it).
-2. **Music catalog (`/music`), Phase 4.** `visual-phase-2.css` +
-   `visual-phase-6-music.css` still carry `music-v2-*` (not yet
-   de-versioned) — note the audit found `.music-v2-card*` rules
-   **defined twice**, identically named, in both files; dedupe when this
-   batch happens.
-3. **Song page (`/song/[slug]`), Phase 5.** `visual-phase-2.css` (song hero
+2. **Song page (`/song/[slug]`), Phase 5.** `visual-phase-2.css` (song hero
    + funding/crown/tiers dashboard) and `visual-phase-7-song.css` still
    fully versioned (`song-v2-*`). Not touched.
-4. **Checkout (`/back`, fan/sponsor checkout), Phase 6.** `visual-phase-3.css`
+3. **Checkout (`/back`, fan/sponsor checkout), Phase 6.** `visual-phase-3.css`
    (`checkout-v3-*`). Not touched.
-5. **Journey/partners/artist/supporter pages, Phase 7.**
+4. **Journey/partners/artist/supporter pages, Phase 7.**
    `visual-phase-4.css` (`journey-v4-*`, `now-v4-*`). Not touched.
-6. **Admin UX, Phase 8.** `visual-phase-5.css` (`admin-v5-*`). Not touched.
+5. **Admin UX, Phase 8.** `visual-phase-5.css` (`admin-v5-*`). Not touched.
    Note from the audit: `lib/admin/SponsorPackageForm.tsx` is a stray
    byte-for-byte duplicate of `components/admin/SponsorPackageForm.tsx` —
    delete the one in `lib/admin/` when this batch happens (it's a
    `.tsx` file sitting in a folder that otherwise holds only server
    actions/queries).
-7. **Responsive/accessibility/visual QA pass, Phase 9.** Not started
+6. **Responsive/accessibility/visual QA pass, Phase 9.** Not started
    (Playwright not installed).
-8. **Pre-existing cleanup, opportunistic, not blocking:** the 3 pre-existing
+7. **Pre-existing cleanup, opportunistic, not blocking:** the 3 pre-existing
    lint errors and 1 pre-existing failing test listed under Baseline above;
    `lib/lookbook/manifest.ts` (a parallel, soon-redundant static registry
    duplicating two `media_assets` rows); 4 orphaned `site_copy` seed keys in

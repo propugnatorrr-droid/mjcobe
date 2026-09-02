@@ -36,8 +36,8 @@ export function CatalogSection({
     <section
       aria-labelledby={id}
       className={[
-        'music-v2-section',
-        featured ? 'music-v2-section-featured' : '',
+        'music-catalog-section',
+        featured ? 'music-catalog-section-featured' : '',
       ].join(' ')}
     >
       <div id={id}>
@@ -48,8 +48,8 @@ export function CatalogSection({
 
       <div
         className={[
-          'music-v2-grid',
-          featured ? 'music-v2-grid-featured' : '',
+          'music-catalog-grid',
+          featured ? 'music-catalog-grid-featured' : '',
         ].join(' ')}
       >
         {songs.map((song, index) => (

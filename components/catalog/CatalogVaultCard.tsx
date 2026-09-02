@@ -12,8 +12,8 @@ export function CatalogVaultCard({
   label,
 }: CatalogVaultCardProps) {
   return (
-    <article className="music-v2-card music-v2-vault-card">
-      <div className="music-v2-card-art-link">
+    <article className="music-card music-vault-card">
+      <div className="music-card-art-link">
         {song.coverPath ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -22,7 +22,7 @@ export function CatalogVaultCard({
             width={900}
             height={900}
             loading="lazy"
-            className="music-v2-card-art music-v2-vault-art"
+            className="music-card-art music-vault-art"
             style={{
               backgroundColor: 'var(--ink)',
               backgroundImage: song.coverPlaceholder
@@ -33,17 +33,17 @@ export function CatalogVaultCard({
             }}
           />
         ) : (
-          <span className="music-v2-card-art-placeholder" />
+          <span className="music-card-art-placeholder" />
         )}
 
         <span
           aria-hidden
-          className="music-v2-card-art-treatment music-v2-vault-treatment"
+          className="music-card-art-treatment music-vault-treatment"
         />
 
         <span
           aria-hidden
-          className="music-v2-vault-lock"
+          className="music-vault-lock"
         >
           <LockKeyhole
             size={22}
@@ -51,7 +51,7 @@ export function CatalogVaultCard({
           />
         </span>
 
-        <span className="music-v2-card-status">
+        <span className="music-card-status">
           <StatusBadge
             status="vault"
             label={label}
@@ -59,14 +59,14 @@ export function CatalogVaultCard({
         </span>
       </div>
 
-      <div className="music-v2-card-content">
-        <h2 className="music-v2-card-title text-[var(--text-dim)]">
+      <div className="music-card-heading">
+        <h2 className="music-card-title text-[var(--text-dim)]">
           {song.title}
         </h2>
 
         <div
           aria-hidden
-          className="music-v2-vault-lines"
+          className="music-vault-lines"
         >
           <span />
           <span />

@@ -27,6 +27,16 @@ type CatalogSongCardProps = {
   featured?: boolean;
 };
 
+/**
+ * Below 640px, non-featured cards switch to a compact landscape layout
+ * (cover left, title/status beside it, player/funding/CTA in a full-width
+ * row underneath) instead of the desktop stack squeezed into one column —
+ * see .music-card's mobile rule in app/styles/music.css. That's why the
+ * art link and the title/description block are separate elements
+ * (`.music-card-heading`) rather than one `.music-card-content` wrapper:
+ * the audio player and funding/CTA block (`.music-card-body`) need to be
+ * a sibling that can span full width on its own grid row.
+ */
 export function CatalogSongCard({
   song,
   labels,
@@ -41,14 +51,14 @@ export function CatalogSongCard({
   return (
     <article
       className={[
-        'music-v2-card group',
-        featured ? 'music-v2-card-featured' : '',
+        'music-card group',
+        featured ? 'music-card-featured' : '',
       ].join(' ')}
     >
       <Link
         href={href}
         aria-label={song.title}
-        className="music-v2-card-art-link"
+        className="music-card-art-link"
       >
         {song.coverPath ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -58,7 +68,7 @@ export function CatalogSongCard({
             width={900}
             height={900}
             loading="lazy"
-            className="music-v2-card-art"
+            className="music-card-art"
             style={{
               backgroundColor: 'var(--ink)',
               backgroundImage: song.coverPlaceholder
@@ -71,7 +81,7 @@ export function CatalogSongCard({
         ) : (
           <span
             aria-hidden
-            className="music-v2-card-art-placeholder"
+            className="music-card-art-placeholder"
           >
             <Headphones
               size={34}
@@ -82,10 +92,10 @@ export function CatalogSongCard({
 
         <span
           aria-hidden
-          className="music-v2-card-art-treatment"
+          className="music-card-art-treatment"
         />
 
-        <span className="music-v2-card-status">
+        <span className="music-card-status">
           <StatusBadge
             status={song.status}
             label={labels.status}
@@ -94,7 +104,7 @@ export function CatalogSongCard({
 
         <span
           aria-hidden
-          className="music-v2-card-arrow"
+          className="music-card-arrow"
         >
           <ArrowUpRight
             size={18}
@@ -103,7 +113,7 @@ export function CatalogSongCard({
         </span>
 
         {showCampaign ? (
-          <span className="music-v2-card-supporters">
+          <span className="music-card-supporters">
             <Users
               aria-hidden
               size={13}
@@ -119,21 +129,21 @@ export function CatalogSongCard({
         ) : null}
       </Link>
 
-      <div className="music-v2-card-content">
-        <div>
-          <h2 className="music-v2-card-title">
-            <Link href={href}>
-              {song.title}
-            </Link>
-          </h2>
+      <div className="music-card-heading">
+        <h2 className="music-card-title">
+          <Link href={href}>
+            {song.title}
+          </Link>
+        </h2>
 
-          {song.description ? (
-            <p className="music-v2-card-description">
-              {song.description}
-            </p>
-          ) : null}
-        </div>
+        {song.description ? (
+          <p className="music-card-description">
+            {song.description}
+          </p>
+        ) : null}
+      </div>
 
+      <div className="music-card-body">
         <AudioPreview
           src={song.audioPath}
           songId={song.id}
@@ -179,7 +189,7 @@ export function CatalogSongCard({
 
         <Link
           href={href}
-          className="music-v2-card-link"
+          className="music-card-link"
         >
           <span>{labels.joinJourney}</span>
 

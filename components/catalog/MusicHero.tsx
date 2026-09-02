@@ -16,21 +16,21 @@ export function MusicHero({
   return (
     <header
       aria-labelledby="music-page-title"
-      className="music-v2-hero"
+      className="music-hero"
     >
       <div
         aria-hidden
-        className="music-v2-hero-disc"
+        className="music-hero-disc"
       >
-        <span className="music-v2-hero-disc-ring" />
-        <span className="music-v2-hero-disc-label">
+        <span className="music-hero-disc-ring" />
+        <span className="music-hero-disc-label">
           <Music2 size={22} strokeWidth={1.5} />
         </span>
       </div>
 
-      <div className="site-shell music-v2-hero-shell">
-        <div className="music-v2-hero-copy">
-          <p className="music-v2-hero-eyebrow">
+      <div className="site-shell music-hero-shell">
+        <div className="music-hero-copy">
+          <p className="music-hero-eyebrow">
             <Disc3
               aria-hidden
               size={15}
@@ -42,17 +42,17 @@ export function MusicHero({
 
           <h1
             id="music-page-title"
-            className="music-v2-hero-title"
+            className="music-hero-title"
           >
             {title}
           </h1>
 
-          <p className="music-v2-hero-intro">
+          <p className="music-hero-intro">
             {intro}
           </p>
         </div>
 
-        <div className="music-v2-hero-meta">
+        <div className="music-hero-meta">
           <p className="numeric">
             {String(recordCount).padStart(2, '0')}
           </p>

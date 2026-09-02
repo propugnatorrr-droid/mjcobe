@@ -89,7 +89,7 @@ export default async function MusicPage() {
         recordCount={catalog.length}
       />
 
-      <div className="site-shell music-v2-catalog">
+      <div className="site-shell music-catalog">
         <CatalogSection
           heading={buildingLabel}
           subheading={buildingSub}
@@ -139,7 +139,7 @@ export default async function MusicPage() {
         {vault.length > 0 ? (
           <section
             aria-labelledby="catalog-vault"
-            className="music-v2-section"
+            className="music-catalog-section"
           >
             <div id="catalog-vault">
               <SectionHeading>
@@ -147,7 +147,7 @@ export default async function MusicPage() {
               </SectionHeading>
             </div>
 
-            <div className="music-v2-grid">
+            <div className="music-catalog-grid">
               {vault.map((song) => (
                 <CatalogVaultCard
                   key={song.id}
@@ -160,7 +160,7 @@ export default async function MusicPage() {
         ) : null}
 
         {catalog.length === 0 ? (
-          <section className="music-v2-empty">
+          <section className="music-empty">
             <p>{emptyLabel}</p>
           </section>
         ) : null}
