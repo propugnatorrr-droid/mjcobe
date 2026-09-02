@@ -22,7 +22,7 @@ export async function SongHero({
   SongPageData,
   'song' | 'campaign' | 'cover' | 'audio'
 >) {
-   const [
+  const [
     comingSoonLabel,
     artistName,
     statusLabel,
@@ -53,7 +53,6 @@ export async function SongHero({
     }),
   ]);
 
-
   const artwork =
     cover?.path ?? '/media/song-hero-mobile.webp';
 
@@ -83,7 +82,7 @@ export async function SongHero({
         <div className="song-art-column">
           <div className="song-art-frame">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-                       <img
+            <img
               src={artwork}
               alt={artworkAlt}
               width={1200}
@@ -121,43 +120,35 @@ export async function SongHero({
             {song.title}
           </h1>
 
-
+          {song.description ? (
+            <p className="song-objective">
+              {song.description}
+            </p>
+          ) : null}
 
           <div className="song-player">
             <div className="song-player-heading">
-              <span className="song-player-icon">
+              <span
+                aria-hidden
+                className="song-player-icon"
+              >
                 <Disc3
-                  aria-hidden
                   size={18}
                   strokeWidth={1.6}
                 />
               </span>
 
-              <div className="min-w-0">
-                <p>{song.title}</p>
-                <span>{previewLabel}</span>
-              </div>
+              <p>{previewLabel}</p>
             </div>
 
             <AudioPreview
               src={audio?.path ?? null}
               songId={song.id}
-              campaignId={
-                campaign?.id ??
-                null
-              }
-              previewStartMs={
-                song.previewStartMs
-              }
-              previewEndMs={
-                song.previewEndMs
-              }
-              allowFullPlayback={
-                song.allowFullPlayback
-              }
-              comingSoonLabel={
-                comingSoonLabel
-              }
+              campaignId={campaign?.id ?? null}
+              previewStartMs={song.previewStartMs}
+              previewEndMs={song.previewEndMs}
+              allowFullPlayback={song.allowFullPlayback}
+              comingSoonLabel={comingSoonLabel}
               playLabel={playLabel}
               pauseLabel={pauseLabel}
               seekLabel={seekLabel}
