@@ -1,6 +1,8 @@
-import { CountUp } from '@/components/primitives/CountUp';
 import { FundingMeter } from '@/components/primitives/FundingMeter';
-import { cents, formatCents } from '@/lib/money/cents';
+import {
+  cents,
+  formatCents,
+} from '@/lib/money/cents';
 import { text } from '@/lib/copy/site-copy';
 import type { SongPageData } from '@/lib/song/queries';
 
@@ -69,10 +71,8 @@ export async function FundingPanel({
           </div>
 
           <div className="song-funding-stat">
-            <p className="song-funding-figure">
-              <CountUp
-                value={totals.supporterCount}
-              />
+            <p className="song-funding-figure numeric">
+              {totals.supporterCount.toLocaleString()}
             </p>
 
             <p className="song-funding-label">
