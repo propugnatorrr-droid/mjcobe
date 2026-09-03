@@ -444,10 +444,199 @@ correctly at `/feed` and `/feed/[slug]` before relying on this batch's
 UI further.
 
 ## Batch D — Secure brand submissions
-Status: not started.
 
-## Batch D — Secure brand submissions
-Status: not started.
+Status: **done**.
+
+### Schema and migrations
+- `lib/db/schema/feed.ts`: added `brandSubmissionInvites` (sponsor-bound,
+  single-use, `tokenHash` only — plaintext token never persisted) and
+  `feedSubmissionAttempts` (rate-limit counter, see below). Both
+  barrel-exported already via the existing `export * from './feed'`.
+- `lib/db/migrations/0014_brand_submission_invites.sql`,
+  `lib/db/migrations/0015_feed_submission_attempts.sql` — hand-authored,
+  `IF NOT EXISTS`-guarded, same policy as `0013` (see Batch A/C). Generated
+  and reviewed, **not applied** — `db:migrate` never run.
+
+### Invite lifecycle (`lib/feed/invites.ts`, `lib/feed/invite-eligibility.ts`)
+- `createSubmissionInvite({sponsorId, adminId, expiresInDays})` — 32-byte
+  random token (`randomBytes(32).toString('base64url')`, more entropy than
+  `lib/checkout/tokens.ts`'s 16-byte share code since this grants *write*
+  access), only `sha256(token)` stored. Plaintext returned once, to the
+  caller, for embedding in the invite email — never logged, never
+  re-derivable afterward.
+- `validateSubmissionToken(rawToken)` — looks up by hash, delegates the
+  actual usability decision to `isInviteUsable()` (`lib/feed/
+  invite-eligibility.ts`), a **pure function** re-checking expiry/revoked/
+  used/sponsor-still-approved — extracted specifically so it's unit-testable
+  without a DB, per this repo's established convention. Returns a single
+  generic "not valid" outcome for every failure reason (unknown, expired,
+  revoked, used, sponsor blocked) — deliberately not distinguishing which,
+  so a token-guessing attempt can't use the error to narrow its search.
+- `markInviteUsed(tx, inviteId, postId)` — conditional `UPDATE ... WHERE
+  used_at IS NULL`, called *inside* the same transaction that creates the
+  resulting post (`lib/feed/submission-actions.ts`). If two concurrent
+  requests redeem the same token, the loser's `UPDATE` matches zero rows
+  and its whole transaction (including the post insert) rolls back — this
+  is what actually prevents a double-submit from creating two posts, not
+  the earlier `validateSubmissionToken` read alone.
+- `revokeInvite(inviteId)`.
+- `sendSubmissionInviteEmail(...)` — enqueues via the existing
+  `notifications` outbox (`dedupeKey: brand_submission_invite:${inviteId}`)
+  and calls `deliverNotification()` immediately, matching
+  `sendContributionConfirmation()`'s exact shape in `lib/notifications/
+  outbox.ts`. `lib/email/templates.ts`'s `siteUrl()` was exported (was
+  file-private) so this module could build the absolute submission link.
+
+### Email template
+- `lib/email/templates.ts`: `'brand_submission_invite'` notification kind,
+  `BrandSubmissionInvitePayload` type, `brandSubmissionInviteEmail()` — a
+  real HTML+text template (not just a declared-but-unimplemented kind,
+  which was flagged as a repeated failure mode in the architecture plan's
+  risk table).
+
+### Admin invite management (`lib/feed/invite-actions.ts`, `/admin/feed/invites`)
+- `issueSubmissionInvite` / `revokeSubmissionInvite` /
+  `resendSubmissionInvite` — all `requireAdminRole(['partnership_admin'])`
+  (issuing a sponsor relationship credential is a partnership decision,
+  scoped separately from Batch C's `MODERATION_ROLES`). Issuing requires
+  the sponsor to currently be `moderation: 'approved'` — rejected
+  otherwise, both for a first issue and for resend. Resend never reuses
+  the old token (it was never stored): it revokes the superseded invite
+  and issues + emails a fresh one to the same sponsor.
+- `lib/feed/queries.ts`: `listAdminSubmissionInvites()` — resolves
+  `status`/`usable` **server-side at fetch time**, not in the client row
+  component, because a React render body must stay pure (no `Date.now()`
+  calls) — this was caught by the React Compiler's purity lint (see Real
+  bugs below), not just a style preference.
+- `components/admin/InviteIssueForm.tsx`, `components/admin/InviteRow.tsx`
+  — same `useActionState` + hidden-field-form pattern as
+  `FeedModerationPanel.tsx`.
+
+### Public submission route (`/partners/submit/[secureToken]`)
+- `app/partners/submit/[secureToken]/page.tsx` — flag-gated
+  (`brandSubmissionsEnabled`) via `notFound()`; invalid/expired/revoked/
+  used token renders one generic "this link isn't valid" state (server
+  component reads the token server-side, never exposes which specific
+  reason). `robots: noindex` — this is a private, single-use link, not a
+  page meant to be discoverable.
+- `components/feed/SubmissionForm.tsx` — client form, `postType` limited
+  to **text/image/link only** (no video — see media module note below),
+  honeypot field (`company_website_confirm`, same name/pattern as
+  `lib/checkout/actions.ts`, CSS-hidden not JS-hidden so it still exists in
+  the DOM for bots that don't render styles), required rights-attestation
+  checkbox.
+- `lib/feed/submission-actions.ts` — `submitBrandFeedPost` server action:
+  honeypot check → rate-limit check → token validation → rate-limit check
+  again (per-invite) → field validation (postType allowlist, `ctaUrl`
+  through the existing `normalizeExternalUrl()`, media through the new
+  validation module) → transaction (insert post with
+  `sponsorId: invite.sponsorId` + `markInviteUsed`). **The sponsor identity
+  is never read from form input anywhere in this file** — there is no
+  `sponsorId` field on the form at all, so there's no code path through
+  which a submission could be attributed to a sponsor other than the one
+  the admin bound the invite to at issuance. This is what the plan's
+  "sponsor impersonation" test requirement is actually about; documented
+  (not faked with a mock) in `tests/feed-invites.test.ts`'s trailing
+  comment.
+
+### Rate limiting (deliverable: "honeypot and rate limiting")
+- `feed_submission_attempts` table: one row per POST attempt (success,
+  validation failure, or invalid token), written before most other work.
+  `submitBrandFeedPost` rejects (without revealing which check failed) once
+  either the requesting IP or the specific invite has **5 attempts within
+  a rolling 10-minute window**. The invite token's own 256-bit entropy
+  already makes brute-force guessing computationally infeasible — this
+  table isn't defending the token's secrecy, it caps how many times a
+  given invite or IP can hammer the endpoint, matching the plan's "small
+  counter keyed by token or IP with a time window" guidance without adding
+  an external dependency (no Redis/Upstash).
+
+### Media upload (`lib/feed/media-validation.ts`, `lib/feed/media.ts`)
+- Split into two files specifically so the signature/size/type validation
+  logic is unit-testable without pulling in `'server-only'` + Vercel Blob +
+  the DB: `media-validation.ts` has no side-effecting imports at all;
+  `media.ts` re-exports it and adds `storeFeedMedia()` (Blob upload +
+  `media_assets` insert with `role: 'feed-pending'`, `kind: 'image'` — the
+  latter matters: `media_assets.kind` is a Postgres enum
+  (`image|video|audio|logo`), not free text; an early draft of this module
+  used `kind: 'feed-media'`, which would have failed the DB constraint —
+  caught and fixed before it was ever exercised against a real database,
+  see Real bugs below).
+- Adapted from `lib/media/sponsor-logo.ts`'s magic-byte-sniffing pattern
+  (PNG/WebP signatures) plus a third format, JPEG (`FF D8 FF`), matching
+  what brand submissions realistically need. 5MB cap.
+- **Video is explicitly not supported** — no transcoding/streaming
+  infrastructure, no player component, no moderation tooling for scanning
+  video before it's public. Both the admin `FeedPostForm` and the public
+  submission form only offer **text/image/link** as selectable post types
+  (removed 'video' as an option from `FeedPostForm`'s existing select,
+  which had offered it since Batch C with no actual storage path behind
+  it). Documented in `lib/feed/media.ts`'s header comment as the
+  plan-sanctioned escape hatch ("keep video disabled by capability/
+  configuration, document the exact blocker") rather than half-building it.
+- Wired into `FeedPostForm.tsx` (a Batch C gap: the admin form never had a
+  media upload control despite the schema supporting `mediaAssetId` since
+  it was created) — uploading a new file replaces a post's media; leaving
+  it empty on an edit **keeps** the existing media rather than clearing it
+  (`lib/feed/admin-actions.ts`'s `updateFeedPost` falls back to
+  `before.mediaAssetId` when the form's media field was empty).
+
+### Real bugs caught and fixed while building this (not shipped, then found)
+1. `storeFeedMedia` initially inserted `media_assets.kind: 'feed-media'` —
+   `kind` is a Postgres enum (`image|video|audio|logo`), not free text.
+   Would have thrown a DB constraint error on the very first real upload.
+   Fixed to `kind: 'image'` before this was ever exercised against a
+   database, by re-checking the schema definition rather than assuming a
+   string column.
+2. `components/admin/InviteRow.tsx` originally computed "is this invite
+   still usable" (and its status label) by calling `Date.now()` directly
+   inside the component's render body. The React Compiler's purity lint
+   (`react-hooks/purity`) correctly flagged this as an impure render — a
+   component render should not depend on wall-clock time evaluated at
+   render, since re-renders can then produce different output for
+   identical props. Fixed by moving the status/usability computation into
+   `lib/feed/queries.ts`'s `listAdminSubmissionInvites()` (plain
+   server-side function, resolved once when the list is fetched) and
+   passing the already-resolved `status`/`usable` fields down as props
+   instead of recomputing them in the client component.
+3. `markInviteUsed`'s conditional-`UPDATE`-inside-the-post-creation-
+   transaction design (rather than checking-then-writing as two separate
+   steps) was deliberate from the start, not a bug found after the fact —
+   noted here because it's the one piece of this batch that's actually
+   concurrency-sensitive (a double-submit race on the same token) and is
+   worth a future session double-checking with a real concurrent-request
+   test before this route sees real traffic, the same way Batch H's ticket
+   redemption is required to.
+
+### Verification
+`npm run typecheck && npm run lint && npm run build` — all clean; lint run
+scoped to this batch's own files (`lib/feed/**`, the new components, the
+new routes) shows zero errors/warnings, and a full-repo lint run shows the
+same 4 pre-existing errors as baseline (confirmed via `git status` that
+none of those 3 files were touched this session) plus the fix for the one
+error this batch's own code introduced (#2 above, now fixed — full-repo
+lint is back to exactly the pre-existing baseline). `npm test` — 185
+passing (162 baseline + 23 new: `tests/feed-invites.test.ts` for
+`isInviteUsable()` including the impersonation-prevention note,
+`tests/feed-media.test.ts` for signature/type/size validation including a
+mismatched-declared-type attack case, `tests/feed-sanitize.test.ts` for
+`normalizeExternalUrl()`), same 1 pre-existing failing suite
+(`tests/referral-attribution.test.ts`, untouched, `server-only` import
+issue unrelated to this work). `npm run build` — succeeds, all new routes
+present in the route manifest (`/admin/feed/invites`,
+`/partners/submit/[secureToken]`).
+
+**Not verified live** (no admin credentials, no live DB writes made by
+this session): issuing a real invite, receiving/opening the actual email,
+completing a real submission end-to-end, and confirming a submitted post
+shows up correctly in `/admin/feed/[id]`'s review UI with its
+`originalSubmission` snapshot populated after a subsequent admin edit.
+**Manual follow-up for the user**: enable `brandSubmissionsEnabled` on
+`/admin/flags`, issue an invite to a real approved sponsor from
+`/admin/feed/invites`, and walk the full path once — including trying to
+reuse the same submission link a second time (should show the generic
+"not valid" state) and trying an obviously-fake token (should show the
+same generic state, not a different one).
 
 ## Batch E — Feed navigation and homepage preview
 Status: not started.

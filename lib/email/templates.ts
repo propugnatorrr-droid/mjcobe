@@ -16,6 +16,7 @@ export const notificationKinds = [
   'song_release',
   'video_release',
   'campaign_ended',
+  'brand_submission_invite',
 ] as const;
 
 export type NotificationKind =
@@ -35,6 +36,12 @@ export type ConfirmationPayload = {
   rank: number | null;
   thanksToken: string | null;
 };
+export type BrandSubmissionInvitePayload = {
+  businessName: string;
+  submissionUrl: string;
+  expiresAtIso: string;
+};
+
 export type OutbidPayload = {
   songTitle: string;
   songSlug: string;
@@ -69,7 +76,7 @@ function money(
   ).format(cents / 100);
 }
 
-function siteUrl(): string {
+export function siteUrl(): string {
   const configured =
     process.env
       .NEXT_PUBLIC_SITE_URL
@@ -256,6 +263,88 @@ function confirmationEmail(
     text,
   };
 }
+/** The submission link itself is the bearer credential — it's meant to be
+ * in this email, once, for its intended recipient. Nothing here logs it;
+ * see lib/feed/invites.ts for where the token is generated and hashed. */
+function brandSubmissionInviteEmail(
+  recipientEmail: string,
+  payload: BrandSubmissionInvitePayload,
+): EmailMessage {
+  const subject = `Post to the MJ COBE feed — ${payload.businessName}`;
+
+  const expiresLabel = new Date(payload.expiresAtIso).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const text = [
+    'YOU’RE INVITED TO POST',
+    '',
+    `MJ COBE has invited ${payload.businessName} to submit content for the brand feed.`,
+    'Every submission is reviewed before it goes public — nothing you send is published automatically.',
+    '',
+    `Submit here: ${payload.submissionUrl}`,
+    '',
+    `This link expires ${expiresLabel} and can only be used once.`,
+    '',
+    'MJ COBE',
+  ].join('\n');
+
+  const html = `<!doctype html>
+<html lang="en">
+  <body style="margin:0;background:#090909;color:#f5f0e7;font-family:Arial,Helvetica,sans-serif">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#090909">
+      <tr>
+        <td align="center" style="padding:32px 16px">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;border:1px solid #3e372b;background:#111111">
+            <tr>
+              <td style="padding:38px 36px;border-bottom:1px solid #3e372b">
+                <div style="font-family:Georgia,Times,serif;font-size:27px;letter-spacing:5px;color:#d6b979">
+                  MJ COBE
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:42px 36px">
+                <div style="font-size:11px;letter-spacing:2px;color:#d6b979">
+                  YOU'RE INVITED TO POST
+                </div>
+                <h1 style="margin:18px 0 22px;font-family:Georgia,Times,serif;font-size:30px;line-height:1.2;font-weight:400;color:#f5f0e7">
+                  ${escapeHtml(payload.businessName)}
+                </h1>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#c8c0b2">
+                  MJ COBE has invited you to submit content for the brand feed. Every submission is reviewed before it goes public — nothing you send is published automatically.
+                </p>
+                <div style="margin-top:28px">
+                  <a
+                    href="${escapeHtml(payload.submissionUrl)}"
+                    style="display:inline-block;padding:15px 24px;background:#d6b979;color:#090909;text-decoration:none;font-size:11px;font-weight:bold;letter-spacing:2px"
+                  >
+                    SUBMIT YOUR POST
+                  </a>
+                </div>
+                <p style="margin:28px 0 0;font-size:13px;line-height:1.6;color:#786f62">
+                  This link expires ${escapeHtml(expiresLabel)} and can only be used once.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  return {
+    to: recipientEmail,
+    from: fromAddress(),
+    subject,
+    html,
+    text,
+  };
+}
+
 function outbidEmail(
   recipientEmail: string,
   payload: OutbidPayload,
@@ -363,6 +452,12 @@ export function buildNotificationEmail(
     return outbidEmail(
       recipientEmail,
       payload as OutbidPayload,
+    );
+  }
+  if (kind === 'brand_submission_invite') {
+    return brandSubmissionInviteEmail(
+      recipientEmail,
+      payload as BrandSubmissionInvitePayload,
     );
   }
 

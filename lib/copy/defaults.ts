@@ -472,6 +472,39 @@ const copyDefaults = {
   'feed.back_to_feed': 'BACK TO THE FEED',
   'feed.not_found': 'That post doesn’t exist or isn’t public.',
   'feed.related_song': 'ABOUT {song}',
+
+  // ---- /partners/submit/[secureToken] (brand submission form) ----------------
+  'submit.eyebrow': 'BRAND SUBMISSION',
+  'submit.title': 'POST TO THE FEED',
+  'submit.intro_prefix': 'Submitting as',
+  'submit.intro_suffix':
+    'This link is bound to your brand and can be used once. Your post is reviewed before it goes public — you’ll see it here regardless of whether it’s approved.',
+  'submit.invalid_title': 'THIS LINK ISN’T VALID',
+  'submit.invalid_body':
+    'It may have already been used, revoked, or expired. Contact MJ COBE’s team for a new invite.',
+  'submit.type_label': 'POST TYPE',
+  'submit.type_text': 'Text',
+  'submit.type_image': 'Image',
+  'submit.type_link': 'Link',
+  'submit.title_label': 'TITLE',
+  'submit.body_label': 'MESSAGE',
+  'submit.cta_label_label': 'BUTTON LABEL (OPTIONAL)',
+  'submit.cta_url_label': 'BUTTON LINK (OPTIONAL, HTTPS ONLY)',
+  'submit.media_label': 'IMAGE (OPTIONAL)',
+  'submit.media_hint': 'PNG, WebP, or JPEG, up to 5MB.',
+  'submit.rights_label': 'I confirm my business owns the rights to this content, or has permission to share it.',
+  'submit.submit': 'SUBMIT FOR REVIEW',
+  'submit.success_title': 'SUBMITTED',
+  'submit.success_body':
+    'Thank you — your post is now pending review. It will not appear publicly unless approved.',
+  'submit.error_rights_required': 'Please confirm you have the rights to share this content.',
+  'submit.error_unsafe_url': 'That link is not a valid https:// address.',
+  'submit.error_media_type': 'That file type is not supported. Use PNG, WebP, or JPEG.',
+  'submit.error_media_size': 'That image is larger than 5MB.',
+  'submit.error_media_signature': 'That file’s contents don’t match its extension.',
+  'submit.error_rate_limited': 'Too many attempts. Please wait a few minutes and try again.',
+  'submit.error_generic': 'Something went wrong. Please try again.',
+
   'home.feed_heading': 'FROM OUR PARTNERS',
   'home.feed_cta': 'VIEW THE FEED',
 

@@ -69,6 +69,7 @@ export default async function AdminFeedPostPage({ params }: Props) {
             relatedSongId: post.relatedSongId,
             relatedCampaignId: post.relatedCampaignId,
             rightsAttested: post.rightsAttested,
+            mediaPath: post.postMediaPath,
           }}
         />
       </div>

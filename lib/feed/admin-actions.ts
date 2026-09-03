@@ -9,6 +9,7 @@ import { requireAdminRole } from '@/lib/admin/guard';
 import { recordAudit } from '@/lib/audit/log';
 import { str, bool, slugify } from '@/lib/checkout/validate';
 import { normalizeExternalUrl } from '@/lib/feed/sanitize';
+import { validateFeedMedia, storeFeedMedia } from '@/lib/feed/media';
 import type { AdminState } from '@/lib/admin/actions';
 
 /** Content authoring vs. moderation are different responsibilities per the
@@ -35,20 +36,31 @@ type PostFields = {
   ctaUrl: string | null;
   relatedSongId: string | null;
   relatedCampaignId: string | null;
+  mediaAssetId: string | null;
 };
 
-function readPostFields(formData: FormData): PostFields | { error: string } {
+// 'video' is intentionally not selectable here — see lib/feed/media.ts's
+// header comment for why (no transcoding/streaming/moderation infra yet).
+const ALLOWED_POST_TYPES = ['text', 'image', 'link'] as const;
+
+async function readPostFields(formData: FormData): Promise<PostFields | { error: string }> {
   const sponsorId = str(formData.get('sponsorId'), 100);
   if (!sponsorId) return { error: 'missing' };
 
   const postType = str(formData.get('postType'), 20) ?? 'text';
-  if (!['text', 'image', 'video', 'link'].includes(postType)) {
+  if (!ALLOWED_POST_TYPES.includes(postType as (typeof ALLOWED_POST_TYPES)[number])) {
     return { error: 'invalid_type' };
   }
 
   const rawCtaUrl = str(formData.get('ctaUrl'), 2000);
   const ctaUrl = rawCtaUrl ? normalizeExternalUrl(rawCtaUrl) : null;
   if (rawCtaUrl && !ctaUrl) return { error: 'unsafe_url' };
+
+  const mediaValidation = await validateFeedMedia(formData.get('media'));
+  if (!mediaValidation.ok) return { error: `media_${mediaValidation.reason}` };
+  const mediaAssetId = mediaValidation.file
+    ? await storeFeedMedia(mediaValidation.file, mediaValidation.detectedType!)
+    : null;
 
   return {
     sponsorId,
@@ -59,13 +71,14 @@ function readPostFields(formData: FormData): PostFields | { error: string } {
     ctaUrl,
     relatedSongId: str(formData.get('relatedSongId'), 100),
     relatedCampaignId: str(formData.get('relatedCampaignId'), 100),
+    mediaAssetId,
   };
 }
 
 export async function createFeedPost(_prev: AdminState, formData: FormData): Promise<AdminState> {
   const me = await requireAdminRole([...CONTENT_ROLES]);
 
-  const fields = readPostFields(formData);
+  const fields = await readPostFields(formData);
   if ('error' in fields) return fields;
 
   const titleForSlug = fields.title || 'post';
@@ -120,11 +133,15 @@ export async function updateFeedPost(_prev: AdminState, formData: FormData): Pro
   const id = str(formData.get('id'), 100);
   if (!id) return { error: 'missing' };
 
-  const fields = readPostFields(formData);
+  const fields = await readPostFields(formData);
   if ('error' in fields) return fields;
 
   const [before] = await db.select().from(s.brandFeedPosts).where(eq(s.brandFeedPosts.id, id)).limit(1);
   if (!before) return { error: 'not_found' };
+
+  // Uploading a new file replaces the post's media; leaving the field empty
+  // on an edit keeps whatever media the post already had — it does not clear it.
+  const mediaAssetId = fields.mediaAssetId ?? before.mediaAssetId;
 
   // The first time an admin edits a brand-submitted post, snapshot what
   // the sponsor actually sent before overwriting it — never on an
@@ -145,6 +162,7 @@ export async function updateFeedPost(_prev: AdminState, formData: FormData): Pro
     .update(s.brandFeedPosts)
     .set({
       ...fields,
+      mediaAssetId,
       ...(originalSubmission ? { originalSubmission } : {}),
       updatedAt: new Date(),
     })

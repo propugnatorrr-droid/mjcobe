@@ -16,12 +16,20 @@ export default async function AdminFeedPage() {
           <AdminHint>{admin.feed.hint}</AdminHint>
         </div>
 
-        <Link
-          href="/admin/feed/new"
-          className="font-mono text-eyebrow uppercase text-[var(--champagne)] transition-opacity [transition-duration:var(--duration-signature)] hover:opacity-70"
-        >
-          + {admin.feed.newPost}
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link
+            href="/admin/feed/invites"
+            className="font-mono text-eyebrow uppercase text-[var(--text-dim)] transition-opacity [transition-duration:var(--duration-signature)] hover:opacity-70"
+          >
+            {admin.feed.invites.heading}
+          </Link>
+          <Link
+            href="/admin/feed/new"
+            className="font-mono text-eyebrow uppercase text-[var(--champagne)] transition-opacity [transition-duration:var(--duration-signature)] hover:opacity-70"
+          >
+            + {admin.feed.newPost}
+          </Link>
+        </div>
       </div>
 
       {posts.length === 0 ? (

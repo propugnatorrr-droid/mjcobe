@@ -19,6 +19,7 @@ type FeedPostFormProps = {
     relatedSongId: string | null;
     relatedCampaignId: string | null;
     rightsAttested: boolean;
+    mediaPath: string | null;
   };
 };
 
@@ -27,7 +28,7 @@ export function FeedPostForm({ postId, sponsors, initial }: FeedPostFormProps) {
   const [state, formAction] = useActionState<AdminState, FormData>(action, {});
 
   return (
-    <form action={formAction} className="flex max-w-2xl flex-col gap-6">
+    <form action={formAction} encType="multipart/form-data" className="flex max-w-2xl flex-col gap-6">
       {postId ? <input type="hidden" name="id" value={postId} /> : null}
 
       <label className="flex flex-col gap-2">
@@ -49,7 +50,6 @@ export function FeedPostForm({ postId, sponsors, initial }: FeedPostFormProps) {
           options={[
             { value: 'text', label: 'Text' },
             { value: 'image', label: 'Image' },
-            { value: 'video', label: 'Video' },
             { value: 'link', label: 'Link' },
           ]}
         />
@@ -78,6 +78,22 @@ export function FeedPostForm({ postId, sponsors, initial }: FeedPostFormProps) {
       <label className="flex flex-col gap-2">
         <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">{admin.feed.ctaUrl}</span>
         <AdminInput name="ctaUrl" defaultValue={initial?.ctaUrl ?? ''} wide />
+      </label>
+
+      <label className="flex flex-col gap-2">
+        <span className="font-mono text-eyebrow uppercase text-[var(--text-dim)]">{admin.feed.media}</span>
+        {initial?.mediaPath ? (
+          <p className="font-mono text-[0.625rem] uppercase text-[var(--text-dim)]">
+            {admin.feed.mediaCurrent}: {initial.mediaPath}
+          </p>
+        ) : null}
+        <input
+          type="file"
+          name="media"
+          accept="image/png,image/webp,image/jpeg"
+          className="w-full border border-[var(--line)] bg-transparent p-3 font-ui text-sm text-[var(--text)] focus:border-[var(--text)] focus:outline-none"
+        />
+        <span className="font-mono text-[0.625rem] uppercase text-[var(--text-dim)]">{admin.feed.mediaHint}</span>
       </label>
 
       <label className="flex flex-col gap-2">
@@ -112,7 +128,22 @@ export function FeedPostForm({ postId, sponsors, initial }: FeedPostFormProps) {
           {admin.feed.unsafeUrl}
         </p>
       ) : null}
-      {state.error && state.error !== 'unsafe_url' ? (
+      {state.error === 'media_type' ? (
+        <p className="font-mono text-eyebrow uppercase" style={{ color: 'var(--ember)' }}>
+          {admin.feed.mediaTypeError}
+        </p>
+      ) : null}
+      {state.error === 'media_size' ? (
+        <p className="font-mono text-eyebrow uppercase" style={{ color: 'var(--ember)' }}>
+          {admin.feed.mediaSizeError}
+        </p>
+      ) : null}
+      {state.error === 'media_signature' ? (
+        <p className="font-mono text-eyebrow uppercase" style={{ color: 'var(--ember)' }}>
+          {admin.feed.mediaSignatureError}
+        </p>
+      ) : null}
+      {state.error && !['unsafe_url', 'media_type', 'media_size', 'media_signature'].includes(state.error) ? (
         <p className="font-mono text-eyebrow uppercase" style={{ color: 'var(--ember)' }}>
           {admin.failed}
         </p>

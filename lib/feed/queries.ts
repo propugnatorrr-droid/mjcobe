@@ -188,6 +188,52 @@ export async function getAdminFeedPost(id: string): Promise<AdminFeedPost | null
   return row ?? null;
 }
 
+export type InviteStatus = 'pending' | 'used' | 'revoked' | 'expired';
+
+export type AdminSubmissionInvite = {
+  id: string;
+  sponsorId: string;
+  sponsorName: string;
+  expiresAt: Date;
+  revokedAt: Date | null;
+  usedAt: Date | null;
+  createdAt: Date;
+  /** Resolved here, server-side at fetch time, rather than in the client
+   * row component — a React component render body must stay pure (no
+   * Date.now()), so "is this invite still usable right now" is computed
+   * once when the list is built, not on every render. */
+  status: InviteStatus;
+  usable: boolean;
+};
+
+function resolveInviteStatus(row: { expiresAt: Date; revokedAt: Date | null; usedAt: Date | null }): InviteStatus {
+  if (row.usedAt) return 'used';
+  if (row.revokedAt) return 'revoked';
+  if (row.expiresAt.getTime() <= Date.now()) return 'expired';
+  return 'pending';
+}
+
+export async function listAdminSubmissionInvites(): Promise<AdminSubmissionInvite[]> {
+  const rows = await db
+    .select({
+      id: s.brandSubmissionInvites.id,
+      sponsorId: s.brandSubmissionInvites.sponsorId,
+      sponsorName: s.sponsors.businessName,
+      expiresAt: s.brandSubmissionInvites.expiresAt,
+      revokedAt: s.brandSubmissionInvites.revokedAt,
+      usedAt: s.brandSubmissionInvites.usedAt,
+      createdAt: s.brandSubmissionInvites.createdAt,
+    })
+    .from(s.brandSubmissionInvites)
+    .innerJoin(s.sponsors, eq(s.sponsors.id, s.brandSubmissionInvites.sponsorId))
+    .orderBy(desc(s.brandSubmissionInvites.createdAt));
+
+  return rows.map((row) => {
+    const status = resolveInviteStatus(row);
+    return { ...row, status, usable: status === 'pending' };
+  });
+}
+
 export async function listApprovedSponsorsForSelect(): Promise<{ id: string; businessName: string }[]> {
   return db
     .select({ id: s.sponsors.id, businessName: s.sponsors.businessName })
