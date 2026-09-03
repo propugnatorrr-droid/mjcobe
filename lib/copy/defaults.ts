@@ -460,6 +460,21 @@ const copyDefaults = {
   'partner.official_partners_body':
     'Businesses helping build the visual, marketing and cultural rollout behind this record.',
 
+  // ---- /feed (moderated brand feed) ------------------------------------------
+  'feed.title': 'THE FEED',
+  'feed.eyebrow': 'FROM OUR PARTNERS',
+  'feed.intro':
+    'Approved brands, in their own words — every post reviewed before it goes up.',
+  'feed.empty': 'Nothing has been posted yet. Check back soon.',
+  'feed.load_more': 'OLDER POSTS',
+  'feed.sponsored_by': 'FROM',
+  'feed.view_post': 'VIEW POST',
+  'feed.back_to_feed': 'BACK TO THE FEED',
+  'feed.not_found': 'That post doesn’t exist or isn’t public.',
+  'feed.related_song': 'ABOUT {song}',
+  'home.feed_heading': 'FROM OUR PARTNERS',
+  'home.feed_cta': 'VIEW THE FEED',
+
   // ---- /now (link-in-bio) page ----------------------------------------------
   'now.title': 'MJ COBE / RIGHT NOW',
   'now.new_music': 'NEW MUSIC',

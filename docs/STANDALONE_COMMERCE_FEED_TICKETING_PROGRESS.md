@@ -292,6 +292,158 @@ spot-checked once a supporter using those options is among the top 3 for
 whichever campaign is actually featured at the time.
 
 ## Batch C — Moderated feed foundation
+
+Status: **done**.
+
+### Schema and migration
+- `lib/db/schema/feed.ts`: `brand_feed_posts` table (fields match the
+  architecture plan's §4 exactly — see that file for the full column
+  rationale). Barrel-exported from `lib/db/schema/index.ts`.
+  `relatedLiveEventId` is deliberately **not** a column yet — `live_events`
+  doesn't exist until Batch F; add it as a real nullable FK then, not a
+  bare uuid now.
+- **Migration generation hit the journal-gap problem documented in Batch A
+  in a very concrete way**: `npm run db:generate` produced a file it
+  numbered `0002_clammy_cyclops.sql` — colliding with the existing
+  hand-authored `0002_stripe_payment_reconciliation.sql` — and bundled my
+  new table together with a raw (non-idempotent) re-emission of columns
+  already added by 0002/0003/0012, **plus two more previously-undocumented
+  drift items this generate run surfaced**: `analytics_events.event_key`
+  (+ its unique index) and a `badge_grants` unique index, neither of which
+  appeared in the three known orphaned migrations. Did not adopt any of
+  that raw output. Instead:
+  1. Reverted `meta/_journal.json` back to its prior 0000/0001-only state
+     and deleted the auto-generated `meta/0002_snapshot.json` — not
+     adopting drizzle-kit's bookkeeping for this run.
+  2. Hand-extracted only the `brand_feed_posts` statements into
+     `lib/db/migrations/0013_brand_feed_posts.sql` (numbered after the
+     highest existing file, not the colliding `0002` drizzle-kit chose),
+     with every statement `IF NOT EXISTS`-guarded to match 0002/0003/0012's
+     established idempotent style.
+  3. **Did not touch** the unrelated drift (`analytics_events.event_key`,
+     `badge_grants` unique index) — bundling pre-existing, unrelated drift
+     into a migration named "add brand feed posts" would misattribute it.
+     Flagging it here for the user's own separate, dedicated reconciliation
+     migration: `analytics_events` needs an `event_key text` column plus a
+     unique index on it, and `badge_grants` needs a unique index on
+     `(badge_id, supporter_id, campaign_id)` — both already exist in the
+     live application schema/code (confirmed via `getTableColumns`-driven
+     typecheck passing against real query code that reads them) but appear
+     to have never been captured in any committed migration file at all,
+     unlike 0002/0003/0012 which at least exist as hand-authored SQL.
+  4. **Migration is generated and reviewed, not applied** — `db:migrate`
+     was never run.
+
+### Application code
+- `lib/feed/sanitize.ts` — `normalizeExternalUrl()`: https-only allowlist,
+  rejects everything else outright (no attempt to "clean up" an unsafe
+  URL into something that looks safe).
+- `lib/feed/visibility.ts` — `isPubliclyVisible(post, sponsor, now)`, a
+  pure function that is the readable spec for the same rule
+  `lib/feed/queries.ts`'s `publiclyVisibleWhere()` enforces in SQL (both
+  files cross-reference each other in comments so they don't silently
+  drift apart). Tested directly in `tests/feed-visibility.test.ts` (13
+  cases: every moderation state × sponsor-approval combination, scheduled-
+  future, just-published-now boundary, expiry boundary, never-published).
+  This is the batch's answer to "tests for every moderation/scheduling/
+  expiration combination" — via a pure decision function per this repo's
+  established testing convention, not a DB integration test.
+- `lib/feed/queries.ts` — public reads (`listPublicFeedPosts` with real
+  keyset/cursor pagination using Postgres row-value comparison, not a
+  fake cursor param that was accepted but never applied to the WHERE
+  clause — caught and fixed that exact bug while writing this file, see
+  below; `getPublicFeedPost`, `getLatestPublicFeedPosts` for the future
+  homepage preview) and admin reads (`listAdminFeedPosts`,
+  `getAdminFeedPost`, `listApprovedSponsorsForSelect`). Both public
+  queries double-gate on `brandFeedPosts.moderation` AND
+  `sponsors.moderation`, matching `lib/sponsor/queries.ts`'s
+  `getSponsorProfile()` precedent.
+- `lib/feed/admin-actions.ts` — `createFeedPost`/`updateFeedPost`
+  (`content_admin`), `approveFeedPost`/`rejectFeedPost`/`hideFeedPost`/
+  `unpublishFeedPost` (`content_admin` + `partnership_admin` +
+  `moderator` — see the role-split note below). Every mutation:
+  `requireAdminRole()` → validate → `dbw` write → `recordAudit()` →
+  `revalidatePath()`. `updateFeedPost` snapshots a brand-submitted post's
+  original content into `originalSubmission` the *first* time it's
+  edited, never again — matching the plan's "preserve the original
+  submission separately from later admin edits" requirement, ready for
+  Batch D even though nothing produces `submissionSource: 'brand_invite'`
+  posts yet.
+- `app/feed/page.tsx`, `app/feed/[slug]/page.tsx` — public routes,
+  `flagEnabled('brandFeedEnabled')`-gated via `notFound()` when off.
+  `components/feed/FeedPostCard.tsx` for the grid.
+- `app/admin/(dash)/feed/page.tsx` (list), `.../feed/new/page.tsx`
+  (create), `.../feed/[id]/page.tsx` (review — sponsor context panel,
+  original-submission diff viewer, moderation actions, edit form).
+  `components/admin/FeedPostForm.tsx`, `components/admin/
+  FeedModerationPanel.tsx`. Nav entry added to `app/admin/(dash)/layout.tsx`.
+- Copy: `lib/copy/defaults.ts` (`feed.*`, `home.feed_heading`/
+  `home.feed_cta` — the latter two unused until Batch E, added now so
+  Batch E doesn't need to touch this file again) and `lib/copy/admin.ts`
+  (`admin.nav.feed`, `admin.feed.*`).
+- **No nav entry on the public site yet** — deliberately deferred to
+  Batch E per the plan's own slice boundary.
+
+### Role-split decision (recorded, not asked twice)
+The approved role table said "partnership_admin: brand-feed moderation"
+and separately "moderator: feed moderation," without fully resolving
+whether *authoring* post content is a third, narrower permission.
+Decided: `content_admin` writes/edits post copy (matches "content_admin:
+...public feed content" in the same table); moderation actions
+(approve/reject/hide/unpublish) are allowed to `content_admin` +
+`partnership_admin` + `moderator` together — the broadest reasonable
+reading that honors both explicit mentions, plus letting whoever authored
+a post also unpublish their own mistake. `super_admin` is always allowed
+on top of all of this (built into `requireAdminRole` itself).
+
+### Real bugs caught and fixed while building this (not shipped, then found)
+1. `db.select({ ...s.brandFeedPosts, ... })` — spreading a Drizzle table
+   object directly into a select projection isn't valid column selection
+   (it spreads the table's internal metadata, not actual columns).
+   Fixed with `getTableColumns(s.brandFeedPosts)`, matching the pattern
+   already used in `lib/partners/queries.ts`.
+2. The post's own attached media and the sponsor's logo were both wired
+   to the *same* `mediaAssets` join in the admin query, so
+   `sponsorLogoPath` was silently just a duplicate of the post's media —
+   not the sponsor's logo at all. Fixed with a proper `alias()`'d second
+   join (`sponsorLogoAsset`) and two distinct output fields
+   (`sponsorLogoPath` vs `postMediaPath`).
+3. `listPublicFeedPosts` accepted a `cursor` parameter and declared
+   cursor-based pagination in its docstring, but the query never actually
+   applied it to the `WHERE` clause — every "next page" request would
+   have silently returned the same first page forever. Fixed with a real
+   Postgres row-value comparison (`(sort_priority, published_at, id) <
+   (...)`) matching the `ORDER BY` exactly. The public `/feed` page had
+   the same shape of bug one level up — a "load more" link pointing at
+   `?cursor=...` that the page component never read back out of
+   `searchParams`. Both fixed together.
+4. `app/feed/page.tsx` used a static `export const metadata` instead of a
+   flag-aware `generateMetadata()`, so the browser tab title read "The
+   Feed | MJ COBE" even while the page correctly rendered its 404 body
+   with the flag off — caught by live-checking the actual tab title in
+   the dev server, not just the rendered content. Fixed to match the
+   `[slug]` page's already-correct pattern.
+
+### Verification
+`npm run typecheck && npm run lint && npm run build` — clean, same 3
+pre-existing lint errors as baseline, no new ones. `npm test` — 162
+passing (149 baseline + 13 new `feed-visibility.test.ts` cases), same 1
+pre-existing failing suite. Live-checked in the dev server: `/feed` with
+the flag off correctly renders the site's 404 page (verified both the
+rendered body text and, after the metadata fix, the tab title);
+`/admin/flags` correctly redirects an unauthenticated visitor to
+`/admin/login` (confirms the new route is actually gated, not just
+assumed to be). **Not verified live**: the admin feed list/review/create
+UI and the public feed list/detail rendering with a real approved post —
+this session has no admin credentials and was told not to write feed
+content into the database itself. Manual follow-up for the user: log
+into `/admin`, create a feed post for an approved sponsor via
+`/admin/feed/new`, approve it via `/admin/feed/[id]`, then set
+`brandFeedEnabled` to `true` on `/admin/flags` and confirm it renders
+correctly at `/feed` and `/feed/[slug]` before relying on this batch's
+UI further.
+
+## Batch D — Secure brand submissions
 Status: not started.
 
 ## Batch D — Secure brand submissions

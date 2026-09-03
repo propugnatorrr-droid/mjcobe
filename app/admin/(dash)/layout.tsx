@@ -12,6 +12,7 @@ import {
   Link2,
   LogOut,
   Music,
+  Newspaper,
   Receipt,
   Settings,
   ShieldCheck,
@@ -55,6 +56,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin/journey', label: admin.nav.journey, icon: History },
     { href: '/admin/contributions', label: admin.nav.contributions, icon: Receipt },
 { href: '/admin/sponsors', label: admin.nav.sponsors, icon: Landmark },
+{ href: '/admin/feed', label: admin.nav.feed, icon: Newspaper },
 {
   href: '/admin/sponsors/manage',
   label: admin.nav.sponsorProfiles,
