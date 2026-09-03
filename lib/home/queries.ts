@@ -17,7 +17,11 @@ import { setting } from '@/lib/config/settings';
 
 export type HomeComposition = {
   featured: CatalogSong | null;
-  topFan: LeaderboardRowData | null;
+  /** Ranked, settled-only, moderation/anonymity/hidden-amount-respecting —
+   * see getLeaderboard(). Top sponsor stays a single row (see the
+   * decision recorded in docs/STANDALONE_COMMERCE_FEED_TICKETING_PROGRESS.md);
+   * only the fan side widens. */
+  topFans: LeaderboardRowData[];
   topSponsor: LeaderboardRowData | null;
   buildingSongs: CatalogSong[];
   releasedSongs: CatalogSong[];
@@ -62,6 +66,8 @@ export const getHomeComposition = cache(
     const catalog = await listCatalog();
     const featured = await resolveFeaturedCampaign(catalog);
 
+    const fanPreviewCount = await setting('homeSupportersPreviewCount');
+
     const [
       leaderboards,
       journeyEntries,
@@ -73,7 +79,9 @@ export const getHomeComposition = cache(
     ] = await Promise.all([
       featured?.campaignId
         ? Promise.all([
-            getLeaderboard(featured.campaignId, 'fan', 1),
+            // Fan side widens to the configured preview count; sponsor
+            // stays a single row — see docs/STANDALONE_COMMERCE_FEED_TICKETING_PROGRESS.md.
+            getLeaderboard(featured.campaignId, 'fan', fanPreviewCount),
             getLeaderboard(featured.campaignId, 'business', 1),
           ])
         : Promise.resolve([null, null] as const),
@@ -101,7 +109,7 @@ export const getHomeComposition = cache(
 
     return {
       featured,
-      topFan: fanLeaderboard?.rows[0] ?? null,
+      topFans: fanLeaderboard?.rows ?? [],
       topSponsor: sponsorLeaderboard?.rows[0] ?? null,
       buildingSongs,
       releasedSongs,

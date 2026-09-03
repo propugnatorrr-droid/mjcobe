@@ -2,10 +2,10 @@ import Link from 'next/link';
 import {
   ArrowUpRight,
   Crown,
-  Heart,
   Users,
 } from 'lucide-react';
 import { CampaignLeader } from '@/components/home/CampaignLeader';
+import { TopSupportersPreview } from '@/components/home/TopSupportersPreview';
 import { ButtonLink } from '@/components/primitives/Button';
 import { FundingMeter } from '@/components/primitives/FundingMeter';
 import { SectionHeading } from '@/components/primitives/SectionHeading';
@@ -15,7 +15,7 @@ import { cents, formatCents } from '@/lib/money/cents';
 
 type FeaturedCampaignProps = {
   song: CatalogSong;
-  topFan: LeaderboardRowData | null;
+  topFans: LeaderboardRowData[];
   topSponsor: LeaderboardRowData | null;
   copy: {
     sectionHeading: string;
@@ -32,7 +32,7 @@ type FeaturedCampaignProps = {
 
 export function FeaturedCampaign({
   song,
-  topFan,
+  topFans,
   topSponsor,
   copy,
 }: FeaturedCampaignProps) {
@@ -173,15 +173,14 @@ export function FeaturedCampaign({
             </ButtonLink>
           </div>
 
-          {topFan || topSponsor ? (
+          {topFans.length > 0 || topSponsor ? (
             <aside className="home-campaign-leaders">
-              {topFan ? (
-                <CampaignLeader
+              {topFans.length > 0 ? (
+                <TopSupportersPreview
                   label={copy.topFan}
-                  row={topFan}
+                  rows={topFans}
                   anonymousLabel={copy.anonymous}
                   hiddenAmountLabel={copy.hiddenAmount}
-                  icon={Heart}
                 />
               ) : null}
 

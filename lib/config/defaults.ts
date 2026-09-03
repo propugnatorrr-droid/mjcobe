@@ -58,6 +58,9 @@ const configDefaults = {
   homeReleasedLimit: 3,
   homeJourneyLimit: 1,
   homePartnersLimit: 6,
+  /** Fan leaderboard rows shown in the homepage featured-campaign preview.
+   * The top sponsor stays a single row regardless of this setting. */
+  homeSupportersPreviewCount: 3,
 
   // Artist-level social profiles for the /now page. Admin-overridable;
   // blank hides that row rather than linking nowhere.

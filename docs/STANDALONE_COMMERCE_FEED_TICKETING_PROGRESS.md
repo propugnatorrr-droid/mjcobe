@@ -218,7 +218,78 @@ See git log — commit message `Prepare standalone commerce and moderation found
 
 ## Batch B — Homepage top-three supporters
 
-Status: not started yet in this pass (next).
+Status: **done**.
+
+- `lib/config/defaults.ts`: `homeSupportersPreviewCount: 3` (new setting,
+  admin-overridable via `/admin/settings` like every other `setting()`
+  key — no new admin UI needed).
+- `lib/home/queries.ts`: `HomeComposition.topFan` (singular) →
+  `topFans: LeaderboardRowData[]`. The fan-side `getLeaderboard(...)` call
+  now passes `homeSupportersPreviewCount` instead of a hard-coded `1`.
+  **Top sponsor is unchanged** — still `getLeaderboard(campaignId,
+  'business', 1)`, per the approved correction (§2.6: only the fan query
+  changes). No global fallback: `topFans` is `[]` whenever
+  `resolveFeaturedCampaign()` returns `null` (unset/ineligible configured
+  campaign), never silently pulled from anywhere else.
+- New `components/home/TopSupportersPreview.tsx` — reuses
+  `components/primitives/LeaderboardRow.tsx` (the same ranked-row
+  primitive the song page's full leaderboard already uses: medal icons
+  for 1st/2nd/3rd, avatar, tabular amount) instead of building a second
+  near-identical "top fan" widget. `row.slug` is already `null` for
+  anonymous/unapproved supporters (computed server-side in
+  `lib/campaign/queries.ts`'s `standingsFor()`), so linking straight off
+  it can never expose a profile link that shouldn't be public — no new
+  privacy logic needed, just correct reuse of what already exists.
+- `components/home/FeaturedCampaign.tsx`: `topFan` prop → `topFans`,
+  renders `<TopSupportersPreview>` instead of a single `<CampaignLeader>`
+  for the fan slot; sponsor slot (`<CampaignLeader icon={Crown} featured
+  logo>`) is byte-for-byte unchanged.
+- `lib/copy/defaults.ts`: `'home.top_fan_heading'` fallback text changed
+  from `'TOP FAN SUPPORTER'` to `'TOP SUPPORTERS'` (same key, no new copy
+  key needed — this key had no DB override anywhere yet, so repointing its
+  default text is safe).
+- Deleted `components/home/SpotlightRow.tsx` — re-confirmed
+  repo-wide-unused (only match was the file itself) immediately before
+  deleting, per the batch instruction to verify, not assume, before
+  removing it.
+- `app/styles/home.css`: `.home-top-supporters-list` (vertical stack,
+  zeroes out `LeaderboardRow`'s own horizontal padding so it sits flush
+  inside the existing `.home-campaign-leader` card).
+
+**No feature flag** — this widens an already-public feature (one more
+leaderboard row on a page that's already live) rather than exposing new
+surface area, so gating it felt like process overhead without a real
+safety benefit. Flagged in case that judgment call needs revisiting.
+
+**No new test file** — the invariants this batch touches (settled-only,
+anonymity, hidden-amount, moderation, refund/dispute handling via
+negative ledger entries) all live inside `getLeaderboard()`, which this
+batch does not modify — only the `limit` argument passed to it changes,
+from a literal `1` to a setting-driven value. Those invariants are
+already covered by the existing `ranking.test.ts` and `privacy.test.ts`
+suites. The only genuinely new code here is presentational (the wrapper
+component + CSS), which is why verification leaned on live rendering
+rather than a new unit test file.
+
+**Verification**: typecheck/lint/build/test all clean, same baseline as
+Batch A, no new issues. Live-checked in the dev server: the zero-fans
+case (no featured campaign currently configured in this dev DB → the
+existing "Nothing is currently building" empty state) renders cleanly,
+no console errors, no crash. **Could not visually confirm the actual
+3-row rendering against live data** — the only campaign in this
+database's current dev/prod state with real fan contributions
+("CAN'T READ YOUR MIND", 5 real backers including one anonymous) is not
+the currently-configured featured campaign, and changing
+`homeFeaturedCampaignId` to point at it would be a production settings
+mutation this session was told not to make unilaterally. **Manual
+follow-up for the user**: to see the top-3 list rendered against real
+data, temporarily set `homeFeaturedCampaignId` to `cant-read-your-mind`'s
+campaign id via `/admin/settings` and view the homepage — expect 3 ranked
+rows (Marcus $1,250, jasmine.reyes $825, KDot_ATL $600), with the 4th/5th
+real backers (darius__ $500, an anonymous $500) correctly excluded by the
+`limit: 3`, and the anonymous-handling/hidden-amount paths can be
+spot-checked once a supporter using those options is among the top 3 for
+whichever campaign is actually featured at the time.
 
 ## Batch C — Moderated feed foundation
 Status: not started.

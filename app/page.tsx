@@ -118,7 +118,7 @@ export default async function HomePage() {
       {home.featured ? (
         <FeaturedCampaign
           song={home.featured}
-          topFan={home.topFan}
+          topFans={home.topFans}
           topSponsor={home.topSponsor}
           copy={{
             sectionHeading: currentlyBuilding,

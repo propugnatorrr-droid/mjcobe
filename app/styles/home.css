@@ -561,6 +561,16 @@
   text-transform: uppercase;
 }
 
+.home-top-supporters-list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-top-supporters-list > div {
+  padding-inline: 0;
+}
+
 .home-campaign-leader-body {
   display: flex;
   min-width: 0;

@@ -325,7 +325,7 @@ const copyDefaults = {
   'home.currently_building': 'CURRENTLY BUILDING',
   'home.cta': 'BACK THIS SONG',
   'home.top_sponsor_heading': '#1 BUSINESS SPONSOR',
-  'home.top_fan_heading': 'TOP FAN SUPPORTER',
+  'home.top_fan_heading': 'TOP SUPPORTERS',
   'home.empty': 'Nothing is currently building. Check back soon.',
   'home.new_single': 'NEW SINGLE',
   'home.view_project': 'VIEW PROJECT',
