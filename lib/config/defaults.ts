@@ -61,6 +61,9 @@ const configDefaults = {
   /** Fan leaderboard rows shown in the homepage featured-campaign preview.
    * The top sponsor stays a single row regardless of this setting. */
   homeSupportersPreviewCount: 3,
+  /** Approved brand feed posts shown in the homepage preview row. Only
+   * queried/rendered at all when the `brandFeedEnabled` flag is on. */
+  homeFeedPreviewCount: 3,
 
   // Artist-level social profiles for the /now page. Admin-overridable;
   // blank hides that row rather than linking nowhere.

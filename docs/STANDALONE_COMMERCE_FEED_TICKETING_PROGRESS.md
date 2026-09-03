@@ -639,7 +639,55 @@ reuse the same submission link a second time (should show the generic
 same generic state, not a different one).
 
 ## Batch E — Feed navigation and homepage preview
-Status: not started.
+
+Status: **done**.
+
+- `lib/config/defaults.ts`: `homeFeedPreviewCount: 3` (new setting, same
+  admin-overridable pattern as `homeSupportersPreviewCount`).
+- `lib/copy/defaults.ts`: `nav.feed` (`'THE FEED'`). `home.feed_heading`/
+  `home.feed_cta` were already reserved in Batch C.
+- `components/SiteNav.tsx`: the `/feed` link is appended to the shared
+  `links` array **only when `flagEnabled('brandFeedEnabled')` is true** —
+  a nav link to a route that 404s with the flag off would be a broken
+  link, not a hidden feature. `MobileNavToggle` already maps over the same
+  array, so this covers both desktop and mobile nav with one change, no
+  separate mobile wiring needed.
+- `components/SiteFooter.tsx`: same flag-gated link added to the footer
+  nav row.
+- `lib/home/queries.ts`: `HomeComposition.latestFeedPosts: PublicFeedPost[]`
+  — **not queried at all when the flag is off** (checked before calling
+  `getLatestPublicFeedPosts()`, not just hidden at render time after an
+  unconditional fetch).
+- `components/home/FeedPreview.tsx` — new, mirrors `PartnerStrip.tsx`'s
+  section shape exactly (heading + "view the feed" link + content row),
+  reuses `FeedPostCard.tsx` from Batch C directly rather than a second
+  card component. Returns `null` when there are zero posts — never
+  fabricates placeholder content to fill the row, same contract as
+  `PartnerStrip`. **Static responsive grid, not a carousel**, per the
+  explicit instruction to avoid carousel accessibility/overflow risk
+  unless proven necessary.
+- `app/page.tsx`: `<FeedPreview>` wired in between `JourneySpotlight` and
+  `PartnerStrip`.
+- `app/styles/home.css`: `.home-feed-preview` section spacing, reusing the
+  existing `.home-partner-strip-heading`/`-view-all` classes rather than
+  duplicating them.
+
+### Verification
+`npm run typecheck && npm run lint && npm run build` — clean; lint scoped
+to this batch's files shows zero errors/warnings, full-repo lint shows the
+same pre-existing baseline as Batch D (nothing new). `npm test` — 185
+passing, same 1 pre-existing failing suite (unrelated, untouched). `npm
+run build` — succeeds. **Live-checked in the dev server** with the flag
+at its real default (off): homepage renders with no "THE FEED" nav link,
+no "FROM OUR PARTNERS" feed preview section, no console errors beyond the
+already-known-cosmetic HMR websocket noise; `/feed` still correctly
+renders the site's 404 page. **Not verified live**: the populated state
+(nav link present, preview grid rendering real approved posts) — same
+constraint as Batch C, no admin credentials and no live content to enable
+the flag against. Manual follow-up folds into the one already logged for
+Batch D: once a real submission exists and is approved, also confirm the
+homepage preview row and nav/footer links render correctly with
+`brandFeedEnabled` on.
 
 ## Batch F — Events and Journey integration
 Status: not started.

@@ -8,7 +8,7 @@ import {
   Video,
   type LucideIcon,
 } from 'lucide-react';
-import { setting } from '@/lib/config/settings';
+import { setting, flagEnabled } from '@/lib/config/settings';
 import { text } from '@/lib/copy/site-copy';
 
 type SocialDefinition = {
@@ -65,6 +65,8 @@ export async function SiteFooter() {
     privacy,
     contact,
     mediaKit,
+    feedLabel,
+    feedEnabled,
   ] = await Promise.all([
     text('footer.tagline'),
     text('footer.rights'),
@@ -73,6 +75,8 @@ export async function SiteFooter() {
     text('footer.privacy'),
     text('footer.contact'),
     text('footer.media_kit'),
+    text('nav.feed'),
+    flagEnabled('brandFeedEnabled'),
   ]);
 
   const socials = (
@@ -171,6 +175,15 @@ export async function SiteFooter() {
             >
               {mediaKit}
             </Link>
+
+            {feedEnabled ? (
+              <Link
+                href="/feed"
+                className="transition-colors hover:text-[var(--champagne)]"
+              >
+                {feedLabel}
+              </Link>
+            ) : null}
 
             <Link
               href="/legal/terms"

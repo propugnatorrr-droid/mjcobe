@@ -4,6 +4,7 @@ import { HomeCatalogRow } from '@/components/home/HomeCatalogRow';
 import { HomeFinalCta } from '@/components/home/HomeFinalCta';
 import { HomeHero } from '@/components/home/HomeHero';
 import { JourneySpotlight } from '@/components/home/JourneySpotlight';
+import { FeedPreview } from '@/components/home/FeedPreview';
 import { PartnerStrip } from '@/components/home/PartnerStrip';
 import { MobileCta } from '@/components/MobileCta';
 import { SectionHeading } from '@/components/primitives/SectionHeading';
@@ -54,6 +55,10 @@ export default async function HomePage() {
     partnersCta,
     finalCtaHeading,
     finalCtaSub,
+    feedHeading,
+    feedCta,
+    feedSponsoredBy,
+    feedViewPost,
   ] = await Promise.all([
     text('hero.artist_name'),
     text('hero.eyebrow'),
@@ -83,6 +88,10 @@ export default async function HomePage() {
     text('home.partners_cta'),
     text('home.final_cta_heading'),
     text('home.final_cta_sub'),
+    text('home.feed_heading'),
+    text('home.feed_cta'),
+    text('feed.sponsored_by'),
+    text('feed.view_post'),
   ]);
 
   const catalogLabels = {
@@ -175,6 +184,14 @@ export default async function HomePage() {
           cta={journeyCta}
         />
       ) : null}
+
+      <FeedPreview
+        posts={home.latestFeedPosts}
+        heading={feedHeading}
+        cta={feedCta}
+        sponsoredByLabel={feedSponsoredBy}
+        viewPostLabel={feedViewPost}
+      />
 
       <PartnerStrip
         partners={home.partners}

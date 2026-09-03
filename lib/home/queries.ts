@@ -13,7 +13,8 @@ import {
   getPartnersPage,
   type PartnerSponsor,
 } from '@/lib/partners/queries';
-import { setting } from '@/lib/config/settings';
+import { getLatestPublicFeedPosts, type PublicFeedPost } from '@/lib/feed/queries';
+import { setting, flagEnabled } from '@/lib/config/settings';
 
 export type HomeComposition = {
   featured: CatalogSong | null;
@@ -27,6 +28,9 @@ export type HomeComposition = {
   releasedSongs: CatalogSong[];
   latestJourney: JourneyEntry | null;
   partners: PartnerSponsor[];
+  /** Empty whenever brandFeedEnabled is off — never queried in that case,
+   * not just hidden at render time. */
+  latestFeedPosts: PublicFeedPost[];
 };
 
 function eligibleAsFeatured(song: CatalogSong) {
@@ -76,6 +80,8 @@ export const getHomeComposition = cache(
       releasedLimit,
       journeyLimit,
       partnersLimit,
+      feedEnabled,
+      feedPreviewCount,
     ] = await Promise.all([
       featured?.campaignId
         ? Promise.all([
@@ -91,9 +97,15 @@ export const getHomeComposition = cache(
       setting('homeReleasedLimit'),
       setting('homeJourneyLimit'),
       setting('homePartnersLimit'),
+      flagEnabled('brandFeedEnabled'),
+      setting('homeFeedPreviewCount'),
     ]);
 
     const [fanLeaderboard, sponsorLeaderboard] = leaderboards;
+
+    // Not queried at all when the flag is off — the whole point of a
+    // feature flag is that disabled means disabled, not "fetched but hidden".
+    const latestFeedPosts = feedEnabled ? await getLatestPublicFeedPosts(feedPreviewCount) : [];
 
     const buildingSongs = catalog
       .filter(
@@ -118,6 +130,7 @@ export const getHomeComposition = cache(
           ? (journeyEntries[0] ?? null)
           : null,
       partners: partnersPage.sponsors.slice(0, partnersLimit),
+      latestFeedPosts,
     };
   },
 );

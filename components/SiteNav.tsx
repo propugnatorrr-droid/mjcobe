@@ -6,6 +6,7 @@ import {
 import { ButtonLink } from '@/components/primitives/Button';
 import { Wordmark } from '@/components/primitives/Wordmark';
 import { text } from '@/lib/copy/site-copy';
+import { flagEnabled } from '@/lib/config/settings';
 
 export async function SiteNav({ sub }: { sub?: string }) {
   const [
@@ -16,6 +17,8 @@ export async function SiteNav({ sub }: { sub?: string }) {
     partners,
     mjcobe,
     cta,
+    feed,
+    feedEnabled,
   ] = await Promise.all([
     text('nav.home'),
     text('nav.music'),
@@ -24,6 +27,8 @@ export async function SiteNav({ sub }: { sub?: string }) {
     text('nav.partners'),
     text('nav.mj_cobe'),
     text('nav.cta'),
+    text('nav.feed'),
+    flagEnabled('brandFeedEnabled'),
   ]);
 
   const links: PrimaryNavLink[] = [
@@ -32,6 +37,10 @@ export async function SiteNav({ sub }: { sub?: string }) {
     { href: '/back', label: backASong },
     { href: '/journey', label: journey },
     { href: '/partners', label: partners },
+    // A nav link to a route that 404s when its flag is off would be a
+    // broken link, not a hidden feature — only listed once brandFeedEnabled
+    // is actually on, matching how /feed itself is gated.
+    ...(feedEnabled ? [{ href: '/feed', label: feed }] : []),
     { href: '/now', label: mjcobe },
   ];
 

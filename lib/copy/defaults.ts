@@ -317,6 +317,7 @@ const copyDefaults = {
   'nav.back_a_song': 'BACK A SONG',
   'nav.journey': 'JOURNEY',
   'nav.partners': 'PARTNERS',
+  'nav.feed': 'THE FEED',
   'nav.mj_cobe': 'MJ COBE',
   'nav.cta': 'BACK A RECORD',
 
