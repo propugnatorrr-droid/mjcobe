@@ -154,6 +154,17 @@ async function main() {
     { key: 'vault', enabled: false, description: 'Entitlement-gated content area.' },
     { key: 'referralLeaderboard', enabled: false },
     { key: 'simulationRibbon', enabled: true, description: 'Show SIMULATION MODE while payments are mocked.' },
+    // Shop/feed/events/ticketing — all off by default. Enabling one is a
+    // deliberate launch decision, never a side effect of shipping the code
+    // that implements it. See docs/STANDALONE_COMMERCE_FEED_TICKETING_PROGRESS.md.
+    { key: 'shopEnabled', enabled: false, description: 'Public /shop storefront and checkout.' },
+    { key: 'brandFeedEnabled', enabled: false, description: 'Public /feed of approved brand posts.' },
+    { key: 'brandSubmissionsEnabled', enabled: false, description: 'External /partners/submit brand submission form.' },
+    { key: 'eventsEnabled', enabled: false, description: 'Public /events pages and event Journey links.' },
+    { key: 'ticketSalesEnabled', enabled: false, description: 'Ticket checkout for events.' },
+    { key: 'ticketCheckInEnabled', enabled: false, description: 'Staff /admin/check-in scanner and redemption.' },
+    { key: 'homeFeedPreviewEnabled', enabled: false, description: 'Homepage preview row of approved feed posts.' },
+    { key: 'homeShopPreviewEnabled', enabled: false, description: 'Homepage preview row of featured shop products.' },
   ]);
 
   await db.insert(s.adminUsers).values({

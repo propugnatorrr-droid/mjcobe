@@ -639,6 +639,10 @@ export async function listSettings() {
   return db.select().from(s.settings).orderBy(s.settings.key);
 }
 
+export async function listFeatureFlags() {
+  return db.select().from(s.featureFlags).orderBy(s.featureFlags.key);
+}
+
 export async function listSiteCopy() {
   return db.select().from(s.siteCopy).orderBy(s.siteCopy.key);
 }

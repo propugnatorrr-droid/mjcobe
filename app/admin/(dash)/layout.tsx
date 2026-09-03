@@ -15,6 +15,7 @@ import {
   Receipt,
   Settings,
   ShieldCheck,
+  ToggleLeft,
   Wallet,
 } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
@@ -62,6 +63,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin/offline', label: admin.nav.offline, icon: Wallet },
     { href: '/admin/referrals', label: admin.nav.referrals, icon: Link2 },
     { href: '/admin/settings', label: admin.nav.settings, icon: Settings },
+    { href: '/admin/flags', label: admin.nav.flags, icon: ToggleLeft },
     { href: '/admin/copy', label: admin.nav.copy, icon: FileText },
     { href: '/admin/audit', label: admin.nav.audit, icon: ShieldCheck },
     { href: '/admin/blocklist', label: admin.nav.blocklist, icon: Ban },

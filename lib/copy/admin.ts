@@ -28,6 +28,7 @@ export const admin = {
     sponsorProfiles: 'PARTNER PROFILES',
     notifications: 'EMAIL DELIVERY',
     analytics: 'ANALYTICS',
+    flags: 'FEATURE FLAGS',
   },
 
   analytics: {
@@ -569,6 +570,17 @@ invoiceStatuses: {
     newKey: 'NEW KEY',
     newValue: 'VALUE (JSON)',
     invalidJson: 'That value is not valid JSON.',
+  },
+
+  flags: {
+    heading: 'FEATURE FLAGS',
+    hint:
+      'A flag with no row here is off by default. Creating a row with Enabled checked is what actually turns a feature on for visitors — nothing here goes live from code alone.',
+    newKey: 'NEW FLAG KEY',
+    description: 'DESCRIPTION',
+    enabled: 'ENABLED',
+    add: 'ADD',
+    empty: 'No flags have been created yet.',
   },
 
   copy: {
