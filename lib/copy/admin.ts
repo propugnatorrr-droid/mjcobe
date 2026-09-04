@@ -745,6 +745,19 @@ invoiceStatuses: {
     regenerateLink: 'REGENERATE CONFIRMATION LINK',
     regenerateLinkHint: 'Invalidates the previous link immediately. Use if it was shared somewhere it shouldn’t have been.',
     resendTickets: 'RESEND TICKET EMAIL',
+    fulfillment: {
+      heading: 'FULFILLMENT',
+      shipTo: 'SHIP TO',
+      status: 'STATUS',
+      carrier: 'CARRIER',
+      trackingNumber: 'TRACKING NUMBER',
+      notes: 'NOTES',
+      statuses: {
+        unfulfilled: 'UNFULFILLED',
+        fulfilled: 'FULFILLED',
+        partial: 'PARTIAL',
+      },
+    },
   },
 
   checkIn: {

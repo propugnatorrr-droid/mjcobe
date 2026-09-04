@@ -18,6 +18,8 @@ export const notificationKinds = [
   'campaign_ended',
   'brand_submission_invite',
   'ticket_order_confirmation',
+  'shop_order_confirmation',
+  'shop_shipment',
 ] as const;
 
 export type NotificationKind =
@@ -46,6 +48,18 @@ export type TicketOrderConfirmationPayload = {
   eventTitle: string;
   orderNumber: string;
   tickets: { displayCode: string; ticketUrl: string; eventTitle: string }[];
+};
+export type ShopOrderConfirmationPayload = {
+  orderNumber: string;
+  orderUrl: string;
+  items: { title: string; quantity: number; lineTotalCents: number }[];
+  totalCents: number;
+};
+export type ShopShipmentPayload = {
+  orderNumber: string;
+  orderUrl: string;
+  carrier: string | null;
+  trackingNumber: string | null;
 };
 
 export type OutbidPayload = {
@@ -435,6 +449,163 @@ function ticketOrderConfirmationEmail(
   };
 }
 
+function shopOrderConfirmationEmail(
+  recipientEmail: string,
+  payload: ShopOrderConfirmationPayload,
+): EmailMessage {
+  const subject = `Order confirmed — ${payload.orderNumber}`;
+
+  const text = [
+    'ORDER CONFIRMED',
+    '',
+    `Order ${payload.orderNumber}`,
+    '',
+    ...payload.items.map((item) => `${item.title} ×${item.quantity} — ${money(item.lineTotalCents)}`),
+    '',
+    `Total: ${money(payload.totalCents)}`,
+    '',
+    `View your order: ${payload.orderUrl}`,
+    '',
+    'MJ COBE',
+  ].join('\n');
+
+  const itemRows = payload.items
+    .map(
+      (item) => `
+              <tr>
+                <td style="padding:14px 0;border-bottom:1px solid #3e372b;color:#f5f0e7;font-size:15px">${escapeHtml(item.title)} ×${item.quantity}</td>
+                <td style="padding:14px 0;border-bottom:1px solid #3e372b;color:#c8c0b2;font-size:15px;text-align:right">${escapeHtml(money(item.lineTotalCents))}</td>
+              </tr>`,
+    )
+    .join('');
+
+  const html = `<!doctype html>
+<html lang="en">
+  <body style="margin:0;background:#090909;color:#f5f0e7;font-family:Arial,Helvetica,sans-serif">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#090909">
+      <tr>
+        <td align="center" style="padding:32px 16px">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;border:1px solid #3e372b;background:#111111">
+            <tr>
+              <td style="padding:38px 36px;border-bottom:1px solid #3e372b">
+                <div style="font-family:Georgia,Times,serif;font-size:27px;letter-spacing:5px;color:#d6b979">
+                  MJ COBE
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:42px 36px">
+                <div style="font-size:11px;letter-spacing:2px;color:#d6b979">
+                  ORDER CONFIRMED
+                </div>
+                <p style="margin:18px 0 22px;font-size:13px;color:#786f62">
+                  Order ${escapeHtml(payload.orderNumber)}
+                </p>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  ${itemRows}
+                  <tr>
+                    <td style="padding-top:16px;color:#f5f0e7;font-size:16px;font-weight:bold">Total</td>
+                    <td style="padding-top:16px;color:#d6b979;font-size:16px;font-weight:bold;text-align:right">${escapeHtml(money(payload.totalCents))}</td>
+                  </tr>
+                </table>
+                <div style="margin-top:28px">
+                  <a
+                    href="${escapeHtml(payload.orderUrl)}"
+                    style="display:inline-block;padding:15px 24px;background:#d6b979;color:#090909;text-decoration:none;font-size:11px;font-weight:bold;letter-spacing:2px"
+                  >
+                    VIEW YOUR ORDER
+                  </a>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  return {
+    to: recipientEmail,
+    from: fromAddress(),
+    subject,
+    html,
+    text,
+  };
+}
+
+function shopShipmentEmail(
+  recipientEmail: string,
+  payload: ShopShipmentPayload,
+): EmailMessage {
+  const subject = `Your order shipped — ${payload.orderNumber}`;
+
+  const trackingLine = payload.trackingNumber
+    ? `${payload.carrier ? payload.carrier + ' — ' : ''}${payload.trackingNumber}`
+    : 'Tracking details to follow.';
+
+  const text = [
+    'YOUR ORDER SHIPPED',
+    '',
+    `Order ${payload.orderNumber}`,
+    trackingLine,
+    '',
+    `View your order: ${payload.orderUrl}`,
+    '',
+    'MJ COBE',
+  ].join('\n');
+
+  const html = `<!doctype html>
+<html lang="en">
+  <body style="margin:0;background:#090909;color:#f5f0e7;font-family:Arial,Helvetica,sans-serif">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#090909">
+      <tr>
+        <td align="center" style="padding:32px 16px">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;border:1px solid #3e372b;background:#111111">
+            <tr>
+              <td style="padding:38px 36px;border-bottom:1px solid #3e372b">
+                <div style="font-family:Georgia,Times,serif;font-size:27px;letter-spacing:5px;color:#d6b979">
+                  MJ COBE
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:42px 36px">
+                <div style="font-size:11px;letter-spacing:2px;color:#d6b979">
+                  YOUR ORDER SHIPPED
+                </div>
+                <p style="margin:18px 0 8px;font-size:13px;color:#786f62">
+                  Order ${escapeHtml(payload.orderNumber)}
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;color:#f5f0e7">
+                  ${escapeHtml(trackingLine)}
+                </p>
+                <div style="margin-top:10px">
+                  <a
+                    href="${escapeHtml(payload.orderUrl)}"
+                    style="display:inline-block;padding:15px 24px;background:#d6b979;color:#090909;text-decoration:none;font-size:11px;font-weight:bold;letter-spacing:2px"
+                  >
+                    VIEW YOUR ORDER
+                  </a>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  return {
+    to: recipientEmail,
+    from: fromAddress(),
+    subject,
+    html,
+    text,
+  };
+}
+
 function outbidEmail(
   recipientEmail: string,
   payload: OutbidPayload,
@@ -554,6 +725,18 @@ export function buildNotificationEmail(
     return ticketOrderConfirmationEmail(
       recipientEmail,
       payload as TicketOrderConfirmationPayload,
+    );
+  }
+  if (kind === 'shop_order_confirmation') {
+    return shopOrderConfirmationEmail(
+      recipientEmail,
+      payload as ShopOrderConfirmationPayload,
+    );
+  }
+  if (kind === 'shop_shipment') {
+    return shopShipmentEmail(
+      recipientEmail,
+      payload as ShopShipmentPayload,
     );
   }
 

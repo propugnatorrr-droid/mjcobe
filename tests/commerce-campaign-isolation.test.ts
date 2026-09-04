@@ -19,6 +19,12 @@ import { resolve } from 'node:path';
 const COMMERCE_SOURCE_FILES = [
   'lib/commerce/orders.ts',
   'lib/commerce/reservations.ts',
+  'lib/shop/reservations.ts',
+  'lib/shop/fulfillment.ts',
+  'lib/shop/checkout-actions.ts',
+  'lib/shop/admin-actions.ts',
+  'lib/tickets/issue.ts',
+  'lib/tickets/checkin.ts',
 ];
 
 const FORBIDDEN_IDENTIFIERS = [

@@ -67,6 +67,8 @@ export async function SiteFooter() {
     mediaKit,
     feedLabel,
     feedEnabled,
+    shopLabel,
+    shopEnabled,
   ] = await Promise.all([
     text('footer.tagline'),
     text('footer.rights'),
@@ -77,6 +79,8 @@ export async function SiteFooter() {
     text('footer.media_kit'),
     text('nav.feed'),
     flagEnabled('brandFeedEnabled'),
+    text('nav.shop'),
+    flagEnabled('shopEnabled'),
   ]);
 
   const socials = (
@@ -182,6 +186,15 @@ export async function SiteFooter() {
                 className="transition-colors hover:text-[var(--champagne)]"
               >
                 {feedLabel}
+              </Link>
+            ) : null}
+
+            {shopEnabled ? (
+              <Link
+                href="/shop"
+                className="transition-colors hover:text-[var(--champagne)]"
+              >
+                {shopLabel}
               </Link>
             ) : null}
 

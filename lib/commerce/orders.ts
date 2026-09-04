@@ -9,6 +9,8 @@ import { attachReservationToOrder } from '@/lib/commerce/reservations';
 import { orderConfirmationToken, verifyOrderConfirmationToken } from '@/lib/commerce/order-credentials';
 import { issueTicketsForOrder } from '@/lib/tickets/issue';
 import { sendTicketOrderConfirmation } from '@/lib/tickets/notify';
+import { commitProductSale } from '@/lib/shop/fulfillment';
+import { sendShopOrderConfirmation } from '@/lib/shop/notify';
 
 const sha = (v: string) => createHash('sha256').update(v).digest('hex');
 
@@ -20,6 +22,16 @@ export type CreateOrderItemInput = {
   titleSnapshot: string;
   unitPriceCents: number;
   quantity: number;
+};
+
+export type ShippingAddressInput = {
+  recipientName: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  region?: string | null;
+  postalCode: string;
+  country: string;
 };
 
 export type CreateOrderInput = {
@@ -35,6 +47,9 @@ export type CreateOrderInput = {
   providerId?: ProviderId;
   simulateCard?: string;
   description?: string;
+  /** Shop orders only — inserted into order_addresses inside the same
+   * transaction as the order itself. */
+  shippingAddress?: ShippingAddressInput;
 };
 
 export type CreateOrderResult = {
@@ -95,6 +110,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       items: input.items.map((i) => ({ itemType: i.itemType, referenceId: i.referenceId, unitPriceCents: i.unitPriceCents, quantity: i.quantity })),
       totalCents,
       providerId: provider.id,
+      shippingAddress: input.shippingAddress ?? null,
     }),
   );
   const scope = `create_commerce_order:${payloadHash}`;
@@ -175,6 +191,20 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       await attachReservationToOrder(tx, reservationId, order.id);
     }
 
+    if (input.shippingAddress) {
+      await tx.insert(s.orderAddresses).values({
+        orderId: order.id,
+        kind: 'shipping',
+        recipientName: input.shippingAddress.recipientName,
+        line1: input.shippingAddress.line1,
+        line2: input.shippingAddress.line2 ?? null,
+        city: input.shippingAddress.city,
+        region: input.shippingAddress.region ?? null,
+        postalCode: input.shippingAddress.postalCode,
+        country: input.shippingAddress.country,
+      });
+    }
+
     const result: CreateOrderResult = {
       orderId: order.id,
       secureToken,
@@ -252,6 +282,13 @@ export async function settleOrder(paymentId: string): Promise<SettleOrderResult>
       await issueTicketsForOrder(tx, current.orderId);
     }
 
+    // Same idea for shop orders: converts the reservation into a
+    // permanent stockOnHand decrement + inventory_movements row, inside
+    // this same transaction. See lib/shop/fulfillment.ts's doc comment.
+    if (order?.orderType === 'shop') {
+      await commitProductSale(tx, current.orderId);
+    }
+
     // The reservation's job is done — the order's own items are now the
     // durable capacity record (see lib/commerce/reservations.ts's
     // `committed` query). Deleting it here, inside the same transaction
@@ -270,6 +307,11 @@ export async function settleOrder(paymentId: string): Promise<SettleOrderResult>
   if (result.ok && result.orderType === 'ticket' && 'orderId' in result) {
     await sendTicketOrderConfirmation(result.orderId).catch((error) => {
       console.error('[ticket-confirmation-email-failed]', { orderId: result.orderId, error });
+    });
+  }
+  if (result.ok && result.orderType === 'shop' && 'orderId' in result) {
+    await sendShopOrderConfirmation(result.orderId).catch((error) => {
+      console.error('[shop-order-confirmation-email-failed]', { orderId: result.orderId, error });
     });
   }
 

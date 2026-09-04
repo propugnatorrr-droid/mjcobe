@@ -112,6 +112,48 @@ export const getPublicProduct = cache(async (slug: string): Promise<PublicProduc
   return withDetails;
 });
 
+export type PurchasableVariant = {
+  variantId: string;
+  variantName: string;
+  priceCents: number;
+  isActive: boolean;
+  productId: string;
+  productTitle: string;
+  productSlug: string;
+  productStatus: string;
+  shippingRequired: boolean;
+};
+
+/**
+ * The single server-authoritative read for "can this variant currently be
+ * bought, and what does it actually cost" — used by BOTH the checkout
+ * page (to display cart contents) and the checkout action (to validate
+ * them), so the two can never drift apart. A stale/tampered cart cookie
+ * is never trusted for price or availability, matching
+ * loadPayableCampaign()'s discipline elsewhere in this codebase.
+ */
+export async function getVariantForCheckout(variantId: string): Promise<PurchasableVariant | null> {
+  const [row] = await db
+    .select({
+      variantId: s.productVariants.id,
+      variantName: s.productVariants.name,
+      priceCents: s.productVariants.priceCents,
+      isActive: s.productVariants.isActive,
+      productId: s.products.id,
+      productTitle: s.products.title,
+      productSlug: s.products.slug,
+      productStatus: s.products.status,
+      shippingRequired: s.products.shippingRequired,
+    })
+    .from(s.productVariants)
+    .innerJoin(s.products, eq(s.products.id, s.productVariants.productId))
+    .where(eq(s.productVariants.id, variantId))
+    .limit(1);
+
+  if (!row || !row.isActive || row.productStatus !== 'active') return null;
+  return row;
+}
+
 // --------------------------------------------------------------- admin ----
 
 export type AdminProduct = typeof s.products.$inferSelect;

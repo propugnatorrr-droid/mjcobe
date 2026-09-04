@@ -19,6 +19,8 @@ export async function SiteNav({ sub }: { sub?: string }) {
     cta,
     feed,
     feedEnabled,
+    shop,
+    shopEnabled,
   ] = await Promise.all([
     text('nav.home'),
     text('nav.music'),
@@ -29,6 +31,8 @@ export async function SiteNav({ sub }: { sub?: string }) {
     text('nav.cta'),
     text('nav.feed'),
     flagEnabled('brandFeedEnabled'),
+    text('nav.shop'),
+    flagEnabled('shopEnabled'),
   ]);
 
   const links: PrimaryNavLink[] = [
@@ -38,9 +42,10 @@ export async function SiteNav({ sub }: { sub?: string }) {
     { href: '/journey', label: journey },
     { href: '/partners', label: partners },
     // A nav link to a route that 404s when its flag is off would be a
-    // broken link, not a hidden feature — only listed once brandFeedEnabled
-    // is actually on, matching how /feed itself is gated.
+    // broken link, not a hidden feature — only listed once its flag is
+    // actually on, matching how /feed and /shop themselves are gated.
     ...(feedEnabled ? [{ href: '/feed', label: feed }] : []),
+    ...(shopEnabled ? [{ href: '/shop', label: shop }] : []),
     { href: '/now', label: mjcobe },
   ];
 

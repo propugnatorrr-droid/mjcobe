@@ -57,6 +57,25 @@ export const productVariants = pgTable('product_variants', {
   index('product_variants_product_idx').on(t.productId),
 ]);
 
+/** One row per shop order, tracking shipment state. Batch J-only — ticket
+ * orders never get a fulfillments row (there's nothing to ship). */
+export const fulfillments = pgTable('fulfillments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  /** Bare uuid, not a `.references()` FK — same cross-schema-file
+   * precedent as commerce_order_items.referenceId, avoiding an import
+   * cycle with commerce.ts. */
+  orderId: uuid('order_id').notNull(),
+  status: text('status').default('unfulfilled').notNull(), // unfulfilled | fulfilled | partial
+  carrier: text('carrier'),
+  trackingNumber: text('tracking_number'),
+  shippedAt: timestamp('shipped_at', { withTimezone: true }),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex('fulfillments_order_idx').on(t.orderId),
+]);
+
 /** Append-only audit trail for stock adjustments — mirrors ledger_entries'
  * "never mutate, always append" discipline even though this isn't a money
  * table. `product_variants.stockOnHand` is a fast-read cache kept in sync

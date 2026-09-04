@@ -6,6 +6,7 @@ import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
 import { MobileCta } from '@/components/MobileCta';
 import { getPublicProduct } from '@/lib/shop/queries';
+import { AddToCartButton } from '@/components/shop/AddToCartButton';
 import { flagEnabled } from '@/lib/config/settings';
 import { text } from '@/lib/copy/site-copy';
 import { formatCents, cents } from '@/lib/money/cents';
@@ -34,11 +35,11 @@ export default async function ProductDetailPage({ params }: Props) {
     notFound();
   }
 
-  const [backToShop, inStockLabel, outOfStockLabel, checkoutNotAvailable] = await Promise.all([
+  const [backToShop, inStockLabel, outOfStockLabel, addToCartLabel] = await Promise.all([
     text('shop.back_to_shop'),
     text('shop.in_stock'),
     text('shop.out_of_stock'),
-    text('shop.checkout_not_yet_available'),
+    text('shop.add_to_cart'),
   ]);
 
   return (
@@ -89,14 +90,15 @@ export default async function ProductDetailPage({ params }: Props) {
                       {variant.inStock ? inStockLabel : outOfStockLabel}
                     </p>
                   </div>
-                  <span className="whitespace-nowrap font-mono text-base tabular-nums text-[var(--text)]">
-                    {formatCents(cents(variant.priceCents))}
-                  </span>
+                  <div className="flex items-center gap-4">
+                    <span className="whitespace-nowrap font-mono text-base tabular-nums text-[var(--text)]">
+                      {formatCents(cents(variant.priceCents))}
+                    </span>
+                    <AddToCartButton variantId={variant.id} label={addToCartLabel} disabled={!variant.inStock} />
+                  </div>
                 </li>
               ))}
             </ul>
-
-            <p className="mt-4 text-sm text-[var(--text-dim)]">{checkoutNotAvailable}</p>
           </section>
         ) : null}
       </article>

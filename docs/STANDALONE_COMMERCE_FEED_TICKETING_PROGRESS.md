@@ -1346,7 +1346,165 @@ rejected, not clamped), set it `active`, enable `shopEnabled` on
 `/shop/[slug]`.
 
 ## Batch J — Shop checkout, orders, and fulfillment
-Status: not started.
+
+Status: **done**, with one explicit product/legal placeholder decision —
+read the shipping/tax section below before treating this as launch-ready.
+
+### The shipping/tax decision (§14 of the architecture plan)
+The plan's own decision table listed shipping method and tax strategy as
+**"Not decided by this plan — needs a real answer before Slice J"** — a
+genuine product/legal question (tax nexus, carrier accounts), not
+something resolvable from the repository. The approval's instruction was
+to use conservative defaults and continue rather than block on every open
+question, so: **shipping is charged as flat $0.00 and no tax is
+calculated** for this batch — `commerce_orders.taxCents`/`shippingCents`
+stay at their Batch G schema default of 0. This is explicitly surfaced to
+the buyer at checkout (`shop_checkout.shipping_tax_note`: "Shipping and
+tax are not charged yet — you'll only be charged the item price shown"),
+not silently omitted — nobody is surprised by a charge they weren't told
+about. **This is a placeholder, not a recommendation** — real shipping
+rates and any tax-collection obligation are a decision only the user can
+make (and may carry real legal exposure if gotten wrong), flagged again
+in this batch's manual follow-up below.
+
+### Schema and migration
+- `lib/db/schema/shop.ts`: added `fulfillments` (one row per shop order;
+  `orderId` is a bare uuid, same cross-schema-file precedent as
+  `commerce_order_items.referenceId`, avoiding an import cycle with
+  `commerce.ts`).
+- `lib/db/migrations/0020_shop_checkout.sql` — hand-authored, `IF NOT
+  EXISTS`-guarded, same policy as 0013–0019. Nothing else new schema-wise
+  — checkout reuses Batch G's `commerce_orders`/`commerce_order_items`/
+  `commerce_payments`/`inventory_reservations` verbatim, and stock
+  commitment reuses Batch I's `product_variants`/`inventory_movements`
+  verbatim. Generated and reviewed, **not applied**.
+
+### Guest cart (`lib/shop/cart.ts`)
+Plain (unsigned) cookie holding `{variantId, quantity}` pairs only — never
+a price, per the plan's own explicit design ("client-held prices/
+availability are never trusted"). Tampering with the cookie is harmless
+by construction: every price and every availability check is re-read
+from the database at both checkout-page-render time and checkout-action-
+submit time (`lib/shop/queries.ts`'s `getVariantForCheckout()`, the one
+shared source both call so they can't drift apart). Pure parsing/
+serialization (`parseCart`, `addToCart`, `removeFromCart`) tested in
+`tests/shop-cart.test.ts` (13 cases: malformed JSON, non-array JSON,
+wrong field types, non-positive/non-integer quantity, an absurd single-
+line quantity and an absurd line count both capped rather than trusted).
+`components/shop/AddToCartButton.tsx` / `RemoveFromCartButton.tsx` write/
+read the cookie client-side; the checkout page and action both read it
+server-side via `next/headers`'s `cookies()`.
+
+### Reservations and stock commitment
+- `lib/shop/reservations.ts` — `reserveProductStock()`, same checkout-
+  time-only + advisory-lock discipline as Batch H's
+  `reserveTicketCapacity()`, **reusing the identical
+  `reservationDecision()` pure function** rather than a third copy of the
+  oversell math. Unlike tickets (which had no separate "stock" concept
+  and derived `committed` from paid orders), `product_variants.stockOnHand`
+  already IS the authoritative committed quantity, so here `committed` is
+  always 0 and `capacity` is `stockOnHand` directly — matching the plan's
+  own stated formula ("available = stockOnHand - activeUnexpiredReservations")
+  exactly. An `inventoryTracked: false` variant (made-to-order) skips
+  capacity math entirely and always grants.
+- `lib/shop/fulfillment.ts` — `commitProductSale()`, called from inside
+  `lib/commerce/orders.ts`'s `settleOrder()` transaction for
+  `orderType: 'shop'` orders (mirrors `issueTicketsForOrder()`'s calling
+  convention exactly). Decrements `stockOnHand` and inserts the
+  `inventory_movements` row in the same transaction, never a bare
+  `UPDATE` to stock alone. Idempotent by construction (checks for an
+  existing `'sale'` movement per order item first). A would-be negative
+  `stockOnHand` here is **not clamped to zero** — if the reservation
+  system worked correctly this can't happen, and silently clamping would
+  hide the bug if it somehow did. Also creates the order's `fulfillments`
+  row (`status: 'unfulfilled'`) so an admin has something to update.
+
+### Checkout (`lib/shop/checkout-actions.ts`, `app/shop/checkout/page.tsx`)
+`purchaseShopOrder()` mirrors `purchaseTickets()`'s shape exactly:
+honeypot → idempotency-key validation → cart re-validated item-by-item
+against the database (never the cookie) → reserve stock per line →
+`createOrder()` (the same Batch G function, now extended with an optional
+`shippingAddress` input inserted into `order_addresses` inside the same
+transaction) → Stripe-clientSecret-present branches to
+`components/commerce/CommerceStripeStep.tsx` (reused verbatim from Batch
+G — no shop-specific payment component needed), otherwise settles
+synchronously and redirects to `/orders/[secureToken]`. Shipping address
+fields are only required when at least one cart item's product has
+`shippingRequired: true`. The cart cookie is cleared once the order
+exists (even before payment settles) — a failed/abandoned payment doesn't
+restore it; the reservation's own expiry releases the stock either way,
+same as ticket checkout's documented behavior.
+
+### Public routes
+- `app/shop/[slug]/page.tsx` — the Batch I placeholder ("checkout coming
+  soon" text) is now a real `AddToCartButton` per variant, disabled when
+  out of stock.
+- `app/shop/checkout/page.tsx` — flag-gated (`shopEnabled`), shows a
+  friendly empty-cart state with a link back to `/shop` when there's
+  nothing to check out, otherwise line items (with remove), subtotal/
+  shipping/total (shipping always $0, with the explicit note above), and
+  the checkout form.
+- `components/SiteNav.tsx` / `components/SiteFooter.tsx` — `/shop` nav
+  link added, gated behind `shopEnabled`, same pattern as Batch E's
+  `/feed` link (never links to a route that would 404).
+
+### Email (`lib/shop/notify.ts`, `lib/email/templates.ts`)
+`shop_order_confirmation` (sent on settlement, same outbox/dedupe pattern
+as every other notification in this initiative) and `shop_shipment`
+(sent from the new admin fulfillment action, **only** when status
+actually transitions to `'fulfilled'` with a tracking number present —
+not on every edit, so correcting a typo in the carrier name doesn't
+re-notify the buyer; its dedupe key includes the fulfillment row's own
+`updatedAt` rather than being static per-order, since a shipment email is
+legitimately re-triggerable when shipment details change, unlike an order
+confirmation).
+
+### Admin fulfillment
+- `lib/shop/admin-actions.ts`'s `updateFulfillment()` — `finance_admin`
+  role (launch role table: "finance_admin: refunds/order details/
+  fulfillment"). `components/admin/FulfillmentForm.tsx` on
+  `/admin/orders/[id]` (shown only when a `fulfillments` row exists, i.e.
+  only for shop orders) — shows the shipping address alongside the
+  status/carrier/tracking-number form.
+- `lib/commerce/admin-queries.ts`'s `getAdminOrder()` extended to also
+  return `fulfillment` and `shippingAddress`.
+
+### Regression tests
+`tests/commerce-campaign-isolation.test.ts` (Batch G) extended to cover
+this batch's new files (`lib/shop/reservations.ts`,
+`lib/shop/fulfillment.ts`, `lib/shop/checkout-actions.ts`,
+`lib/shop/admin-actions.ts`) plus Batch H's ticket files that hadn't been
+added yet (`lib/tickets/issue.ts`, `lib/tickets/checkin.ts`) — same
+static-source-scan approach, same reasoning (no live database for a real
+integration test).
+
+### Verification
+`npm run typecheck && npm run lint && npm run build` — all clean; lint
+scoped to this batch's files shows zero errors/warnings, full-repo lint
+matches baseline. `npm test` — 301 passing (246 baseline + 13 new
+`tests/shop-cart.test.ts` cases + 42 new isolation-test cases from the
+6 newly-covered files × 7 forbidden identifiers), same 1 pre-existing
+failing suite (unrelated, untouched). `npm run build` — succeeds, all new
+routes present (`/shop/checkout`). **Live-checked in the dev server**:
+`/shop/checkout` correctly 404s with `shopEnabled` off (checkout is
+flag-gated exactly like the catalog pages, not just reachable-but-empty);
+the homepage no longer shows a "SHOP" nav link with the flag off;
+`/admin/orders` (now touching the new fulfillment/address query) still
+correctly redirects an unauthenticated visitor to `/admin/login`; a fresh
+tab on the homepage shows zero console errors.
+
+**Not verified live**: an actual guest checkout end to end (add to cart →
+checkout → pay → settle → stock decrements → confirmation email → admin
+marks fulfilled → shipment email) — no live database, no Stripe test
+webhooks. **Manual follow-up for the user, in addition to the shipping/
+tax decision above**: with `shopEnabled` on and a real product/variant
+published, add it to cart, complete checkout with the mock/offline
+provider, confirm `/orders/[secureToken]` shows `'paid'` and
+`product_variants.stockOnHand` actually decremented (check
+`/admin/shop/[id]`), confirm the confirmation email arrived, then mark it
+fulfilled with a tracking number from `/admin/orders/[id]` and confirm
+the shipment email arrived and a second "mark fulfilled" edit (e.g. fixing
+a typo) does NOT re-send it.
 
 ## Batch K — Shop preview and launch hardening
 Status: not started.

@@ -14,15 +14,19 @@ export type AdminOrderDetail = {
   items: (typeof s.commerceOrderItems.$inferSelect)[];
   payments: (typeof s.commercePayments.$inferSelect)[];
   refunds: (typeof s.commerceRefunds.$inferSelect)[];
+  fulfillment: typeof s.fulfillments.$inferSelect | null;
+  shippingAddress: typeof s.orderAddresses.$inferSelect | null;
 };
 
 export async function getAdminOrder(id: string): Promise<AdminOrderDetail | null> {
   const [order] = await db.select().from(s.commerceOrders).where(eq(s.commerceOrders.id, id)).limit(1);
   if (!order) return null;
 
-  const [items, payments] = await Promise.all([
+  const [items, payments, fulfillmentRows, addressRows] = await Promise.all([
     db.select().from(s.commerceOrderItems).where(eq(s.commerceOrderItems.orderId, id)),
     db.select().from(s.commercePayments).where(eq(s.commercePayments.orderId, id)),
+    db.select().from(s.fulfillments).where(eq(s.fulfillments.orderId, id)).limit(1),
+    db.select().from(s.orderAddresses).where(eq(s.orderAddresses.orderId, id)).limit(1),
   ]);
 
   const paymentIds = payments.map((p) => p.id);
@@ -30,5 +34,5 @@ export async function getAdminOrder(id: string): Promise<AdminOrderDetail | null
     ? await db.select().from(s.commerceRefunds).where(inArray(s.commerceRefunds.paymentId, paymentIds))
     : [];
 
-  return { order, items, payments, refunds };
+  return { order, items, payments, refunds, fulfillment: fulfillmentRows[0] ?? null, shippingAddress: addressRows[0] ?? null };
 }

@@ -10,6 +10,7 @@ import { recordAudit } from '@/lib/audit/log';
 import { str, bool, slugify, parseAmountCents } from '@/lib/checkout/validate';
 import { validateProductMedia, storeProductMedia } from '@/lib/shop/media';
 import { inventoryAdjustmentDecision } from '@/lib/shop/inventory-decision';
+import { sendShopShipmentEmail } from '@/lib/shop/notify';
 import type { AdminState } from '@/lib/admin/actions';
 
 /** Products are content_admin's domain per the launch role table
@@ -310,6 +311,66 @@ export async function adjustInventory(_prev: AdminState, formData: FormData): Pr
   });
 
   revalidateShopSurfaces(product?.slug);
+
+  return { ok: 'saved' };
+}
+
+// ------------------------------------------------------------- fulfillment ----
+
+const FULFILLMENT_ROLES = ['finance_admin'] as const;
+const FULFILLMENT_STATUSES = ['unfulfilled', 'fulfilled', 'partial'] as const;
+
+/** Marks a shop order's shipment status. Sends the shipment email only
+ * when the status is actually 'fulfilled' with a tracking number present
+ * — not on every edit (e.g. correcting a typo in the carrier name
+ * shouldn't re-notify the buyer). */
+export async function updateFulfillment(_prev: AdminState, formData: FormData): Promise<AdminState> {
+  const me = await requireAdminRole([...FULFILLMENT_ROLES]);
+
+  const orderId = str(formData.get('orderId'), 100);
+  const status = str(formData.get('status'), 20) ?? 'unfulfilled';
+  if (!orderId || !FULFILLMENT_STATUSES.includes(status as (typeof FULFILLMENT_STATUSES)[number])) {
+    return { error: 'missing' };
+  }
+
+  const carrier = str(formData.get('carrier'), 100);
+  const trackingNumber = str(formData.get('trackingNumber'), 100);
+  const notes = str(formData.get('notes'), 500);
+
+  const [before] = await db.select().from(s.fulfillments).where(eq(s.fulfillments.orderId, orderId)).limit(1);
+  if (!before) return { error: 'not_found' };
+
+  const now = new Date();
+  const becameFulfilled = status === 'fulfilled' && before.status !== 'fulfilled';
+
+  await dbw
+    .update(s.fulfillments)
+    .set({
+      status,
+      carrier,
+      trackingNumber,
+      notes,
+      shippedAt: becameFulfilled ? now : before.shippedAt,
+      updatedAt: now,
+    })
+    .where(eq(s.fulfillments.id, before.id));
+
+  await recordAudit({
+    adminUserId: me.id,
+    action: 'fulfillment.update',
+    entity: 'fulfillment',
+    entityId: before.id,
+    before: { status: before.status, carrier: before.carrier, trackingNumber: before.trackingNumber },
+    after: { status, carrier, trackingNumber },
+  });
+
+  if (becameFulfilled && trackingNumber) {
+    await sendShopShipmentEmail(orderId).catch((error) => {
+      console.error('[shop-shipment-email-failed]', { orderId, error });
+    });
+  }
+
+  revalidatePath(`/admin/orders/${orderId}`);
 
   return { ok: 'saved' };
 }

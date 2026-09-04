@@ -3,6 +3,7 @@ import { getAdminOrder } from '@/lib/commerce/admin-queries';
 import { OrderRefundForm } from '@/components/admin/OrderRefundForm';
 import { RegenerateOrderLinkForm } from '@/components/admin/RegenerateOrderLinkForm';
 import { ResendTicketsForm } from '@/components/admin/ResendTicketsForm';
+import { FulfillmentForm } from '@/components/admin/FulfillmentForm';
 import { AdminHeading, AdminHint, StateDot, Table, Td } from '@/components/admin/ui';
 import { formatCents, cents } from '@/lib/money/cents';
 import { admin } from '@/lib/copy/admin';
@@ -19,7 +20,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
     notFound();
   }
 
-  const { order, items, payments, refunds } = result;
+  const { order, items, payments, refunds, fulfillment, shippingAddress } = result;
   const settledPayment = payments.find((p) => p.state === 'settled');
 
   return (
@@ -91,6 +92,12 @@ export default async function AdminOrderDetailPage({ params }: Props) {
         <div className="mt-10 max-w-2xl">
           <p className="mb-4 font-mono text-eyebrow uppercase text-[var(--text-dim)]">{admin.orders.issueRefund}</p>
           <OrderRefundForm orderId={order.id} paymentId={settledPayment.id} />
+        </div>
+      ) : null}
+
+      {fulfillment ? (
+        <div className="mt-10">
+          <FulfillmentForm orderId={order.id} fulfillment={fulfillment} shippingAddress={shippingAddress} />
         </div>
       ) : null}
     </>
