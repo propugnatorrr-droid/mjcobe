@@ -14,6 +14,7 @@ import {
   type PartnerSponsor,
 } from '@/lib/partners/queries';
 import { getLatestPublicFeedPosts, type PublicFeedPost } from '@/lib/feed/queries';
+import { listFeaturedPublicProducts, type PublicProduct } from '@/lib/shop/queries';
 import { setting, flagEnabled } from '@/lib/config/settings';
 
 export type HomeComposition = {
@@ -31,6 +32,8 @@ export type HomeComposition = {
   /** Empty whenever brandFeedEnabled is off — never queried in that case,
    * not just hidden at render time. */
   latestFeedPosts: PublicFeedPost[];
+  /** Empty whenever shopEnabled is off — same discipline as latestFeedPosts. */
+  featuredProducts: PublicProduct[];
 };
 
 function eligibleAsFeatured(song: CatalogSong) {
@@ -82,6 +85,8 @@ export const getHomeComposition = cache(
       partnersLimit,
       feedEnabled,
       feedPreviewCount,
+      shopEnabled,
+      shopPreviewCount,
     ] = await Promise.all([
       featured?.campaignId
         ? Promise.all([
@@ -99,6 +104,8 @@ export const getHomeComposition = cache(
       setting('homePartnersLimit'),
       flagEnabled('brandFeedEnabled'),
       setting('homeFeedPreviewCount'),
+      flagEnabled('shopEnabled'),
+      setting('homeShopPreviewCount'),
     ]);
 
     const [fanLeaderboard, sponsorLeaderboard] = leaderboards;
@@ -106,6 +113,7 @@ export const getHomeComposition = cache(
     // Not queried at all when the flag is off — the whole point of a
     // feature flag is that disabled means disabled, not "fetched but hidden".
     const latestFeedPosts = feedEnabled ? await getLatestPublicFeedPosts(feedPreviewCount) : [];
+    const featuredProducts = shopEnabled ? await listFeaturedPublicProducts(shopPreviewCount) : [];
 
     const buildingSongs = catalog
       .filter(
@@ -131,6 +139,7 @@ export const getHomeComposition = cache(
           : null,
       partners: partnersPage.sponsors.slice(0, partnersLimit),
       latestFeedPosts,
+      featuredProducts,
     };
   },
 );

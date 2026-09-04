@@ -9,6 +9,8 @@ import { getPublicEvent, formatEventDateTime } from '@/lib/events/queries';
 import { flagEnabled } from '@/lib/config/settings';
 import { text } from '@/lib/copy/site-copy';
 import { formatCents, cents } from '@/lib/money/cents';
+import { siteUrl } from '@/lib/email/templates';
+import { safeJsonLd } from '@/lib/seo/json-ld';
 import type { CopyKey } from '@/lib/copy/defaults';
 
 export const revalidate = 60;
@@ -54,8 +56,41 @@ export default async function EventDetailPage({ params }: Props) {
 
   const addressParts = [event.addressLine1, event.addressLine2, event.city, event.region, event.postalCode, event.country].filter(Boolean);
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: event.title,
+    description: event.description ?? undefined,
+    startDate: event.startsAt.toISOString(),
+    endDate: event.endsAt?.toISOString(),
+    eventStatus:
+      event.status === 'canceled'
+        ? 'https://schema.org/EventCancelled'
+        : event.status === 'postponed'
+          ? 'https://schema.org/EventPostponed'
+          : 'https://schema.org/EventScheduled',
+    location: {
+      '@type': 'Place',
+      name: event.venueName,
+      address: addressParts.length > 0 ? addressParts.join(', ') : undefined,
+    },
+    image: event.heroPath ?? undefined,
+    url: `${siteUrl()}/events/${event.slug}`,
+    offers:
+      event.ticketTypes.length > 0
+        ? event.ticketTypes.map((tier) => ({
+            '@type': 'Offer',
+            name: tier.name,
+            priceCurrency: 'USD',
+            price: (tier.priceCents / 100).toFixed(2),
+            url: `${siteUrl()}/events/${event.slug}/tickets`,
+          }))
+        : undefined,
+  };
+
   return (
     <main id="main-content" className="surface-ink min-h-screen">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <SiteNav sub={event.title} />
 
       <article className="site-shell section-space-compact">

@@ -64,6 +64,9 @@ const configDefaults = {
   /** Approved brand feed posts shown in the homepage preview row. Only
    * queried/rendered at all when the `brandFeedEnabled` flag is on. */
   homeFeedPreviewCount: 3,
+  /** Featured products shown in the homepage preview row. Only queried/
+   * rendered at all when the `shopEnabled` flag is on. */
+  homeShopPreviewCount: 3,
 
   // Artist-level social profiles for the /now page. Admin-overridable;
   // blank hides that row rather than linking nowhere.

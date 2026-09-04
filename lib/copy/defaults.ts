@@ -627,6 +627,8 @@ const copyDefaults = {
   'shop_checkout.shipping_tax_note': 'Shipping and tax are not charged yet — you’ll only be charged the item price shown.',
 
   'home.feed_heading': 'FROM OUR PARTNERS',
+  'home.shop_heading': 'FROM THE SHOP',
+  'home.shop_cta': 'VISIT THE SHOP',
   'home.feed_cta': 'VIEW THE FEED',
 
   // ---- /now (link-in-bio) page ----------------------------------------------

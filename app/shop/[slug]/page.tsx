@@ -10,6 +10,8 @@ import { AddToCartButton } from '@/components/shop/AddToCartButton';
 import { flagEnabled } from '@/lib/config/settings';
 import { text } from '@/lib/copy/site-copy';
 import { formatCents, cents } from '@/lib/money/cents';
+import { siteUrl } from '@/lib/email/templates';
+import { safeJsonLd } from '@/lib/seo/json-ld';
 
 export const revalidate = 60;
 
@@ -42,8 +44,28 @@ export default async function ProductDetailPage({ params }: Props) {
     text('shop.add_to_cart'),
   ]);
 
+  const cheapestVariant = product.variants[0];
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description: product.description ?? undefined,
+    image: product.media[0]?.path,
+    url: `${siteUrl()}/shop/${product.slug}`,
+    offers: cheapestVariant
+      ? {
+          '@type': 'Offer',
+          priceCurrency: 'USD',
+          price: (cheapestVariant.priceCents / 100).toFixed(2),
+          availability: product.variants.some((v) => v.inStock) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          url: `${siteUrl()}/shop/${product.slug}`,
+        }
+      : undefined,
+  };
+
   return (
     <main id="main-content" className="surface-ink min-h-screen">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <SiteNav sub={product.title} />
 
       <article className="site-shell section-space-compact">

@@ -78,6 +78,26 @@ async function attachMediaAndVariants<T extends { id: string }>(products: T[]): 
   }));
 }
 
+/** The N most recent featured, active products — for the homepage
+ * preview row. Featured-only (not just "active"), matching the plan's
+ * intent that this row is curated, not a full catalog dump. */
+export const listFeaturedPublicProducts = cache(async (limit: number): Promise<PublicProduct[]> => {
+  const rows = await db
+    .select({
+      id: s.products.id,
+      slug: s.products.slug,
+      title: s.products.title,
+      description: s.products.description,
+      featured: s.products.featured,
+    })
+    .from(s.products)
+    .where(and(publiclyVisibleWhere(), eq(s.products.featured, true)))
+    .orderBy(asc(s.products.sortIndex), desc(s.products.createdAt))
+    .limit(Math.max(0, limit));
+
+  return attachMediaAndVariants(rows);
+});
+
 export const listPublicProducts = cache(async (): Promise<PublicProduct[]> => {
   const rows = await db
     .select({

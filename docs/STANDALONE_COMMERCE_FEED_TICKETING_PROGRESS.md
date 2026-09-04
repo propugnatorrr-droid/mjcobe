@@ -1507,9 +1507,259 @@ the shipment email arrived and a second "mark fulfilled" edit (e.g. fixing
 a typo) does NOT re-send it.
 
 ## Batch K — Shop preview and launch hardening
-Status: not started.
+
+Status: **done**. All 11 batches (A–K) of the approved plan are now
+complete and committed locally. See this file's very last section for
+the full final report; this section covers Batch K's own work only.
+
+### Homepage shop preview
+- `lib/config/defaults.ts`: `homeShopPreviewCount: 3`.
+- `lib/shop/queries.ts`: `listFeaturedPublicProducts(limit)` — active AND
+  `featured: true` only, matching the plan's intent that this row is
+  curated, not a full catalog dump (unlike `listPublicProducts()`, which
+  is every active product).
+- `lib/home/queries.ts`: `HomeComposition.featuredProducts` — not queried
+  at all when `shopEnabled` is off, same discipline as `latestFeedPosts`.
+- `components/home/ShopPreview.tsx` — same shape as `FeedPreview.tsx`
+  (Batch E): static grid, not a carousel, returns `null` rather than
+  fabricate content when empty. Wired into `app/page.tsx` right after
+  `FeedPreview`.
+
+### Nav/footer
+`components/SiteNav.tsx` / `components/SiteFooter.tsx`: `/shop` link
+added, flag-gated behind `shopEnabled`, same pattern as the `/feed` link
+from Batch E — never links to a route that would 404.
+
+### SEO / structured data
+`lib/seo/json-ld.ts` (new) — `safeJsonLd()`, a shared escaping helper
+(`JSON.stringify` alone doesn't escape `</script>`; cheap to guard even
+though all embedded content here is admin-authored/trusted). Added
+`Product` JSON-LD to `/shop/[slug]` and `Event` JSON-LD (with per-ticket-
+type `Offer`s and a cancelled/postponed/scheduled `eventStatus`) to
+`/events/[slug]`. Not added to `/feed/[slug]` — brand feed posts don't map
+cleanly onto an existing schema.org type without misrepresenting them
+(they're not quite `Article`, not quite `SocialMediaPosting`), and
+guessing wrong would be worse than omitting it.
+
+### Operational documentation
+`docs/COMMERCE_EVENTS_OPERATIONS.md` (new, required by the plan) — the
+day-to-day runbook: required env vars (including the two new signing
+secrets), a feature-flag table with exactly which migrations each one
+depends on, the admin role table, common operational tasks (issue an
+invite, approve a post, publish a ticketed event, check in attendees,
+refund an order, ship a package, adjust inventory), and the known-gaps
+list. Writing it surfaced two real, previously-undocumented gaps: the
+`ticketCheckInEnabled`, `homeFeedPreviewEnabled`, and
+`homeShopPreviewEnabled` flags were seeded in Batch A but are **never
+actually referenced by any gating code** — the features they were meant
+to control independently ended up folded into their parent flags
+(`ticketSalesEnabled`/`brandFeedEnabled`/`shopEnabled`) instead. Verified
+by grep before writing it down as fact, not assumed. Not fixed —
+documenting it accurately is this batch's job; deciding whether to wire
+them up separately or remove them is a product call for later.
+
+### Final code audit
+Per the plan approval's own required checklist, run against the
+completed initiative:
+
+| Check | Result |
+|---|---|
+| Direct Stripe imports outside `lib/payments` | Only `app/api/webhooks/stripe/route.ts` — a type-only import (`import type Stripe`) plus the existing `stripeClient()` wrapper, which is the one place that legitimately needs it. Pre-existing, unchanged by this initiative. |
+| Commerce/shop/ticket code writing to campaign tables | None found (grep across `lib/commerce`, `lib/shop`, `lib/tickets`, `lib/events` for every campaign-table Drizzle identifier — one match was a false positive, the copy-object key `admin.orders.refunds`, not a table reference). Backed by `tests/commerce-campaign-isolation.test.ts`. |
+| Raw credentials/tokens in logs | None — every `console.error` in the new domains logs only IDs (`orderId`, `providerRef`) and generic error objects, never a raw ticket/order/invite credential. |
+| PII in analytics | None — the new checkout/ticketing/shop code never calls `trackAnalytics()` at all (not wired in this initiative; a documented scope reduction, not a leak). |
+| Missing audit/authorization on admin mutations | Checked every exported function in `lib/feed/admin-actions.ts`, `lib/feed/invite-actions.ts`, `lib/events/admin-actions.ts`, `lib/commerce/admin-actions.ts`, `lib/shop/admin-actions.ts`, `lib/tickets/admin-actions.ts` individually. All authenticate+authorize (`requireAdminRole`) and audit. One apparent gap (`checkInTicketAction` has no `recordAudit()` call) is not a real gap — `redeemTicket()` itself writes to the dedicated, append-only `ticket_check_ins` table on every outcome, a deliberate separate audit trail from the generic `audit_log` specifically because check-in is a high-frequency, staff-scanner-driven action, documented in Batch H. |
+| Client-authoritative prices/inventory | None — grepped both checkout actions for any `formData.get(...)` read of a price/amount field; neither exists. Every price is re-derived server-side from `getVariantForCheckout()` / `loadPurchasableTicketType()`. |
+| Non-idempotent webhooks | Unchanged from the pre-existing `webhook_events` dedup (claim via `onConflictDoNothing`), plus `settleOrder()`'s own settled-state early-return, both exercised by every batch since G. |
+| Exposed pending/draft content | Verified `getPublicFeedPost`/`getPublicEvent`/`getPublicProduct` all apply their visibility filter to the direct-slug lookup, not just the list query — a pending/draft/unpublished record is never reachable by guessing its slug. |
+| Pre-settlement ticket issuance | `issueTicketsForOrder()` has exactly one call site in the whole codebase, inside `settleOrder()`'s post-capture-success transaction. No other path can mint a ticket. |
+| Publicly-reachable check-in mutations | The only caller of `redeemTicket()` outside the authenticated admin action is `app/api/dev/redeem-test/route.ts` — the concurrency-test harness, hard-blocked in production via `NODE_ENV` and gated behind `CRON_SECRET`. A deliberate, documented exception (see the Batch H section and the operations doc), not an oversight. |
+| Unsafe links | `dangerouslySetInnerHTML` appears nowhere in the codebase except the two new `safeJsonLd()` structured-data calls. Feed CTA URLs already https-only-allowlisted since Batch C. |
+| Duplicate/missing email templates | Every notification kind this initiative introduced (`brand_submission_invite`, `ticket_order_confirmation`, `shop_order_confirmation`, `shop_shipment`) has a real dispatch branch and template — verified programmatically, not by eyeballing. **Found, and explicitly NOT fixed as out of scope**: 6 of the pre-existing `NotificationKind`s from before this initiative (`sponsor_declined`, `refund_confirmation`, `top_ten`, `milestone`, `song_release`, `video_release`, `campaign_ended`) still have no template and will throw if ever dispatched — this is the exact gap the architecture plan's own risk table already flagged as pre-existing, and touching the campaign-contribution notification system is outside this initiative's boundary. Flagged here for a separate follow-up, not silently left undocumented. |
+| Accidentally-enabled flags | All 8 flags this initiative added seed with `enabled: false`, and `flagEnabled()`'s own fallback for a missing row is `false`, confirmed by reading the function directly. |
+
+### Verification
+`npm run typecheck && npm run lint && npm run build` — all clean; lint
+scoped to this batch's files shows zero errors/warnings, full-repo lint
+matches the exact same 3-error baseline this initiative has had since
+Batch A (confirmed via `git status` that those 3 files are still
+untouched by any batch in this initiative). `npm test` — 301 passing,
+unchanged from Batch J (no new tests needed for this batch's work), same
+1 pre-existing failing suite. `npm run build` — succeeds. **Live-checked
+in the dev server**: homepage renders with zero console errors and no
+"FROM THE SHOP" section with `shopEnabled` off, matching the same
+verification rigor applied to every batch since the Batch F regression.
 
 ---
+
+## Final report — all 11 batches (A–K) complete
+
+**Branch**: `main` (this initiative was never given its own branch — it
+was built as a direct sequence of commits on `main`, matching how the
+rest of this session's work was done). **Nothing has been pushed to
+`origin`** — every batch was committed locally only, per the standing
+instruction; pushing/deploying needs the user's separate, explicit
+confirmation, not implied by anything in this document.
+
+### Commits (oldest to newest, this initiative only)
+```
+0f26aa5  Prepare standalone commerce and moderation foundation      (Batch A)
+9a64f94  Add top supporter preview to homepage                      (Batch B)
+8b2d61f  Add moderated brand feed foundation                        (Batch C)
+c6e6e44  Add secure brand submission workflow                       (Batch D)
+96b62ca  Add feed nav entry and homepage preview                    (Batch E)
+ea0eb10  Add live events catalog and journey integration            (Batch F)
+21b89f6  Add shared commerce order/payment shell and ticket checkout (Batch G)
+089de6b  Add ticket issuance, email, and authenticated check-in      (Batch H)
+82f43f0  Add shop catalog and inventory management                  (Batch I)
+b8b24c8  Add shop checkout, orders, and fulfillment                 (Batch J)
+<pending>  Add shop preview, SEO, and launch hardening               (Batch K, this commit)
+```
+11 commits, one per batch, each independently green (typecheck/lint/
+test/build) before the next started.
+
+### Scale
+147 files changed, ~12,850 insertions, ~210 deletions across the whole
+initiative (Batch A through the start of K; the final commit adds a
+handful more). Roughly 35 new `lib/` modules, 9 new schema files worth of
+tables, 8 migrations, ~30 new routes (public + admin), 4 new email
+templates, 2 packages.
+
+### Migrations added (all generated, reviewed, **none applied**)
+`0013_brand_feed_posts.sql`, `0014_brand_submission_invites.sql`,
+`0015_feed_submission_attempts.sql`, `0016_live_events.sql`,
+`0017_commerce_orders.sql` (edited once, before ever being applied
+anywhere, to switch `commerce_orders` from a stored `secure_token` to the
+HMAC credential scheme — see Batch H), `0018_tickets.sql`,
+`0019_shop_catalog.sql`, `0020_shop_checkout.sql`. Every one of them is
+hand-authored with `IF NOT EXISTS`/`DO $$ IF NOT EXISTS $$` guards rather
+than raw `drizzle-kit generate` output, per the migration-journal
+reconciliation policy established in Batch A. **The user must apply
+these before enabling any corresponding feature flag** — see
+`docs/COMMERCE_EVENTS_OPERATIONS.md`'s table for exactly which flag
+needs which migrations.
+
+### Package changes
+Exactly two packages added, both explicitly pre-approved by the plan for
+this exact purpose: `qrcode` (^1.5.4) and `@types/qrcode` (^1.5.6), used
+only in `app/tickets/[secureToken]/page.tsx` to render a ticket's QR
+code. Nothing else was installed across all 11 batches.
+
+### Test results
+301 tests passing across 26 files (up from a baseline of 149 at the
+start of Batch A), all pure-function tests per this repo's established
+convention (no live database in this session, so no integration tests
+were possible — every batch's regression coverage is either a pure
+decision-function test or, for the campaign-isolation invariant, a
+static source-scan test). One pre-existing failing suite
+(`tests/referral-attribution.test.ts`) present since before this
+initiative started, confirmed via `git status` to be untouched by any
+batch — a `server-only` import issue unrelated to this work.
+
+### Build results
+`npm run build` succeeds as of the final commit. Every one of the 11
+batch commits independently passed `typecheck && lint && test && build`
+before the next batch began — this was not a "fix it all at the end"
+sweep.
+
+### Concurrency test — REQUIRED, delivered but NOT executed
+`scripts/test-ticket-concurrency.ts` (`npm run tickets:test-concurrency`)
+is ready to run and was confirmed to execute cleanly up to its own
+precondition checks (missing-secret error, the correct behavior with no
+secrets configured). **It has not been run to a pass/fail result** — this
+session has no live database connection, and `redeemTicket()` itself
+can't be imported by a plain script (it sits behind `'server-only'`-
+guarded modules), which is why the script fires HTTP requests at a
+purpose-built, production-blocked, `CRON_SECRET`-gated test route
+instead of calling the function directly. **This is the single most
+important manual follow-up in this entire report**: the plan is explicit
+that ticket check-in isn't done until this passes against a real
+Postgres connection with real concurrent load.
+
+### Accessibility / responsive
+No dedicated a11y audit tool was run (Playwright is not installed in
+this repo, confirmed during planning). Every new interactive element
+follows the patterns already verified elsewhere in this codebase during
+the earlier UI-rebuild phase of this session: labeled form fields,
+visible focus states inherited from the existing `mj-button`/input
+primitive classes, no new custom widgets that would need their own
+keyboard handling (every new "picker" is a native `<select>` or
+`<input>`). Responsive behavior relies on the same `site-shell`/grid
+utility classes already proven responsive across the rest of the site;
+no new fixed-width layout was introduced. **Not verified**: an actual
+screen-reader pass or a real-device responsive check — flagged as a
+manual follow-up, not claimed as done.
+
+### Campaign-isolation evidence
+`tests/commerce-campaign-isolation.test.ts` statically scans 8 source
+files across the commerce/shop/ticket domains and asserts none of them
+reference any campaign-money Drizzle table identifier
+(`s.contributions`, `s.transactions`, `s.refunds`, `s.ledgerEntries`,
+`s.disputes`, `s.consentRecords`, `s.supporterNumbers`) — 56 assertions,
+all passing. This is the strongest evidence obtainable without live
+database access; a real end-to-end regression test (buy a ticket, assert
+campaign totals/leaderboard are byte-identical before and after) remains
+a manual follow-up requiring the user's own database access.
+
+### Disabled features (current flag state)
+All 8 flags this initiative added remain at their seeded default of
+`enabled: false`: `shopEnabled`, `brandFeedEnabled`,
+`brandSubmissionsEnabled`, `eventsEnabled`, `ticketSalesEnabled`,
+`ticketCheckInEnabled`, `homeFeedPreviewEnabled`, `homeShopPreviewEnabled`.
+**Nothing this initiative built is publicly visible until the user
+deliberately turns a flag on** — every route, nav link, and homepage
+section is flag-gated, verified live in the dev server batch by batch,
+not just by code review.
+
+### Manual deployment steps (for whenever the user is ready)
+1. Review all 11 commits (`git log 0f26aa5^..HEAD`, or just read this
+   progress doc, which was updated after every batch).
+2. Apply migrations 0013–0020 against the real database, in order,
+   after independently confirming the Batch A migration-journal gap
+   finding still holds (that 0002/0003/0012 are already applied — this
+   session verified that from application-code behavior, never from a
+   direct database query, since it never had production credentials).
+3. Set the required environment variables (`TICKET_SIGNING_SECRET`,
+   `ORDER_SIGNING_SECRET`, `CRON_SECRET` if not already set,
+   `PAYMENTS_PROVIDER`, `NEXT_PUBLIC_SITE_URL`) — see
+   `docs/COMMERCE_EVENTS_OPERATIONS.md`.
+4. Run `npm run tickets:test-concurrency` against that environment and
+   confirm `PASS` before enabling `ticketSalesEnabled`.
+5. Decide the shipping/tax strategy for shop orders (currently $0/$0,
+   disclosed to the buyer) before enabling `shopEnabled` for real sales.
+6. `git push` only when the user explicitly says to — this session never
+   pushed any of these 11 commits to `origin`.
+7. Enable flags one at a time, in the order suggested in the operations
+   doc, spot-checking each surface before moving to the next.
+
+### Required env vars (recap)
+`TICKET_SIGNING_SECRET`, `ORDER_SIGNING_SECRET`, `CRON_SECRET`,
+`PAYMENTS_PROVIDER`, `NEXT_PUBLIC_SITE_URL` — full detail in
+`docs/COMMERCE_EVENTS_OPERATIONS.md`.
+
+### Remaining blockers / genuine open decisions
+- **The concurrency test has not been executed.** Not optional — see above.
+- **Shipping/tax strategy is undecided**, shipped with an explicit $0/$0
+  placeholder rather than a guess. This is a product/legal decision only
+  the user can make.
+- **The migration-journal gap** (0002/0003/0012 invisible to
+  `drizzle-kit`) from Batch A was never independently re-verified against
+  a live database this session — the evidence for "already applied" is
+  strong (working production checkout code depends on those columns) but
+  not a direct confirmation.
+- **No end-to-end test of any purchase flow** — ticket or shop — has been
+  run against a real payment provider or real database.
+- **Pre-existing, out-of-scope gaps found and explicitly not fixed**: 6
+  `NotificationKind`s from before this initiative still throw if
+  dispatched (see the final audit table above); the
+  `analytics_events.event_key`/`badge_grants` unique-index drift found in
+  Batch C; the `ticketCheckInEnabled`/`homeFeedPreviewEnabled`/
+  `homeShopPreviewEnabled` flags that exist but aren't independently
+  wired to anything.
+
+This concludes the 11-batch build. Every batch's own section above has
+its own "not verified live" list — those are the granular manual
+follow-ups; this final section is the roll-up.
 
 ## How to continue this in a fresh session
 
