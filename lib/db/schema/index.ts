@@ -7,3 +7,4 @@ export * from './content';
 export * from './platform';
 export * from './feed';
 export * from './events';
+export * from './commerce';

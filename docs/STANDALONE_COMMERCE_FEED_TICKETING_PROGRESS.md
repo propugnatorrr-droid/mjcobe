@@ -823,7 +823,229 @@ not-yet-on-sale / on-sale / sales-closed / canceled / postponed states by
 adjusting the event's sales window and status fields.
 
 ## Batch G — Shared commerce and ticket checkout
-Status: not started.
+
+Status: **done**. This is the batch where real money/webhook surface area
+actually landed — read this section fully before touching Batch H or J,
+both of which build directly on top of it.
+
+### Schema and migration
+- `lib/db/schema/commerce.ts` (new): `commerceOrders`, `commerceOrderItems`,
+  `commercePayments`, `commerceRefunds`, `orderAddresses`,
+  `inventoryReservations`. Fully separate from `contributions`/
+  `transactions`/`refunds`/`ledger_entries` — discriminated by
+  `orderType: 'shop' | 'ticket'`, shared by both future domains.
+  `commerceOrderItems.referenceId` is a bare uuid (not a `.references()`
+  FK), matching the existing cross-schema-file precedent already used for
+  `contributions.sponsorId` — avoids an import cycle with `events.ts`
+  (Batch F) and the not-yet-built `shop.ts` (Batch I).
+- `lib/db/migrations/0017_commerce_orders.sql` (new) — hand-authored,
+  `IF NOT EXISTS`-guarded, same policy as 0013–0016. Adds real Postgres
+  `CHECK` constraints (`commerce_order_items.quantity > 0`,
+  `inventory_reservations.quantity > 0`), matching 0016's precedent of
+  putting `CHECK`s only in the SQL, not the Drizzle schema (no `.check()`
+  usage exists anywhere else in this codebase). Generated and reviewed,
+  **not applied**.
+
+### A second real regression caught by live verification, same class as Batch F's
+`app/orders/[secureToken]/page.tsx` is **public and unauthenticated** —
+unlike every other new route in this initiative, it's reachable by
+anyone, anytime, not gated behind a login or (originally) a feature flag.
+Live-checking it against a nonexistent token in the dev server produced a
+real 500 (`relation "commerce_orders" does not exist`) — the exact same
+root cause as Batch F's `getGlobalJourney()` break, but this time on a
+route with no auth gate to accidentally protect it. **Fixed** by gating
+the page (and its `generateMetadata`) behind `flagEnabled
+('ticketSalesEnabled')` before ever calling `getOrderBySecureToken()` —
+semantically correct, not just a workaround: no real order can exist
+unless that flag (or, once Batch J ships, `shopEnabled`) was on at
+checkout time, so skipping the query when it's off loses nothing.
+Re-verified live afterward: a fresh browser tab hitting the same URL
+returns 200 with a clean "we couldn't find that order" state and zero
+console errors. **This is now the second time this initiative has shipped
+a query against a since-migrated-but-unapplied table on an always-
+reachable route** — worth an explicit note for whoever picks up Batch H
+or J: any new route that isn't behind both a feature flag AND (for admin
+routes) `requireAdmin()` must be live-tested against a nonexistent
+record/token before being called done, not just typechecked/built.
+`/admin/orders` and `/admin/orders/[id]` were also live-tested the same
+way — a first check appeared to crash before `requireAdmin()`'s redirect
+resolved, but repeated testing showed it consistently redirects to
+`/admin/login` correctly (the first result is presumed to have been a
+Next.js dev-mode on-demand-compilation race, not a real gap — but this is
+called out explicitly rather than silently assumed safe, since it wasn't
+independently re-derived from framework internals).
+
+### Reservations (`lib/commerce/reservation-decision.ts`, `lib/commerce/reservations.ts`)
+- `reservationDecision()` — pure oversell-prevention math, split into its
+  own file with zero side-effecting imports (same reason as Batch D's
+  `lib/feed/media-validation.ts` split: the DB-touching file it was
+  originally embedded in is marked `'server-only'`, which throws
+  immediately when Vitest imports it directly — caught by a failing test
+  run, not assumed safe). Tested in `tests/commerce-reservations.test.ts`
+  (9 cases: exact-last-unit grant, zero/negative quantity rejection,
+  sold-out rejection, and a documented race scenario showing the decision
+  function correctly rejects a second request once the first's grant is
+  reflected in the snapshot).
+- `reserveTicketCapacity()` — advisory-lock-guarded (`hashtext('ticket_type:'
+  + id)`), same primitive already proven in `lib/ledger/contributions.ts`
+  for supporter-number issuance. `committed` capacity is computed from
+  **paid `commerce_order_items`**, not hardcoded to 0 — a real gap caught
+  and fixed while writing this, before it was ever exercised: `settleOrder()`
+  deletes a reservation once its order pays, so without counting paid
+  order items as committed, that capacity would silently become available
+  again the instant payment succeeded (a real oversell path, not a
+  hypothetical one — no `tickets` table exists yet to be the source of
+  truth for "already claimed", so paid order items are the only durable
+  record until Batch H mints real ticket rows). `'partially_refunded'`
+  orders still count in full toward committed capacity, per this
+  initiative's own correction that money and ticket-voiding are never
+  auto-linked — only a fully `'refunded'` order releases its seats.
+  Reservations expire after 20 minutes; `sweepExpiredReservations()` +
+  `app/api/cron/reservations/route.ts` (registered in `vercel.json`,
+  every 10 minutes) clean up expired rows as housekeeping — every read
+  already filters `expiresAt > now()`, so this isn't load-bearing for
+  correctness, only table hygiene.
+
+### Orders (`lib/commerce/orders.ts`)
+- `createOrder()` — mirrors `createContribution()`'s idempotent-creation
+  shape exactly: client-supplied idempotency key → payload-hash-scoped
+  check against the **same** `idempotency_keys` table (new
+  `create_commerce_order:` scope prefix, per the plan) → advisory-lock-
+  guarded transaction → provider intent → local rows → store idempotency
+  result. Reservations are attached to the order inside this same
+  transaction (`attachReservationToOrder`), never taken by this function
+  itself — reservation must already exist (checkout-time-only, correction
+  #2).
+- `settleOrder()` — mirrors `settleContribution()`'s idempotent-early-
+  return + advisory-lock shape, simplified: commerce checkout always uses
+  automatic capture (no sponsorship-style manual-review split), so
+  there's no two-phase authorize/capture dance to replicate. Deletes the
+  order's reservations inside the same transaction that flips it to
+  `'paid'` — atomic, so a reader can never see "reservation gone, order
+  not yet paid".
+- `refundOrder()` (admin-initiated) / `reconcileOrderRefund()` (webhook-
+  driven confirmation) / `flagCommerceOrderDisputed()` (minimal dispute
+  handling — flips order status to `'disputed'`, does not attempt
+  `lib/ledger/contributions.ts`'s full won/lost/needs-response lifecycle
+  modeling; documented as a deliberate scope reduction, not an oversight).
+  Per correction #6, a partial refund never auto-voids a ticket — that's
+  a separate, explicit admin action against `tickets` rows once Batch H
+  exists; `refundOrder()`'s only job is recomputing `commerce_orders.status`
+  from net paid-minus-refunded.
+- `getOrderBySecureToken()` / `getOrderByPaymentProviderRef()` — reads.
+
+### Domain-aware webhook dispatch (correction #4)
+- `lib/payments/payment-ownership.ts` (pure `classifyPaymentOwnership()`,
+  same server-only-split reasoning as the reservation math — tested in
+  `tests/webhook-domain-resolution.test.ts`, including the "throws on
+  ambiguous ownership" case) + `lib/payments/webhook-resolver.ts`
+  (`resolvePaymentDomain()`, the DB-touching wrapper).
+- `app/api/webhooks/stripe/route.ts` — every `payment_intent.*` handler
+  now calls `resolvePaymentDomain()` **first**, before touching either
+  table, and dispatches to either the (renamed, otherwise byte-for-byte
+  unchanged) `handleContribution*` functions or new `handleCommerceOrder*`
+  functions. `requireTransaction()`/`transactionFor()` — the two functions
+  the correction specifically named — are now **deleted**, not just
+  unused; there is no code path left that could call them before
+  resolution. `handleRefund()`/`handleDispute()` resolve domain via the
+  refund/dispute's own PaymentIntent reference and route to
+  `reconcileOrderRefund()`/`flagCommerceOrderDisputed()` for commerce,
+  falling through unchanged to the existing `reconcileRefund()`/
+  `reconcileDispute()` for everything else (including an unresolvable
+  reference, preserving this route's exact prior hard-fail behavior for
+  that case). Every existing contribution-handling branch's actual logic
+  is untouched — only reorganized behind the new resolution gate.
+
+### Checkout UI (ticket orders only — shop checkout is Batch J)
+- `lib/events/checkout-actions.ts` — `purchaseTickets()`, mirrors
+  `submitFanContribution()`'s shape (honeypot → idempotency-key validation
+  → server-side re-validation of everything the client sent, including
+  re-running `resolveEventCtaState()` so a stale/tampered form can't buy
+  through a canceled/postponed/sold-out-window event → reserve → create
+  order → Stripe-clientSecret-present branches to Elements handoff,
+  otherwise settles synchronously and redirects to `/orders/[secureToken]`).
+- `components/commerce/CommerceStripeStep.tsx` — a separate, leaner
+  Stripe Elements wrapper from `components/checkout/StripePaymentStep.tsx`,
+  not a reuse of it: that component's failure tracking hard-requires a
+  `campaignId`/`supportType` for its analytics call, neither of which
+  exists for a commerce order.
+- `components/events/TicketCheckoutForm.tsx`, `app/events/[slug]/tickets/page.tsx`
+  — flag-gated (`eventsEnabled` AND `ticketSalesEnabled`), also checks
+  `event.ctaState === 'on_sale'` server-side before rendering the form (a
+  direct hit on this URL for a not-yet-on-sale/sold-out/canceled event
+  shows an explanatory state, not a broken form). `app/events/[slug]/page.tsx`
+  now links to it with a real "Buy Tickets" button exactly when
+  `ticketSalesEnabled` is on and the event is actually on sale — replacing
+  the Batch F placeholder text in that one case only.
+- `app/orders/[secureToken]/page.tsx` — shared confirmation page for
+  shop AND ticket orders (only ticket orders can exist so far). See the
+  regression note above for its flag gate.
+
+### Admin surfaces
+- `lib/commerce/admin-queries.ts` (`listAdminOrders`, `getAdminOrder`),
+  `lib/commerce/admin-actions.ts` (`issueOrderRefund`, `requireAdminRole
+  (['finance_admin'])` per the launch role table's "finance_admin:
+  refunds/order details/fulfillment"). `app/admin/(dash)/orders/page.tsx`
+  (list, filterable by type once there's more than one), `.../orders/[id]/page.tsx`
+  (items/payments/refunds + `OrderRefundForm` shown only when a settled
+  payment exists to refund). Nav entry added to
+  `app/admin/(dash)/layout.tsx`.
+
+### Regression test: campaign isolation
+`tests/commerce-campaign-isolation.test.ts` — the single most important
+test in this batch, per the plan's own framing. A DB-integration test
+proving campaign totals/leaderboards are unaffected by a real commerce
+purchase would need live database access this session doesn't have (every
+other test in this repo is a pure-function test for the same reason).
+Instead: it reads the actual committed source of `lib/commerce/orders.ts`
+and `lib/commerce/reservations.ts` and asserts neither file's text
+contains `s.contributions`, `s.transactions`, `s.refunds`,
+`s.ledgerEntries`, `s.disputes`, `s.consentRecords`, or
+`s.supporterNumbers` — the Drizzle identifiers for every campaign-money
+table. If a future change ever adds one of those references to either
+file, this test fails immediately rather than silently shipping a
+campaign-money leak. Not a substitute for a real DB-level regression test
+once this session (or a future one) has live database access — flagged
+as a manual follow-up below.
+
+### Verification
+`npm run typecheck && npm run lint && npm run build` — all clean; lint
+scoped to this batch's files shows zero errors/warnings, full-repo lint
+matches the pre-existing baseline. `npm test` — 224 passing (211 baseline
++ 13 new: 9 reservation-decision cases, 4 webhook-ownership cases — the
+campaign-isolation test file's cases are counted separately and also
+passing), same 1 pre-existing failing suite (unrelated, untouched). `npm
+run build` — succeeds, all new routes present (`/events/[slug]/tickets`,
+`/orders/[secureToken]`, `/admin/orders`, `/admin/orders/[id]`,
+`/api/cron/reservations`). **Live-checked in the dev server** — this was
+essential, not optional, for this batch specifically: found and fixed the
+`/orders/[secureToken]` crash described above; confirmed the fix with a
+fresh browser tab (zero console errors, `200 OK` on the same previously-
+crashing URL); confirmed `/events/[slug]/tickets` correctly 404s with its
+flags off; confirmed `/admin/orders` and `/admin/feed` both correctly
+redirect an unauthenticated visitor to `/admin/login`; confirmed the
+homepage and `/journey` (Batch F's own regression surface) still render
+with zero console errors after this batch's webhook-route changes.
+
+**Not verified live** (no admin credentials, no Stripe test-mode
+webhooks, no live database): an actual end-to-end ticket purchase
+(reservation → order → Stripe Elements → webhook settlement → order
+status flips to `'paid'`), a concurrent-reservation race under real load
+(the pure decision function is tested; the advisory-lock behavior that
+makes it safe under real concurrency is not — this is explicitly the same
+category of gap Batch H's ticket redemption is required to close with a
+real concurrent-request test before that batch is done, and the same
+standard should apply here before this checkout path sees real traffic),
+an actual Stripe webhook event hitting the domain resolver, and an admin-
+issued refund actually reaching Stripe. **Manual follow-up for the
+user**: with `PAYMENTS_PROVIDER=mock` (or `offline`) and `eventsEnabled`
++ `ticketSalesEnabled` on, publish an event with a ticket type via
+`/admin/events`, buy a ticket through `/events/[slug]/tickets`, confirm
+`/orders/[secureToken]` shows `'paid'`, confirm the campaign homepage/
+leaderboard totals are unchanged before/after, then issue a partial
+refund from `/admin/orders/[id]` and confirm the order's status becomes
+`'partially_refunded'` without any ticket-voiding side effect (there's
+nothing to void yet, but the money side alone should work end to end).
 
 ## Batch H — Ticket issuance, email, and check-in
 Status: not started.

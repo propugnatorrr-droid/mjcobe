@@ -31,6 +31,7 @@ export const admin = {
     flags: 'FEATURE FLAGS',
     feed: 'BRAND FEED',
     events: 'EVENTS',
+    orders: 'ORDERS',
   },
 
   analytics: {
@@ -719,6 +720,26 @@ invoiceStatuses: {
       perOrderLimit: 'PER-ORDER LIMIT',
       active: 'ACTIVE',
     },
+  },
+
+  orders: {
+    heading: 'ORDERS',
+    hint: 'Shop and ticket orders share this list, filterable by type. This is a separate domain from campaign contributions — nothing here ever touches a campaign total or supporter/sponsor ranking.',
+    empty: 'No orders yet.',
+    orderNumber: 'ORDER',
+    type: 'TYPE',
+    status: 'STATUS',
+    buyer: 'BUYER',
+    total: 'TOTAL',
+    placed: 'PLACED',
+    items: 'ITEMS',
+    payments: 'PAYMENTS',
+    refunds: 'REFUNDS',
+    issueRefund: 'ISSUE REFUND',
+    refundAmount: 'REFUND AMOUNT (USD)',
+    refundReason: 'REASON',
+    provider: 'PROVIDER',
+    providerRef: 'PROVIDER REFERENCE',
   },
 
   saved: 'SAVED',

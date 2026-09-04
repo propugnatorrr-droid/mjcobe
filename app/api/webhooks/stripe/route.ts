@@ -8,9 +8,6 @@ import {
   inArray,
 } from 'drizzle-orm';
 import {
-  db,
-} from '@/lib/db/client';
-import {
   dbw,
 } from '@/lib/db/write';
 import * as s from '@/lib/db/schema';
@@ -22,6 +19,14 @@ import {
 import {
   stripeClient,
 } from '@/lib/payments/stripe';
+import {
+  resolvePaymentDomain,
+} from '@/lib/payments/webhook-resolver';
+import {
+  settleOrder,
+  reconcileOrderRefund,
+  flagCommerceOrderDisputed,
+} from '@/lib/commerce/orders';
 
 export const runtime =
   'nodejs';
@@ -49,82 +54,25 @@ string {
   return value;
 }
 
-async function transactionFor(
-  providerRef: string,
-) {
-  const [transaction] =
-    await db
-      .select({
-        id:
-          s.transactions.id,
-        state:
-          s.transactions.state,
-      })
-      .from(s.transactions)
-      .where(
-        and(
-          eq(
-            s.transactions.provider,
-            'stripe',
-          ),
-          eq(
-            s.transactions.providerRef,
-            providerRef,
-          ),
-        ),
-      )
-      .limit(1);
-
-  return transaction ?? null;
-}
-
-async function requireTransaction(
-  providerRef: string,
-) {
-  const transaction =
-    await transactionFor(
-      providerRef,
-    );
-
-  if (!transaction) {
-    throw new Error(
-      `No transaction exists for Stripe PaymentIntent ${providerRef}.`,
-    );
-  }
-
-  return transaction;
-}
-
-async function handleSucceeded(
-  intent:
-    Stripe.PaymentIntent,
+async function handleContributionSucceeded(
+  transactionId: string,
 ): Promise<void> {
-  const transaction =
-    await requireTransaction(
-      intent.id,
-    );
-
   const settled =
     await settleContribution(
-      transaction.id,
+      transactionId,
     );
 
   if (!settled.ok) {
     throw new Error(
-      `Could not settle ${transaction.id}: ${settled.code}`,
+      `Could not settle ${transactionId}: ${settled.code}`,
     );
   }
 }
 
-async function handleCapturable(
-  intent:
-    Stripe.PaymentIntent,
+async function handleContributionCapturable(
+  intent: Stripe.PaymentIntent,
+  transactionId: string,
 ): Promise<void> {
-  const transaction =
-    await requireTransaction(
-      intent.id,
-    );
-
   if (
     intent.status !==
     'requires_capture'
@@ -146,7 +94,7 @@ async function handleCapturable(
       and(
         eq(
           s.transactions.id,
-          transaction.id,
+          transactionId,
         ),
         inArray(
           s.transactions.state,
@@ -159,15 +107,9 @@ async function handleCapturable(
     );
 }
 
-async function handleProcessing(
-  intent:
-    Stripe.PaymentIntent,
+async function handleContributionProcessing(
+  transactionId: string,
 ): Promise<void> {
-  const transaction =
-    await requireTransaction(
-      intent.id,
-    );
-
   const now = new Date();
 
   await dbw
@@ -182,7 +124,7 @@ async function handleProcessing(
       and(
         eq(
           s.transactions.id,
-          transaction.id,
+          transactionId,
         ),
         inArray(
           s.transactions.state,
@@ -195,15 +137,10 @@ async function handleProcessing(
     );
 }
 
-async function handleFailed(
-  intent:
-    Stripe.PaymentIntent,
+async function handleContributionFailed(
+  intent: Stripe.PaymentIntent,
+  transactionId: string,
 ): Promise<void> {
-  const transaction =
-    await requireTransaction(
-      intent.id,
-    );
-
   const now = new Date();
 
   await dbw
@@ -221,7 +158,7 @@ async function handleFailed(
       and(
         eq(
           s.transactions.id,
-          transaction.id,
+          transactionId,
         ),
         inArray(
           s.transactions.state,
@@ -235,15 +172,10 @@ async function handleFailed(
     );
 }
 
-async function handleCanceled(
-  intent:
-    Stripe.PaymentIntent,
+async function handleContributionCanceled(
+  intent: Stripe.PaymentIntent,
+  transactionId: string,
 ): Promise<void> {
-  const transaction =
-    await requireTransaction(
-      intent.id,
-    );
-
   const now = new Date();
 
   await dbw
@@ -260,7 +192,7 @@ async function handleCanceled(
       and(
         eq(
           s.transactions.id,
-          transaction.id,
+          transactionId,
         ),
         inArray(
           s.transactions.state,
@@ -273,6 +205,131 @@ async function handleCanceled(
         ),
       ),
     );
+}
+
+// -------------------------------------------------------- commerce orders ----
+
+async function handleCommerceOrderSucceeded(
+  paymentId: string,
+): Promise<void> {
+  const settled = await settleOrder(paymentId);
+
+  if (!settled.ok) {
+    throw new Error(
+      `Could not settle commerce payment ${paymentId}: ${settled.code}`,
+    );
+  }
+}
+
+async function handleCommerceOrderCapturable(
+  intent: Stripe.PaymentIntent,
+  paymentId: string,
+): Promise<void> {
+  if (intent.status !== 'requires_capture') return;
+
+  await dbw
+    .update(s.commercePayments)
+    .set({ state: 'authorized', updatedAt: new Date() })
+    .where(and(eq(s.commercePayments.id, paymentId), inArray(s.commercePayments.state, ['initiated', 'failed'])));
+}
+
+async function handleCommerceOrderProcessing(
+  paymentId: string,
+): Promise<void> {
+  await dbw
+    .update(s.commercePayments)
+    .set({ state: 'authorized', updatedAt: new Date() })
+    .where(and(eq(s.commercePayments.id, paymentId), inArray(s.commercePayments.state, ['initiated', 'failed'])));
+}
+
+async function handleCommerceOrderFailed(
+  paymentId: string,
+  orderId: string,
+): Promise<void> {
+  const now = new Date();
+
+  await dbw
+    .update(s.commercePayments)
+    .set({ state: 'failed', updatedAt: now })
+    .where(and(eq(s.commercePayments.id, paymentId), inArray(s.commercePayments.state, ['initiated', 'authorized', 'failed'])));
+
+  await dbw
+    .update(s.commerceOrders)
+    .set({ status: 'failed', updatedAt: now })
+    .where(eq(s.commerceOrders.id, orderId));
+
+  // Payment failed — free the held capacity immediately rather than
+  // waiting for the reservation's own TTL to expire, so the next buyer
+  // isn't blocked by a hold that's already known to be dead.
+  await dbw.delete(s.inventoryReservations).where(eq(s.inventoryReservations.orderId, orderId));
+}
+
+async function handleCommerceOrderCanceled(
+  paymentId: string,
+  orderId: string,
+): Promise<void> {
+  const now = new Date();
+
+  await dbw
+    .update(s.commercePayments)
+    .set({ state: 'canceled', updatedAt: now })
+    .where(
+      and(
+        eq(s.commercePayments.id, paymentId),
+        inArray(s.commercePayments.state, ['initiated', 'authorized', 'failed', 'canceled']),
+      ),
+    );
+
+  await dbw
+    .update(s.commerceOrders)
+    .set({ status: 'canceled', updatedAt: now })
+    .where(eq(s.commerceOrders.id, orderId));
+
+  await dbw.delete(s.inventoryReservations).where(eq(s.inventoryReservations.orderId, orderId));
+}
+
+// -------------------------------------------------------------- dispatch ----
+
+/**
+ * The correction on top of the original plan: resolve which domain owns
+ * this PaymentIntent BEFORE any handler runs, rather than assuming every
+ * `payment_intent.*` event is a contribution (the original design) or
+ * trusting `intent.metadata.entity_type` alone. `requireTransaction()` is
+ * never called before this resolution.
+ */
+async function handleSucceeded(intent: Stripe.PaymentIntent): Promise<void> {
+  const owner = await resolvePaymentDomain(intent.id);
+  if (owner.domain === 'contribution') return handleContributionSucceeded(owner.transactionId);
+  if (owner.domain === 'commerce') return handleCommerceOrderSucceeded(owner.paymentId);
+  throw new Error(`No transaction or commerce payment exists for Stripe PaymentIntent ${intent.id}.`);
+}
+
+async function handleCapturable(intent: Stripe.PaymentIntent): Promise<void> {
+  const owner = await resolvePaymentDomain(intent.id);
+  if (owner.domain === 'contribution') return handleContributionCapturable(intent, owner.transactionId);
+  if (owner.domain === 'commerce') return handleCommerceOrderCapturable(intent, owner.paymentId);
+  throw new Error(`No transaction or commerce payment exists for Stripe PaymentIntent ${intent.id}.`);
+}
+
+async function handleProcessing(intent: Stripe.PaymentIntent): Promise<void> {
+  const owner = await resolvePaymentDomain(intent.id);
+  if (owner.domain === 'contribution') return handleContributionProcessing(owner.transactionId);
+  if (owner.domain === 'commerce') return handleCommerceOrderProcessing(owner.paymentId);
+  throw new Error(`No transaction or commerce payment exists for Stripe PaymentIntent ${intent.id}.`);
+}
+
+async function handleFailed(intent: Stripe.PaymentIntent): Promise<void> {
+  const owner = await resolvePaymentDomain(intent.id);
+  if (owner.domain === 'contribution') return handleContributionFailed(intent, owner.transactionId);
+  if (owner.domain === 'commerce') return handleCommerceOrderFailed(owner.paymentId, owner.orderId);
+  throw new Error(`No transaction or commerce payment exists for Stripe PaymentIntent ${intent.id}.`);
+}
+
+async function handleCanceled(intent: Stripe.PaymentIntent): Promise<void> {
+  const owner = await resolvePaymentDomain(intent.id);
+  if (owner.domain === 'contribution') return handleContributionCanceled(intent, owner.transactionId);
+  if (owner.domain === 'commerce') return handleCommerceOrderCanceled(owner.paymentId, owner.orderId);
+  throw new Error(`No transaction or commerce payment exists for Stripe PaymentIntent ${intent.id}.`);
 }
 
 function refundPaymentIntentId(
@@ -294,6 +351,36 @@ function refundPaymentIntentId(
 async function handleRefund(
   refund: Stripe.Refund,
 ): Promise<void> {
+  const paymentIntentId =
+    refundPaymentIntentId(refund);
+
+  // Same domain-resolution discipline as the payment_intent.* handlers
+  // above: check which table actually owns this reference before
+  // deciding where the refund belongs. Unlike those handlers, an
+  // unresolvable/'none' PaymentIntent falls through to the existing
+  // contribution path unchanged (it already hard-fails on no match) —
+  // that preserves this route's exact prior behavior for every refund
+  // that isn't a commerce order.
+  const owner = paymentIntentId
+    ? await resolvePaymentDomain(paymentIntentId)
+    : { domain: 'none' as const };
+
+  if (owner.domain === 'commerce') {
+    const reconciled = await reconcileOrderRefund({
+      providerRef: refund.id,
+      status: refund.status ?? 'pending',
+    });
+
+    if (!reconciled.ok) {
+      throw new Error(
+        reconciled.message ??
+        `Could not reconcile commerce refund ${refund.id}.`,
+      );
+    }
+
+    return;
+  }
+
   const reconciled =
     await reconcileRefund({
       providerRef:
@@ -302,10 +389,7 @@ async function handleRefund(
         refund.metadata
           ?.mj_cobe_refund_id ??
         null,
-      paymentIntentId:
-        refundPaymentIntentId(
-          refund,
-        ),
+      paymentIntentId,
       amountCents:
         refund.amount,
       status:
@@ -359,6 +443,24 @@ async function handleDispute(
     throw new Error(
       `Stripe dispute ${dispute.id} has no PaymentIntent.`,
     );
+  }
+
+  const owner = await resolvePaymentDomain(paymentIntentId);
+
+  if (owner.domain === 'commerce') {
+    const flagged = await flagCommerceOrderDisputed({
+      providerRef: paymentIntentId,
+      movement,
+    });
+
+    if (!flagged.ok) {
+      throw new Error(
+        flagged.message ??
+        `Could not flag commerce dispute ${dispute.id}.`,
+      );
+    }
+
+    return;
   }
 
   const reconciled =

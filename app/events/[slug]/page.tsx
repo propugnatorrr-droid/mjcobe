@@ -40,13 +40,17 @@ export default async function EventDetailPage({ params }: Props) {
     notFound();
   }
 
-  const [backToEvents, venueLabel, ticketsHeading, ctaLabel, purchaseNotAvailable] = await Promise.all([
+  const [backToEvents, venueLabel, ticketsHeading, ctaLabel, purchaseNotAvailable, buyTickets, ticketSalesEnabled] = await Promise.all([
     text('events.back_to_events'),
     text('events.venue'),
     text('events.tickets_heading'),
     text(`events.cta.${event.ctaState}` as CopyKey),
     text('events.tickets_purchase_not_yet_available'),
+    text('events.buy_tickets'),
+    flagEnabled('ticketSalesEnabled'),
   ]);
+
+  const canPurchase = ticketSalesEnabled && event.ctaState === 'on_sale';
 
   const addressParts = [event.addressLine1, event.addressLine2, event.city, event.region, event.postalCode, event.country].filter(Boolean);
 
@@ -134,7 +138,13 @@ export default async function EventDetailPage({ params }: Props) {
               ))}
             </ul>
 
-            <p className="mt-4 text-sm text-[var(--text-dim)]">{purchaseNotAvailable}</p>
+            {canPurchase ? (
+              <Link href={`/events/${event.slug}/tickets`} className="mj-button mj-button--primary mt-6 inline-flex w-fit">
+                {buyTickets}
+              </Link>
+            ) : (
+              <p className="mt-4 text-sm text-[var(--text-dim)]">{purchaseNotAvailable}</p>
+            )}
           </section>
         ) : null}
       </article>
