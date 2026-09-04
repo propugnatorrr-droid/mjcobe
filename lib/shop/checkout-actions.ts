@@ -8,6 +8,7 @@ import { reserveProductStock } from '@/lib/shop/reservations';
 import { getVariantForCheckout } from '@/lib/shop/queries';
 import { createOrder, settleOrder, type CreateOrderItemInput } from '@/lib/commerce/orders';
 import { flagEnabled } from '@/lib/config/settings';
+import { loadShopCommerceConfig, computeShopCharges } from '@/lib/shop/checkout-configuration';
 
 export type ShopCheckoutState = {
   error?: string;
@@ -49,6 +50,14 @@ export async function purchaseShopOrder(_prev: ShopCheckoutState, formData: Form
 
   const needsShipping = rows.some((row) => row.shippingRequired);
 
+  // Per this initiative's final acceptance audit (item 8): checkout must
+  // stay blocked until shipping, tax, refund policy, support contact,
+  // currency, and fulfillment ownership have all been explicitly configured
+  // — missing configuration must never silently resolve to free shipping or
+  // no tax. See lib/shop/checkout-configuration.ts.
+  const commerceConfig = await loadShopCommerceConfig();
+  if (!commerceConfig) return { error: 'not_configured' };
+
   let shippingAddress: { recipientName: string; line1: string; line2: string | null; city: string; region: string | null; postalCode: string; country: string } | undefined;
 
   if (needsShipping) {
@@ -88,6 +97,9 @@ export async function purchaseShopOrder(_prev: ShopCheckoutState, formData: Form
     quantity: cart[i]!.quantity,
   }));
 
+  const subtotalCents = items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0);
+  const { taxCents, shippingCents } = computeShopCharges(commerceConfig, subtotalCents, needsShipping);
+
   let orderResult: Awaited<ReturnType<typeof createOrder>>;
   try {
     orderResult = await createOrder({
@@ -98,6 +110,8 @@ export async function purchaseShopOrder(_prev: ShopCheckoutState, formData: Form
       idempotencyKey,
       description: 'MJ COBE shop order',
       shippingAddress,
+      taxCents,
+      shippingCents,
     });
   } catch {
     return { error: 'generic' };

@@ -50,6 +50,12 @@ export type CreateOrderInput = {
   /** Shop orders only — inserted into order_addresses inside the same
    * transaction as the order itself. */
   shippingAddress?: ShippingAddressInput;
+  /** Server-computed only — never accepted from client input. Ticket
+   * orders never set these (no tax/shipping concept); shop orders compute
+   * them from lib/shop/checkout-configuration.ts's explicit admin-set
+   * config, never left as an implicit zero. */
+  taxCents?: number;
+  shippingCents?: number;
 };
 
 export type CreateOrderResult = {
@@ -94,8 +100,14 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     }
   }
 
+  const taxCents = input.taxCents ?? 0;
+  const shippingCents = input.shippingCents ?? 0;
+  if (!Number.isInteger(taxCents) || taxCents < 0 || !Number.isInteger(shippingCents) || shippingCents < 0) {
+    throw new Error('taxCents and shippingCents must be non-negative integers.');
+  }
+
   const subtotalCents = input.items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0);
-  const totalCents = subtotalCents; // no tax/shipping yet — shop checkout (Batch J) adds those inputs
+  const totalCents = subtotalCents + taxCents + shippingCents;
 
   const provider = getProvider(input.providerId);
   const key = input.idempotencyKey;
@@ -108,6 +120,8 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       orderType: input.orderType,
       buyerEmailHash: sha(input.buyerEmail.trim().toLowerCase()),
       items: input.items.map((i) => ({ itemType: i.itemType, referenceId: i.referenceId, unitPriceCents: i.unitPriceCents, quantity: i.quantity })),
+      taxCents,
+      shippingCents,
       totalCents,
       providerId: provider.id,
       shippingAddress: input.shippingAddress ?? null,
@@ -150,6 +164,8 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         buyerEmail: input.buyerEmail,
         status: 'pending',
         subtotalCents,
+        taxCents,
+        shippingCents,
         totalCents,
       })
       .returning({ id: s.commerceOrders.id, credentialVersion: s.commerceOrders.credentialVersion });
