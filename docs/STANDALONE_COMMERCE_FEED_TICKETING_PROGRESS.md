@@ -1779,3 +1779,147 @@ follow-ups; this final section is the roll-up.
 6. Do not push to `origin` or deploy without the user's explicit,
    separate confirmation — see the note above about the conflicting
    instruction in the approval message.
+
+---
+
+## Final acceptance audit — 2026-09-04
+
+Performed against all 11 batch commits plus one audit-driven fix commit,
+with no migrations applied, no flags enabled, no production credentials
+used, and no features added. Full method and evidence for each item below
+is in this session's own record; this section is the summary.
+
+**Commands** — `git status --short` clean; `git log` confirms 12 commits
+ahead of `origin/main` (11 batches + 1 fix), nothing pushed; `typecheck`
+clean; `lint` — 14 pre-existing problems (3 errors, 11 warnings) in 3
+files untouched by this initiative, confirmed via `git log -- <file>`
+that no initiative commit touches them; `test` — 301/301 real tests pass,
+1 file fails on the same pre-existing `'server-only'` import issue
+documented since Batch A; `build` succeeds, full route manifest present;
+`git diff --check` clean across the full range.
+
+**Flags** — all 8 default `false` (seed rows + `flagEnabled()`'s own
+`?? false` fallback). Every public/shared route, nav/footer link, and
+homepage query that touches a table from an unapplied migration is
+gated behind its flag *before* querying — verified by tracing every
+call site of the 13 functions that read from the 8 new tables, not just
+the two routes that regressed during the original build.
+
+**Migrations (0013–0020)** — reviewed individually. Zero destructive
+statements (no `DROP`/`TRUNCATE`/`DELETE`) anywhere. Correct FK
+dependency order in every file. Appropriate `CHECK` constraints
+(capacity/stock non-negative) and unique indexes on every public lookup
+key. The drizzle-kit journal gap (0002/0003/0012 already invisible to
+`meta/_journal.json`) is unchanged and unresolved — 0013–0020 follow the
+same pre-existing hand-authored, `IF NOT EXISTS`-guarded convention
+rather than introducing a new inconsistency.
+
+**Campaign isolation** — `tests/commerce-campaign-isolation.test.ts`
+re-run fresh: 56/56 pass. Independently re-verified with a broader grep
+across every file in `lib/commerce`, `lib/shop`, `lib/tickets`,
+`lib/events`, `lib/feed` (not just the test's own 8-file scope) plus
+their admin/public routes — zero references to `contributions`,
+`transactions`, `refunds`, `ledgerEntries`, `disputes`,
+`consentRecords`, `supporterNumbers`, or `campaigns`.
+
+**Payments/webhooks** — `resolvePaymentDomain()` runs before every
+handler touches either table; unresolvable references hard-fail rather
+than guessing. Commerce order creation is idempotent (advisory lock +
+`idempotency_keys`, scoped `create_commerce_order:` prefix). Settlement
+is idempotent (early-return on `state === 'settled'`, both outside and
+inside an advisory-locked transaction); ticket issuance and stock
+commitment happen inside that same transaction, so a reader can never
+observe a paid order with no tickets/inventory movement. Refunds and
+disputes route to commerce-specific handlers that never touch
+`contributions`/`ledger_entries`; partial ticket refunds correctly do
+not auto-void any ticket (separate, deliberate admin action).
+
+**Tickets** — HMAC credentials (`TICKET_SIGNING_SECRET`, distinct from
+`ORDER_SIGNING_SECRET`) with version-based invalidation on
+reissue/regenerate. Redemption is a single atomic conditional
+`UPDATE ... WHERE status = 'valid'`; wrong-event tickets are rejected by
+a pre-check using the ticket's immutable `eventId` before any write, so
+a mismatched event can never slip through the race window. Every state
+change (check-in, reversal, void, reissue) writes a `ticket_check_ins`
+row. No console log anywhere in `lib/tickets`/`lib/commerce`/`lib/shop`
+prints a credential, token, or buyer PII value. `redeemTicket()` is only
+reachable through `requireAdminRole([...CHECKIN_ROLES])`, which
+genuinely enforces role membership (throws `AdminAuthorizationError`),
+not just a decorative check.
+
+**Concurrency test** — **not executed.** The only `DATABASE_URL`
+configured in this environment points at a live Neon database
+indistinguishable from production; per the standing "never use
+production" rule, no migration was applied and the test was not run
+against it. Status: implemented, unverified, not passed.
+
+**Shop checkout configuration gate — DEFECT FOUND AND FIXED.**
+`purchaseShopOrder()` had no configuration gate: `commerce_orders.taxCents`/
+`shippingCents` silently stayed at their schema default of `0` the
+moment `shopEnabled` was turned on, with no check that shipping, tax,
+refund policy, support contact, currency, or fulfillment ownership had
+ever been decided — exactly the "missing configuration must not mean
+free shipping or no tax" failure this audit was told to check for. Fixed
+in commit `4c7aa9d`: `lib/shop/checkout-configuration.ts` reads 7 DB-only
+settings (no file default, so unset is unambiguous) and blocks checkout
+with a clear `not_configured` error until all are explicitly set via the
+existing `/admin/settings` page; `createOrder()` now accepts and persists
+real `taxCents`/`shippingCents` instead of assuming zero. Re-verified
+clean: typecheck, targeted lint, full test suite (301/301, same baseline
+failure), full build, and a fresh isolation-test run (56/56) all pass
+after the fix.
+
+**Feed/moderation** — honeypot + dual rate limiting (per-IP and
+per-invite, 5/10min); magic-byte signature sniffing on every upload,
+cross-checked against declared MIME (rejects a relabeled file);
+`ctaUrl` accepts `https:` only, everything else rejected outright, not
+sanitized-and-kept; post `body` renders as plain JSX text (React-escaped),
+no `dangerouslySetInnerHTML` anywhere in feed rendering; a submission's
+`sponsorId` comes exclusively from the validated invite row, never from
+form input, and invite consumption is claimed atomically inside the same
+transaction as post creation (a concurrent double-submit rolls back
+rather than creating two posts). All mutating admin actions require
+`requireAdminRole()` with a role list matching the operations doc. All 4
+`NotificationKind`s this initiative added (`brand_submission_invite`,
+`ticket_order_confirmation`, `shop_order_confirmation`, `shop_shipment`)
+have real templates with every interpolated field passed through
+`escapeHtml()` — the pre-existing "declared but never templated" gap was
+not repeated.
+
+**Accessibility / responsive behavior** — **not independently verified**
+in this audit. This was a source-review-only session with no live
+preview or Playwright run; the original build's own disclosure (no
+independent a11y/responsive audit, no Playwright installed) still
+stands. Not claimed as passing.
+
+### Verdict: safe to merge, not yet safe to launch any flag
+
+No unresolved security, financial, or data-integrity defect remains —
+the one found (shop checkout's missing configuration gate) is fixed and
+independently re-verified. Exact blockers before turning on any flag in
+a real environment:
+
+1. **Migrations 0013–0020 have never been applied anywhere.** Apply them
+   to the real database (per the flag → migration dependency table in
+   `docs/COMMERCE_EVENTS_OPERATIONS.md`) before enabling the flag that
+   depends on each one.
+2. **The ticket concurrency test has never been run against a live
+   Postgres connection.** Required before `ticketSalesEnabled` or
+   `ticketCheckInEnabled` ever faces a real door — see item above.
+3. **`TICKET_SIGNING_SECRET` and `ORDER_SIGNING_SECRET` are not set** in
+   any environment this session had access to.
+4. **The 7 new shop commerce settings are not set.** `shopEnabled`
+   checkout will correctly stay blocked (`not_configured`) until an
+   operator sets `shopSupportEmail`, `shopRefundPolicyUrl`,
+   `shopFulfillmentOwnerEmail`, `shopCurrency`, `shopShippingRegions`,
+   `shopFlatShippingCents`, and `shopTaxRatePercent` via `/admin/settings`
+   — this is enforced by code now, not just a documentation note.
+5. **No independent accessibility/responsive audit has been run** against
+   any of the 15 new public/admin routes.
+6. **The drizzle-kit journal gap is still unresolved** (pre-existing,
+   predates this initiative, but still open) — reconcile before trusting
+   `drizzle-kit generate` for anything touching these tables again.
+
+Once 1–3 are satisfied for a specific flag (and 4 for `shopEnabled`
+specifically), that flag is safe to turn on. Item 5 should be closed
+before a real launch even if it doesn't block an internal/staged test.
