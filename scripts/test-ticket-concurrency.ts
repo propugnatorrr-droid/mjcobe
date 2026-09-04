@@ -59,6 +59,20 @@ async function main() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error('DATABASE_URL is not set.');
 
+  // Fail closed: this script seeds and mutates real rows (throwaway or
+  // not) and is only ever safe to run against a disposable local
+  // database. .env.local's DATABASE_URL is this project's real Neon
+  // database — loading it here (line 41 above) is a convenience for local
+  // dev, not a signal that it's safe to point this script at. Refuse
+  // anything but localhost/127.0.0.1 rather than trusting the caller to
+  // have swapped DATABASE_URL out correctly.
+  const dbHost = new URL(databaseUrl).hostname;
+  if (dbHost !== 'localhost' && dbHost !== '127.0.0.1') {
+    throw new Error(
+      `DATABASE_URL host is "${dbHost}", not localhost/127.0.0.1. This script only runs against a disposable local database — set DATABASE_URL to a local Postgres instance before running it.`,
+    );
+  }
+
   const ticketSecret = process.env.TICKET_SIGNING_SECRET;
   if (!ticketSecret) throw new Error('TICKET_SIGNING_SECRET is not set.');
 
