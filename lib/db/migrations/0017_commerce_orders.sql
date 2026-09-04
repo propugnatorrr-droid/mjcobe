@@ -4,12 +4,20 @@
 -- guarded, same policy as 0013-0016 — see those files' header comments.
 -- Nothing in this migration touches contributions/transactions/refunds/
 -- ledger_entries; this is a fully separate, additive schema.
+--
+-- Edited before ever being applied anywhere: the plan's approval applied
+-- its HMAC-signed-deterministic-credential correction (originally scoped
+-- to ticket credentials) to order-confirmation links too. commerce_orders
+-- stores `credential_version` (an integer counter), not a `secure_token`
+-- value — the /orders/[secureToken] URL token is recomputed from
+-- (id, credential_version) on demand, never looked up by a stored value.
+-- See lib/commerce/order-credentials.ts.
 
 CREATE TABLE IF NOT EXISTS "commerce_orders" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"order_type" text NOT NULL,
 	"order_number" text NOT NULL,
-	"secure_token" text NOT NULL,
+	"credential_version" integer DEFAULT 0 NOT NULL,
 	"buyer_email" text NOT NULL,
 	"status" text DEFAULT 'pending' NOT NULL,
 	"subtotal_cents" integer NOT NULL,
@@ -25,8 +33,6 @@ CREATE TABLE IF NOT EXISTS "commerce_orders" (
 --> statement-breakpoint
 
 CREATE UNIQUE INDEX IF NOT EXISTS "commerce_orders_order_number_idx" ON "commerce_orders" USING btree ("order_number");
---> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "commerce_orders_secure_token_idx" ON "commerce_orders" USING btree ("secure_token");
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "commerce_orders_status_idx" ON "commerce_orders" USING btree ("status");
 --> statement-breakpoint

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAdminEvent } from '@/lib/events/queries';
 import { EventForm } from '@/components/admin/EventForm';
@@ -24,6 +25,12 @@ export default async function AdminEventPage({ params }: Props) {
       <div className="flex flex-wrap items-center gap-4">
         <AdminHeading>{event.title}</AdminHeading>
         <StateDot state={event.status} />
+        <Link
+          href={`/admin/events/${event.id}/attendees`}
+          className="font-mono text-eyebrow uppercase text-[var(--champagne)] transition-opacity hover:opacity-70"
+        >
+          {admin.attendees.heading}
+        </Link>
       </div>
       <AdminHint>{admin.events.hint}</AdminHint>
 

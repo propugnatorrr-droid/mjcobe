@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import { getAdminOrder } from '@/lib/commerce/admin-queries';
 import { OrderRefundForm } from '@/components/admin/OrderRefundForm';
+import { RegenerateOrderLinkForm } from '@/components/admin/RegenerateOrderLinkForm';
+import { ResendTicketsForm } from '@/components/admin/ResendTicketsForm';
 import { AdminHeading, AdminHint, StateDot, Table, Td } from '@/components/admin/ui';
 import { formatCents, cents } from '@/lib/money/cents';
 import { admin } from '@/lib/copy/admin';
@@ -34,6 +36,13 @@ export default async function AdminOrderDetailPage({ params }: Props) {
         <p className="mt-1 font-mono text-eyebrow uppercase text-[var(--text-dim)]">
           {order.orderType} · {formatCents(cents(order.totalCents))}
         </p>
+        <div className="mt-4 flex flex-wrap items-center gap-6 border-t pt-4" style={{ borderColor: 'var(--line)' }}>
+          {order.orderType === 'ticket' ? <ResendTicketsForm orderId={order.id} /> : null}
+        </div>
+        <div className="mt-4 border-t pt-4" style={{ borderColor: 'var(--line)' }}>
+          <p className="mb-2 text-sm text-[var(--text-dim)]">{admin.orders.regenerateLinkHint}</p>
+          <RegenerateOrderLinkForm orderId={order.id} />
+        </div>
       </div>
 
       <p className="mb-3 font-mono text-eyebrow uppercase text-[var(--text-dim)]">{admin.orders.items}</p>

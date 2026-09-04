@@ -23,12 +23,14 @@ export const commerceOrders = pgTable('commerce_orders', {
   /** Human-readable, shown to the buyer and in admin lists — never used
    * for authorization. */
   orderNumber: text('order_number').notNull(),
-  /** Opaque, high-entropy — the real authorization for /orders/[secureToken].
-   * Stored as-is (not hashed), matching the existing shareLinks.code
-   * precedent: it's looked up by exact match on a normal confirmation-page
-   * read path, not scanned at a physical gate the way a ticket credential
-   * is (see Batch H's HMAC-signed ticket tokens for that stricter case). */
-  secureToken: text('secure_token').notNull(),
+  /** The real authorization for /orders/[secureToken] is an HMAC-signed
+   * deterministic credential derived from (id, credentialVersion) — see
+   * lib/commerce/order-credentials.ts. Nothing is stored beyond this
+   * counter; the URL token is recomputed on demand. Bumping it invalidates
+   * every previously issued confirmation link at once, which is also how
+   * an admin "regenerate the link" action works — no separate revocation
+   * list, same pattern as ticket credentials (Batch H). */
+  credentialVersion: integer('credential_version').default(0).notNull(),
   buyerEmail: text('buyer_email').notNull(),
   status: text('status').default('pending').notNull(), // pending|paid|failed|canceled|refunded|partially_refunded
   subtotalCents: integer('subtotal_cents').notNull(),
@@ -43,7 +45,6 @@ export const commerceOrders = pgTable('commerce_orders', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   uniqueIndex('commerce_orders_order_number_idx').on(t.orderNumber),
-  uniqueIndex('commerce_orders_secure_token_idx').on(t.secureToken),
   index('commerce_orders_status_idx').on(t.status),
 ]);
 

@@ -571,6 +571,16 @@ const copyDefaults = {
   'orders.items_heading': 'ITEMS',
   'orders.ticket_note': 'Your tickets will be emailed to you once available. This page is your record of purchase.',
 
+  // ---- /tickets/[secureToken] (individual ticket, read-only) -------------
+  'tickets_page.title': 'YOUR TICKET',
+  'tickets_page.not_found': 'We couldn’t find that ticket.',
+  'tickets_page.status_valid': 'VALID',
+  'tickets_page.status_checked_in': 'ALREADY CHECKED IN',
+  'tickets_page.status_void': 'VOID',
+  'tickets_page.display_code': 'CODE',
+  'tickets_page.event': 'EVENT',
+  'tickets_page.show_at_door': 'Show this QR code at the door, or give staff the code below it.',
+
   'home.feed_heading': 'FROM OUR PARTNERS',
   'home.feed_cta': 'VIEW THE FEED',
 

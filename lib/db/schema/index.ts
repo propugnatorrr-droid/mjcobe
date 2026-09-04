@@ -8,3 +8,4 @@ export * from './platform';
 export * from './feed';
 export * from './events';
 export * from './commerce';
+export * from './tickets';

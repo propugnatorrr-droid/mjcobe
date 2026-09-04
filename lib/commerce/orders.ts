@@ -6,6 +6,9 @@ import { dbw } from '@/lib/db/write';
 import * as s from '@/lib/db/schema';
 import { getProvider, type ProviderId } from '@/lib/payments';
 import { attachReservationToOrder } from '@/lib/commerce/reservations';
+import { orderConfirmationToken, verifyOrderConfirmationToken } from '@/lib/commerce/order-credentials';
+import { issueTicketsForOrder } from '@/lib/tickets/issue';
+import { sendTicketOrderConfirmation } from '@/lib/tickets/notify';
 
 const sha = (v: string) => createHash('sha256').update(v).digest('hex');
 
@@ -50,15 +53,6 @@ function generateOrderNumber(): string {
   const stamp = Date.now().toString(36).toUpperCase();
   const suffix = randomBytes(2).toString('hex').toUpperCase();
   return `MJC-${stamp}-${suffix}`;
-}
-
-function generateSecureToken(): string {
-  // 32 random bytes — this is the buyer's sole bearer credential for
-  // /orders/[secureToken], same entropy class as lib/feed/invites.ts's
-  // write-granting token. Stored as-is (not hashed), matching the
-  // existing shareLinks.code precedent — see lib/db/schema/commerce.ts's
-  // header comment on commerceOrders.secureToken for why.
-  return randomBytes(32).toString('base64url');
 }
 
 /**
@@ -131,24 +125,24 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     });
 
     const orderNumber = generateOrderNumber();
-    const secureToken = generateSecureToken();
 
     const [order] = await tx
       .insert(s.commerceOrders)
       .values({
         orderType: input.orderType,
         orderNumber,
-        secureToken,
         buyerEmail: input.buyerEmail,
         status: 'pending',
         subtotalCents,
         totalCents,
       })
-      .returning({ id: s.commerceOrders.id });
+      .returning({ id: s.commerceOrders.id, credentialVersion: s.commerceOrders.credentialVersion });
 
     if (!order) {
       throw new Error('Order was not created.');
     }
+
+    const secureToken = orderConfirmationToken(order.id, order.credentialVersion);
 
     await tx.insert(s.commerceOrderItems).values(
       input.items.map((item) => ({
@@ -226,12 +220,12 @@ export async function settleOrder(paymentId: string): Promise<SettleOrderResult>
     return { ok: false, code: 'pending', message: 'Payment is still processing.' };
   }
 
-  return dbw.transaction(async (tx) => {
+  const result = await dbw.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${paymentId}, 0))`);
 
     const [current] = await tx.select().from(s.commercePayments).where(eq(s.commercePayments.id, paymentId)).limit(1);
-    if (!current) return { ok: false, code: 'not_found', message: 'Payment not found.' };
-    if (current.state === 'settled') return { ok: true };
+    if (!current) return { ok: false as const, code: 'not_found', message: 'Payment not found.', orderType: null };
+    if (current.state === 'settled') return { ok: true as const, orderType: null };
 
     const now = new Date();
 
@@ -240,7 +234,23 @@ export async function settleOrder(paymentId: string): Promise<SettleOrderResult>
       .set({ state: 'settled', settledAt: now, updatedAt: now })
       .where(eq(s.commercePayments.id, paymentId));
 
+    const [order] = await tx
+      .select({ id: s.commerceOrders.id, orderType: s.commerceOrders.orderType })
+      .from(s.commerceOrders)
+      .where(eq(s.commerceOrders.id, current.orderId))
+      .limit(1);
+
     await tx.update(s.commerceOrders).set({ status: 'paid', updatedAt: now }).where(eq(s.commerceOrders.id, current.orderId));
+
+    // Ticket issuance happens inside this same transaction, per the plan
+    // — a reader can never see a paid ticket order with no tickets, or
+    // vice versa. Idempotent by construction (see issueTicketsForOrder's
+    // own doc comment), so this is safe even on a webhook retry that
+    // somehow reached this far (it won't: the settled-state early-return
+    // above already prevents that in the normal case).
+    if (order?.orderType === 'ticket') {
+      await issueTicketsForOrder(tx, current.orderId);
+    }
 
     // The reservation's job is done — the order's own items are now the
     // durable capacity record (see lib/commerce/reservations.ts's
@@ -249,8 +259,21 @@ export async function settleOrder(paymentId: string): Promise<SettleOrderResult>
     // atomic: a reader can never see "reservation gone, order not yet paid".
     await tx.delete(s.inventoryReservations).where(eq(s.inventoryReservations.orderId, current.orderId));
 
-    return { ok: true };
+    return { ok: true as const, orderType: order?.orderType ?? null, orderId: current.orderId };
   });
+
+  // Email is sent outside the settled transaction, same discipline as
+  // sendContributionConfirmation() — an email-provider outage must never
+  // roll back or misreport a successful payment. Failures are swallowed;
+  // the buyer's own confirmation page (/orders/[secureToken]) is always
+  // available regardless of email delivery state.
+  if (result.ok && result.orderType === 'ticket' && 'orderId' in result) {
+    await sendTicketOrderConfirmation(result.orderId).catch((error) => {
+      console.error('[ticket-confirmation-email-failed]', { orderId: result.orderId, error });
+    });
+  }
+
+  return result.ok ? { ok: true } : { ok: false, code: result.code, message: result.message };
 }
 
 /** Payment failed/canceled before settlement — releases the reservation
@@ -260,14 +283,37 @@ export async function releaseOrderReservations(orderId: string): Promise<void> {
 }
 
 export async function getOrderBySecureToken(secureToken: string) {
-  if (secureToken.length < 20 || secureToken.length > 200) return null;
+  const verified = verifyOrderConfirmationToken(secureToken);
+  if (!verified) return null;
 
-  const [order] = await db.select().from(s.commerceOrders).where(eq(s.commerceOrders.secureToken, secureToken)).limit(1);
+  const [order] = await db.select().from(s.commerceOrders).where(eq(s.commerceOrders.id, verified.orderId)).limit(1);
   if (!order) return null;
+
+  // A credential signed under a since-superseded version (see
+  // regenerateOrderCredential below) verifies its HMAC fine — the secret
+  // hasn't changed — but must still be rejected: version is part of what
+  // was signed, and the row no longer matches it.
+  if (order.credentialVersion !== verified.credentialVersion) return null;
 
   const items = await db.select().from(s.commerceOrderItems).where(eq(s.commerceOrderItems.orderId, order.id));
 
   return { order, items };
+}
+
+/** Invalidates every previously issued confirmation link for this order
+ * by bumping its credential version, and returns the new one — used by
+ * an admin "resend/regenerate" action. No DB row beyond the counter
+ * itself needs to change; nothing was ever storing the old token to clean up. */
+export async function regenerateOrderCredential(orderId: string): Promise<string | null> {
+  const [updated] = await dbw
+    .update(s.commerceOrders)
+    .set({ credentialVersion: sql`${s.commerceOrders.credentialVersion} + 1`, updatedAt: new Date() })
+    .where(eq(s.commerceOrders.id, orderId))
+    .returning({ id: s.commerceOrders.id, credentialVersion: s.commerceOrders.credentialVersion });
+
+  if (!updated) return null;
+
+  return orderConfirmationToken(updated.id, updated.credentialVersion);
 }
 
 export async function getOrderByPaymentProviderRef(providerRef: string) {
@@ -341,18 +387,6 @@ async function recomputeOrderRefundStatus(orderId: string, paidAmountCents: numb
 }
 
 /**
- * Webhook-driven refund confirmation — looks up the refund by the
- * provider's own reference (already stored by refundOrder's synchronous
- * call) and updates its status, then recomputes the order's refund
- * status. Unlike lib/ledger/contributions.ts's reconcileRefund, this does
- * NOT insert-a-row-if-missing for a refund created directly in the Stripe
- * dashboard rather than through refundOrder — every commerce refund in
- * this batch originates from refundOrder, so an unmatched providerRef is
- * logged and skipped rather than guessed at. Extending this to handle
- * dashboard-originated refunds is a reasonable future addition once that
- * becomes a real operational need, not something assumed safe to guess at now.
- */
-/**
  * Minimal dispute handling: flips the order to a 'disputed' status so an
  * admin sees it, without attempting to fully model Stripe's dispute
  * lifecycle (won/lost/needs_response/warning states, funds-withdrawn vs
@@ -378,6 +412,18 @@ export async function flagCommerceOrderDisputed(input: {
   return { ok: true };
 }
 
+/**
+ * Webhook-driven refund confirmation — looks up the refund by the
+ * provider's own reference (already stored by refundOrder's synchronous
+ * call) and updates its status, then recomputes the order's refund
+ * status. Unlike lib/ledger/contributions.ts's reconcileRefund, this does
+ * NOT insert-a-row-if-missing for a refund created directly in the Stripe
+ * dashboard rather than through refundOrder — every commerce refund in
+ * this batch originates from refundOrder, so an unmatched providerRef is
+ * logged and skipped rather than guessed at. Extending this to handle
+ * dashboard-originated refunds is a reasonable future addition once that
+ * becomes a real operational need, not something assumed safe to guess at now.
+ */
 export async function reconcileOrderRefund(input: {
   providerRef: string;
   status: string;

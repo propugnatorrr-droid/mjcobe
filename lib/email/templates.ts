@@ -17,6 +17,7 @@ export const notificationKinds = [
   'video_release',
   'campaign_ended',
   'brand_submission_invite',
+  'ticket_order_confirmation',
 ] as const;
 
 export type NotificationKind =
@@ -40,6 +41,11 @@ export type BrandSubmissionInvitePayload = {
   businessName: string;
   submissionUrl: string;
   expiresAtIso: string;
+};
+export type TicketOrderConfirmationPayload = {
+  eventTitle: string;
+  orderNumber: string;
+  tickets: { displayCode: string; ticketUrl: string; eventTitle: string }[];
 };
 
 export type OutbidPayload = {
@@ -345,6 +351,90 @@ function brandSubmissionInviteEmail(
   };
 }
 
+/** Each ticket's own link is the bearer credential (an HMAC-signed
+ * deterministic value, not a stored secret — see lib/tickets/credentials.ts) —
+ * meant to be in this email, once, for its buyer. Nothing here logs it. */
+function ticketOrderConfirmationEmail(
+  recipientEmail: string,
+  payload: TicketOrderConfirmationPayload,
+): EmailMessage {
+  const subject = `Your tickets — ${payload.eventTitle}`;
+
+  const text = [
+    'YOUR TICKETS',
+    '',
+    `Order ${payload.orderNumber} for ${payload.eventTitle} is confirmed.`,
+    '',
+    ...payload.tickets.map((ticket) => `Ticket ${ticket.displayCode}: ${ticket.ticketUrl}`),
+    '',
+    'Show the QR code on any ticket link at the door, or give staff the code printed above it.',
+    '',
+    'MJ COBE',
+  ].join('\n');
+
+  const ticketRows = payload.tickets
+    .map(
+      (ticket) => `
+              <tr>
+                <td style="padding:16px 0;border-bottom:1px solid #3e372b">
+                  <div style="font-size:11px;letter-spacing:2px;color:#d6b979">${escapeHtml(ticket.displayCode)}</div>
+                  <a href="${escapeHtml(ticket.ticketUrl)}" style="color:#f5f0e7;font-size:15px;text-decoration:underline">
+                    View this ticket
+                  </a>
+                </td>
+              </tr>`,
+    )
+    .join('');
+
+  const html = `<!doctype html>
+<html lang="en">
+  <body style="margin:0;background:#090909;color:#f5f0e7;font-family:Arial,Helvetica,sans-serif">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#090909">
+      <tr>
+        <td align="center" style="padding:32px 16px">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;border:1px solid #3e372b;background:#111111">
+            <tr>
+              <td style="padding:38px 36px;border-bottom:1px solid #3e372b">
+                <div style="font-family:Georgia,Times,serif;font-size:27px;letter-spacing:5px;color:#d6b979">
+                  MJ COBE
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:42px 36px">
+                <div style="font-size:11px;letter-spacing:2px;color:#d6b979">
+                  YOUR TICKETS
+                </div>
+                <h1 style="margin:18px 0 10px;font-family:Georgia,Times,serif;font-size:30px;line-height:1.2;font-weight:400;color:#f5f0e7">
+                  ${escapeHtml(payload.eventTitle)}
+                </h1>
+                <p style="margin:0 0 18px;font-size:13px;color:#786f62">
+                  Order ${escapeHtml(payload.orderNumber)}
+                </p>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  ${ticketRows}
+                </table>
+                <p style="margin:28px 0 0;font-size:13px;line-height:1.6;color:#786f62">
+                  Show the QR code on any ticket link at the door, or give staff the code printed above it.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  return {
+    to: recipientEmail,
+    from: fromAddress(),
+    subject,
+    html,
+    text,
+  };
+}
+
 function outbidEmail(
   recipientEmail: string,
   payload: OutbidPayload,
@@ -458,6 +548,12 @@ export function buildNotificationEmail(
     return brandSubmissionInviteEmail(
       recipientEmail,
       payload as BrandSubmissionInvitePayload,
+    );
+  }
+  if (kind === 'ticket_order_confirmation') {
+    return ticketOrderConfirmationEmail(
+      recipientEmail,
+      payload as TicketOrderConfirmationPayload,
     );
   }
 

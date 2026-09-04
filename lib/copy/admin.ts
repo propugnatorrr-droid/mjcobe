@@ -32,6 +32,7 @@ export const admin = {
     feed: 'BRAND FEED',
     events: 'EVENTS',
     orders: 'ORDERS',
+    checkIn: 'CHECK-IN',
   },
 
   analytics: {
@@ -740,6 +741,37 @@ invoiceStatuses: {
     refundReason: 'REASON',
     provider: 'PROVIDER',
     providerRef: 'PROVIDER REFERENCE',
+    regenerateLink: 'REGENERATE CONFIRMATION LINK',
+    regenerateLinkHint: 'Invalidates the previous link immediately. Use if it was shared somewhere it shouldn’t have been.',
+    resendTickets: 'RESEND TICKET EMAIL',
+  },
+
+  checkIn: {
+    heading: 'CHECK-IN',
+    hint: 'Scan a ticket QR or type its code. Redemption is authenticated and atomic — two scans of the same ticket can never both succeed.',
+    selectEvent: 'EVENT',
+    codeLabel: 'SCAN OR TYPE CODE',
+    submit: 'CHECK IN',
+    resultSuccess: 'CHECKED IN',
+    resultAlreadyCheckedIn: 'ALREADY CHECKED IN',
+    resultVoid: 'TICKET VOID',
+    resultWrongEvent: 'WRONG EVENT',
+    resultInvalid: 'NOT A VALID TICKET',
+    reverseCheckIn: 'REVERSE (SCANNED BY MISTAKE)',
+    reversalReason: 'REASON',
+  },
+
+  attendees: {
+    heading: 'ATTENDEES',
+    hint: 'Every ticket issued for this event. Voiding or reissuing is a deliberate, separate action from any refund — money and admission are never auto-linked.',
+    empty: 'No tickets issued yet.',
+    status: 'STATUS',
+    code: 'CODE',
+    issued: 'ISSUED',
+    checkedInAt: 'CHECKED IN',
+    void: 'VOID',
+    reissue: 'REISSUE',
+    reason: 'REASON',
   },
 
   saved: 'SAVED',

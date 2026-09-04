@@ -1048,7 +1048,209 @@ refund from `/admin/orders/[id]` and confirm the order's status becomes
 nothing to void yet, but the money side alone should work end to end).
 
 ## Batch H — Ticket issuance, email, and check-in
-Status: not started.
+
+Status: **done, with one required verification NOT run — read the
+Concurrency section below before treating this as production-ready.**
+
+### A retroactive fix to Batch G, done first
+The plan approval's correction #1 ("ticket credentials must use a
+regenerable HMAC-signed deterministic credential... apply the same
+pattern to order-confirmation links") applies to order-confirmation links
+too — but Batch G shipped `commerce_orders.secureToken` as a stored
+random token (matching `shareLinks.code`'s precedent), not that pattern.
+Since migration 0017 had never been applied anywhere, this was fixed in
+place rather than carried forward as a known inconsistency:
+- `lib/security/signed-credential.ts` (new) — the shared primitive:
+  `signCredential(id, version, secret)` → `` `${id}.${version}.${hmac}` ``,
+  `verifyCredential(token, secret)` → `{id, version} | null`, constant-time
+  comparison via `timingSafeEqual`. Tested in
+  `tests/signed-credential.test.ts` (9 cases: round-trip, determinism,
+  version-bump invalidation, wrong-secret rejection, tampered-id/tampered-
+  version rejection with the original signature reused, malformed
+  segment counts, non-integer/negative version, empty/oversized input).
+- `lib/commerce/order-credentials.ts` — thin wrapper using
+  `ORDER_SIGNING_SECRET`.
+- `commerce_orders.secure_token` → `commerce_orders.credential_version`
+  (integer, default 0) in both `lib/db/schema/commerce.ts` and
+  `lib/db/migrations/0017_commerce_orders.sql` (edited directly, with a
+  new header note explaining why — not layered as a separate migration,
+  since nothing has ever applied the old shape). `createOrder()`,
+  `getOrderBySecureToken()` updated to sign/verify instead of store/look
+  up; new `regenerateOrderCredential()` + an admin "regenerate
+  confirmation link" action/button on `/admin/orders/[id]` (bumping the
+  version invalidates every previously issued link at once — no stored
+  token to rotate).
+
+### Schema and migration
+- `lib/db/schema/tickets.ts` (new): `tickets` (one row per admission unit,
+  `credential_version` not `token_hash` — see above; `status`:
+  `valid|checked_in|void` is the single source of truth, nothing else
+  mutates it) and `ticket_check_ins` (append-only audit trail: check_in /
+  reversal / void / reissue).
+- `lib/db/migrations/0018_tickets.sql` — hand-authored, `IF NOT EXISTS`-
+  guarded, same policy as 0013–0017. Generated and reviewed, **not
+  applied**.
+
+### Issuance (`lib/tickets/issue.ts`)
+`issueTicketsForOrder(tx, orderId)` mints one `tickets` row per unit
+purchased, called from **inside** `lib/commerce/orders.ts`'s
+`settleOrder()` transaction (for `orderType: 'ticket'` orders only) — a
+reader can never see a paid ticket order with zero tickets, or vice
+versa. Idempotent by construction: counts existing tickets per order item
+before minting, so even if `settleOrder()`'s own settled-state early-
+return were somehow bypassed, issuance itself can't double-mint.
+`displayCode` uses a hand-transcription-safe alphabet (no 0/O/1/I),
+collision-checked with a retry loop matching the slug-uniqueness pattern
+already used elsewhere in this initiative (e.g. `lib/feed/admin-actions.ts`).
+
+### Redemption (`lib/tickets/checkin.ts`, `lib/tickets/redemption-decision.ts`)
+- `redemptionDecision()` — pure classification (`success | already_checked_in
+  | void | wrong_event`), split out for testability. `tests/
+  ticket-redemption-decision.test.ts` (6 cases, including "wrong_event
+  takes priority over the ticket's own status" so a checked-in ticket
+  scanned at the wrong door reports wrong_event, not already_checked_in).
+- `redeemTicket()` — resolves a scanned QR (full HMAC credential) or
+  manually-typed code (the short `displayCode`) to a ticket row, checks
+  event scoping, then runs a single **atomic conditional `UPDATE ...
+  WHERE status = 'valid'`**. This is Postgres's own row-level locking on
+  `UPDATE`, not an application-level lock — unlike `lib/commerce/
+  reservations.ts`'s capacity check (which needs `pg_advisory_xact_lock`
+  because it reads-then-decides-then-writes across multiple rows), a
+  single conditional write against one row is already safe under
+  concurrency without one. A credential verified under a since-rotated
+  `credentialVersion` is rejected even though its HMAC still checks out
+  (the secret hasn't changed) — same discipline as
+  `getOrderBySecureToken()`.
+- `reverseCheckIn()` / `voidTicket()` / `reissueTicket()` — admin-only
+  state transitions, each writing its own `ticket_check_ins` row.
+  **A real bug caught and fixed before it shipped**: the first draft of
+  `voidTicket()`'s guard clause was `eq(status, status)` — comparing the
+  status column to itself, always true, meaning it would have silently
+  re-voided an already-void ticket (and skipped writing an audit row)
+  instead of reporting `already_void`. Caught by re-reading the function
+  immediately after writing it, before any test or build touched it;
+  fixed to `ne(status, 'void')` with a proper audit-row write on success.
+
+### Concurrency — REQUIRED, NOT run in this session
+The plan is explicit: this batch isn't done until a real concurrent-load
+test passes against a real Postgres connection. This session has none —
+every test in this repo's suite is a pure-function test for exactly this
+reason (see the campaign-isolation test in Batch G's section for the
+same limitation stated a different way). What was actually delivered
+instead:
+- `scripts/test-ticket-concurrency.ts` — a ready-to-run script that seeds
+  its own throwaway event/ticket-type/order/ticket via a raw Neon
+  connection (same pattern as `lib/db/seed.ts`, to avoid the
+  `'server-only'` import guard — see below), fires 15 concurrent
+  redemption requests at the SAME ticket, asserts exactly 1 succeeds and
+  the other 14 report `already_checked_in` with the winner's own
+  timestamp, and cleans up every row it created regardless of outcome.
+  Run via `npm run tickets:test-concurrency`.
+- **A real, structural discovery while building this**: `redeemTicket()`
+  can't be imported directly by a plain Node script at all —
+  `lib/db/write.ts` (and everything downstream of it) is marked
+  `'server-only'`, which throws immediately outside Next.js's
+  "react-server" module condition, which a bare `tsx` script never sets.
+  This isn't specific to this function; it's true of nearly every
+  `lib/**/*.ts` file in this codebase, and it silently affects the
+  *pre-existing* `scripts/open-song-campaigns.ts` too (confirmed live —
+  that script currently fails immediately on an unrelated top-level-await/
+  CJS transform error before it would even reach this issue; both are
+  pre-existing environment gaps, not something introduced or fixed by
+  this batch). The fix that keeps the test meaningful rather than reduced
+  to reimplementing the logic under test: `app/api/dev/redeem-test/route.ts`,
+  a purpose-built POST endpoint that calls `redeemTicket()` from inside
+  the actual Next.js server runtime (where `'server-only'` is fine), hard-
+  blocked in production (`NODE_ENV` check) and gated behind the existing
+  `CRON_SECRET` bearer token — two independent gates. The script fires its
+  concurrent attempts as HTTP requests against this route instead of a
+  direct function call, so the test exercises the real code path.
+  **Confirmed the script itself runs cleanly up to its own precondition
+  checks** (`TICKET_SIGNING_SECRET is not set` — the expected, correct
+  failure with no secret configured) — not run to completion, since doing
+  so requires secrets this session isn't setting and a running dev server.
+  **Manual follow-up REQUIRED before ticketing is considered production-
+  ready**: set `TICKET_SIGNING_SECRET`/`ORDER_SIGNING_SECRET`/`CRON_SECRET`
+  in `.env.local`, apply migrations 0016–0018, run `npm run dev` in one
+  terminal and `npm run tickets:test-concurrency` in another, and confirm
+  it prints `PASS`.
+
+### Email (`lib/tickets/notify.ts`, `lib/email/templates.ts`)
+`ticket_order_confirmation` — a real template (not just a declared kind;
+see the architecture plan's risk table on why that gap matters), each
+ticket's own link built from `ticketCredential(id, credentialVersion)`.
+Queued/delivered the same way as every other notification in this
+initiative (`lib/notifications/outbox.ts`'s `deliverNotification`, called
+outside `settleOrder()`'s transaction, wrapped in try/catch — an email
+outage can never roll back or misreport a successful payment).
+
+### Public route (`app/tickets/[secureToken]/page.tsx`)
+Read-only — the buyer's confirmation page can display a QR (via the
+newly-installed `qrcode` package, explicitly pre-approved by the plan as
+a narrowly-justified dependency for this exact batch) and the fallback
+display code, but has no write path at all, matching the plan's "no
+public endpoint can ever mark a ticket used" requirement literally: this
+file contains zero mutations. Flag-gated behind `ticketSalesEnabled`
+before querying `tickets`/`live_events` — same fix, same reasoning, as
+Batch G's `/orders/[secureToken]` regression; **live-verified** this time
+*before* shipping rather than discovered after.
+
+### Admin surfaces
+- `app/admin/(dash)/check-in/page.tsx` + `components/admin/CheckInForm.tsx`
+  — event selector + scan/type input, `moderator` role (launch role
+  table: "moderator: feed moderation and ticket check-in"), inline
+  reversal action when the result is `already_checked_in`. Lives under the
+  same `(dash)` layout/auth as every other admin page in this initiative
+  rather than a standalone kiosk layout — a deliberate, documented scope
+  reduction (simpler and safer for this batch; a dedicated full-screen
+  check-in layout is a reasonable future polish item, not a correctness gap).
+- `app/admin/(dash)/events/[id]/attendees/page.tsx` +
+  `components/admin/TicketAttendeeRow.tsx` — full ticket list per event,
+  void/reissue actions. Role: `moderator` **and** `finance_admin` both
+  allowed — voiding/reissuing isn't named explicitly in the launch role
+  table (it sits between "check-in," moderator's domain, and "order
+  details," finance_admin's), resolved the same broadest-reasonable-
+  reading way Batch C resolved an equivalent gap for feed moderation.
+- `components/admin/ResendTicketsForm.tsx` on `/admin/orders/[id]` (ticket
+  orders only) — reuses `retryNotification()` against the existing
+  notification row by dedupe key rather than re-queuing a duplicate,
+  falling back to a fresh `sendTicketOrderConfirmation()` only if no
+  notification row exists yet.
+- Nav entries added to `app/admin/(dash)/layout.tsx` (Check-in) and a link
+  from the event detail page to its attendees list.
+
+### Package installed
+`qrcode` + `@types/qrcode` — explicitly named by the plan as pre-approved
+for this exact batch ("mentioned examples: qrcode, @zxing/browser for
+later ticket batches"). No other new dependency.
+
+### Verification
+`npm run typecheck && npm run lint && npm run build` — all clean; lint
+scoped to this batch's files (including the new dev-only test route and
+script) shows zero errors/warnings, full-repo lint matches baseline.
+`npm test` — 239 passing (224 baseline + 15 new: 9 signed-credential + 6
+redemption-decision cases), same 1 pre-existing failing suite (unrelated,
+untouched). `npm run build` — succeeds, all new routes present
+(`/tickets/[secureToken]`, `/admin/check-in`,
+`/admin/events/[id]/attendees`, `/api/dev/redeem-test`).
+**Live-checked in the dev server**: `/tickets/[secureToken]` with a
+nonexistent token renders the friendly not-found state (no crash) with
+the flag at its real default; `/admin/check-in` and
+`/admin/events/[id]/attendees` both correctly redirect an unauthenticated
+visitor to `/admin/login`; `/orders/[secureToken]` and the homepage still
+work correctly after the order-credential retrofit; a fresh tab on the
+homepage shows zero console errors.
+
+**Not verified live** (beyond the concurrency test discussed above): an
+actual issued ticket's email/QR/display-code rendering correctly end to
+end, an actual scan-based redemption through `/admin/check-in`, and the
+void/reissue/reversal admin actions against a real ticket. **Manual
+follow-up for the user**: after running the concurrency test successfully,
+buy a real ticket through the Batch G checkout flow with
+`eventsEnabled`+`ticketSalesEnabled` on, confirm the email/QR/ticket page
+all render correctly, then check it in via `/admin/check-in`, confirm a
+second attempt reports already-checked-in, reverse it, check in again,
+then try void and reissue from `/admin/events/[id]/attendees`.
 
 ## Batch I — Shop catalog and inventory
 Status: not started.
