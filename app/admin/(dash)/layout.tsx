@@ -13,6 +13,7 @@ import {
   LogOut,
   Music,
   Newspaper,
+  Package,
   QrCode,
   ShoppingBag,
   Ticket,
@@ -61,6 +62,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 { href: '/admin/sponsors', label: admin.nav.sponsors, icon: Landmark },
 { href: '/admin/feed', label: admin.nav.feed, icon: Newspaper },
 { href: '/admin/events', label: admin.nav.events, icon: Ticket },
+{ href: '/admin/shop', label: admin.nav.shop, icon: Package },
 { href: '/admin/orders', label: admin.nav.orders, icon: ShoppingBag },
 { href: '/admin/check-in', label: admin.nav.checkIn, icon: QrCode },
 {

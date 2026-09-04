@@ -581,6 +581,18 @@ const copyDefaults = {
   'tickets_page.event': 'EVENT',
   'tickets_page.show_at_door': 'Show this QR code at the door, or give staff the code below it.',
 
+  // ---- /shop (merch catalog, no checkout yet) ----------------------------
+  'shop.title': 'SHOP',
+  'shop.eyebrow': 'MERCH',
+  'shop.intro': 'Wearable proof you were here before the world caught on.',
+  'shop.empty': 'Nothing in the shop yet. Check back soon.',
+  'shop.view_product': 'VIEW',
+  'shop.back_to_shop': 'BACK TO SHOP',
+  'shop.not_found': 'That product doesn’t exist or isn’t available.',
+  'shop.in_stock': 'IN STOCK',
+  'shop.out_of_stock': 'OUT OF STOCK',
+  'shop.checkout_not_yet_available': 'Online checkout is coming soon — check back here for the link.',
+
   'home.feed_heading': 'FROM OUR PARTNERS',
   'home.feed_cta': 'VIEW THE FEED',
 

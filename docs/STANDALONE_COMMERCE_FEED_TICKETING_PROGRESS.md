@@ -1253,7 +1253,97 @@ second attempt reports already-checked-in, reverse it, check in again,
 then try void and reissue from `/admin/events/[id]/attendees`.
 
 ## Batch I — Shop catalog and inventory
-Status: not started.
+
+Status: **done**.
+
+### Schema and migration
+- `lib/db/schema/shop.ts` (new): `products`, `product_media`,
+  `product_variants` (`stockOnHand` is the one authoritative quantity per
+  the plan's approval correction — updated only alongside an
+  `inventory_movements` insert, in the same transaction, never as a bare
+  `UPDATE` on its own), `inventory_movements` (append-only audit trail,
+  mirrors `ledger_entries`' discipline). `commerce_order_items`-style bare
+  `referenceId`/`orderItemId` precedent reused for
+  `inventory_movements.orderItemId` (no FK, avoids an import cycle with
+  `commerce.ts` — Batch J will populate it on sale).
+- `lib/db/migrations/0019_shop_catalog.sql` — hand-authored, `IF NOT
+  EXISTS`-guarded, same policy as 0013–0018, includes a real Postgres
+  `CHECK (stock_on_hand >= 0)`. Generated and reviewed, **not applied**.
+
+### Reuse over duplication: extracted image validation
+Building product-photo upload revealed a third near-identical copy of
+the PNG/WebP/JPEG magic-byte-sniffing logic was about to happen (after
+`lib/media/sponsor-logo.ts` and Batch D's `lib/feed/media-validation.ts`).
+Instead: `lib/media/image-validation.ts` (new) holds the generic pure
+`validateImageUpload()`/`isPng`/`isWebp`/`isJpeg`, and
+`lib/feed/media-validation.ts` was rewritten as a thin wrapper around it
+— **same public API, same behavior, zero changes needed in its own
+callers** (`lib/feed/media.ts`, `lib/feed/admin-actions.ts`,
+`lib/feed/submission-actions.ts`). Re-ran `tests/feed-media.test.ts`
+after the refactor to confirm — still 8/8 passing. `lib/shop/media.ts`
+is the shop-specific storage wrapper (Vercel Blob + `media_assets`
+insert), analogous to `lib/feed/media.ts`.
+
+### Application code
+- `lib/shop/inventory-decision.ts` — pure `inventoryAdjustmentDecision()`
+  (mirrors `lib/commerce/reservation-decision.ts`'s split-for-testability
+  pattern), tested in `tests/inventory-adjustment-decision.test.ts` (7
+  cases including "never silently clamps a negative result to zero — it
+  rejects instead").
+- `lib/shop/queries.ts` — public reads (`listPublicProducts`,
+  `getPublicProduct`, both `status = 'active'` only) and admin reads
+  (`listAdminProducts`, `getAdminProduct`). A variant's public `inStock`
+  is `!inventoryTracked || stockOnHand > 0` — an untracked variant (e.g.
+  made-to-order) is always shown in stock.
+- `lib/shop/admin-actions.ts` — `createProduct`/`updateProduct`
+  (`content_admin`, per the launch role table's "content_admin:
+  products/... "), `uploadProductMedia`, `createVariant`/`updateVariant`
+  (SKU uniqueness checked before insert), `adjustInventory` (writes the
+  movement row and updates `stockOnHand` inside one transaction, using
+  `inventoryAdjustmentDecision()` for the actual math).
+- `app/shop/page.tsx`, `app/shop/[slug]/page.tsx` — `flagEnabled
+  ('shopEnabled')`-gated via `notFound()`. Variant list on the detail
+  page is **prices and stock status only, no add-to-cart** — Batch I
+  explicitly excludes checkout (that's Batch J), so rather than a
+  placeholder "buy" control that goes nowhere, the page states plainly
+  that online checkout is coming soon (same pattern as Batch F's ticket
+  price list before Batch G added real checkout).
+- `components/shop/ProductCard.tsx` for the list grid.
+- `app/admin/(dash)/shop/page.tsx` (list), `.../shop/new/page.tsx`
+  (create), `.../shop/[id]/page.tsx` (edit + media + variants).
+  `components/admin/ProductForm.tsx`, `components/admin/
+  ProductMediaUploadForm.tsx`, `components/admin/VariantManager.tsx`
+  (per-row edit + inline stock-adjustment form + an add-new form, same
+  `useActionState` shape as `TicketTypeManager`). Nav entry added to
+  `app/admin/(dash)/layout.tsx`.
+- Copy: `lib/copy/defaults.ts` (`shop.*`) and `lib/copy/admin.ts`
+  (`admin.nav.shop`, `admin.shop.*` including `admin.shop.variants.*`).
+
+### Verification
+`npm run typecheck && npm run lint && npm run build` — all clean; lint
+scoped to this batch's files (including the `lib/media/image-validation.ts`
+extraction and the rewritten `lib/feed/media-validation.ts`) shows zero
+errors/warnings, full-repo lint matches baseline. `npm test` — 246
+passing (239 baseline + 7 new `tests/inventory-adjustment-decision.test.ts`
+cases; the pre-existing `tests/feed-media.test.ts` suite was re-run in
+isolation immediately after the media-validation refactor and confirmed
+unaffected), same 1 pre-existing failing suite (unrelated, untouched).
+`npm run build` — succeeds, all new routes present (`/shop`,
+`/shop/[slug]`, `/admin/shop`, `/admin/shop/[id]`, `/admin/shop/new`).
+**Live-checked in the dev server**: `/shop` and `/shop/[slug]` both
+correctly 404 with `shopEnabled` at its real default (off); `/admin/shop`
+correctly redirects an unauthenticated visitor to `/admin/login`; a fresh
+tab on the homepage shows zero console errors.
+
+**Not verified live**: an actual product with variants and a photo
+rendering correctly on `/shop`/`/shop/[slug]`, and the full admin
+create → upload photo → add variant → adjust stock flow end to end — no
+admin credentials, no live product data. Manual follow-up for the user:
+create a product via `/admin/shop/new`, upload a photo, add a variant,
+adjust its stock up and down (confirm a withdrawal below zero is
+rejected, not clamped), set it `active`, enable `shopEnabled` on
+`/admin/flags`, and confirm it renders correctly on `/shop` and
+`/shop/[slug]`.
 
 ## Batch J — Shop checkout, orders, and fulfillment
 Status: not started.

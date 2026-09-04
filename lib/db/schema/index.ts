@@ -9,3 +9,4 @@ export * from './feed';
 export * from './events';
 export * from './commerce';
 export * from './tickets';
+export * from './shop';
