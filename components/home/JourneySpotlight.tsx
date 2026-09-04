@@ -72,6 +72,10 @@ export function JourneySpotlight({
                 <Link href={`/song/${entry.songSlug}`}>
                   {entry.title}
                 </Link>
+              ) : entry.eventSlug ? (
+                <Link href={`/events/${entry.eventSlug}`}>
+                  {entry.title}
+                </Link>
               ) : (
                 entry.title
               )}

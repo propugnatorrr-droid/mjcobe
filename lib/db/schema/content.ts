@@ -3,15 +3,23 @@ import {
 } from 'drizzle-orm/pg-core';
 import { journeyEventKind, milestoneKind, socialFormat } from './enums';
 import { campaigns, songs, mediaAssets } from './catalog';
+import { liveEvents } from './events';
 
 /**
  * One polymorphic event stream. The per-song journey and the global /journey
  * page are both filtered views of this table — nothing is duplicated.
+ *
+ * `liveEventId` follows the same "typed nullable FK per related entity"
+ * precedent as `songId`/`campaignId` above rather than a generic
+ * (entity, entityId) pair — this table has never used polymorphic pointers,
+ * and a live event is exactly the kind of thing a journey entry links to
+ * (an announcement, a reminder) the same way it already links to a song.
  */
 export const journeyEvents = pgTable('journey_events', {
   id: uuid('id').primaryKey().defaultRandom(),
   songId: uuid('song_id').references(() => songs.id, { onDelete: 'cascade' }),
   campaignId: uuid('campaign_id').references(() => campaigns.id, { onDelete: 'cascade' }),
+  liveEventId: uuid('live_event_id').references(() => liveEvents.id, { onDelete: 'set null' }),
   kind: journeyEventKind('kind').notNull(),
   title: text('title').notNull(),
   body: text('body'),

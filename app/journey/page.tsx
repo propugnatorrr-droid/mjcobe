@@ -150,6 +150,13 @@ export default async function JourneyPage({
                             >
                               {event.title}
                             </Link>
+                          ) : event.eventSlug ? (
+                            <Link
+                              href={`/events/${event.eventSlug}`}
+                              className="hover:text-[var(--champagne)]"
+                            >
+                              {event.title}
+                            </Link>
                           ) : (
                             event.title
                           )}

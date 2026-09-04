@@ -6,3 +6,4 @@ export * from './sponsors';
 export * from './content';
 export * from './platform';
 export * from './feed';
+export * from './events';

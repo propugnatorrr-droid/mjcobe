@@ -690,7 +690,137 @@ homepage preview row and nav/footer links render correctly with
 `brandFeedEnabled` on.
 
 ## Batch F — Events and Journey integration
-Status: not started.
+
+Status: **done**.
+
+### Schema and migration
+- `lib/db/schema/enums.ts`: `eventStatus` enum (`scheduled | postponed |
+  canceled | completed`).
+- `lib/db/schema/events.ts` (new): `liveEvents` (slug/venue/address/
+  dates/timezone/sales-window/status/`ticketingEnabled`/informational
+  `capacity`) and `ticketTypes` (name/price/capacity/perOrderLimit/sales
+  window/active/sort — pricing-and-capacity plan only, nothing sells
+  against these yet). Barrel-exported via `lib/db/schema/index.ts`.
+- `lib/db/schema/content.ts`: `journey_events.liveEventId` — a real typed
+  nullable FK (`onDelete: set null`), following the exact precedent
+  `songId`/`campaignId` already set on this table rather than a generic
+  polymorphic pointer.
+- `lib/db/migrations/0016_live_events.sql` (new) — hand-authored,
+  `IF NOT EXISTS`-guarded, same policy as 0013–0015. Creates the
+  `event_status` enum, `live_events`, `ticket_types`, adds
+  `journey_events.live_event_id`, and adds real Postgres `CHECK`
+  constraints (`live_events.capacity >= 0` when set,
+  `ticket_types.capacity >= 0`) — the first `CHECK` constraints added by
+  this initiative; no existing Drizzle schema file in this repo uses
+  `.check()`, so these live only in the hand-authored SQL, not the TS
+  schema. Generated and reviewed, **not applied** — `db:migrate` never run.
+
+### A real regression caught by `npm run build`, not a live check
+`getGlobalJourney()` (`lib/journey/queries.ts`) is an **existing, always-on
+query** — it backs both the homepage's journey spotlight and the public
+`/journey` page, neither of which is flag-gated. Adding an unconditional
+`leftJoin(s.liveEvents, ...)` to it broke `npm run build` outright:
+`relation "live_events" does not exist`, because the migration that
+creates that table is generated but deliberately never applied (this
+initiative's standing policy). A first fix attempt only neutered the
+join's `ON` condition to `sql\`false\`` — that still failed, because
+`.leftJoin(s.liveEvents, ...)` emits `LEFT JOIN "live_events" ...` in the
+compiled SQL regardless of what the `ON` clause says; the join *target*,
+not just its condition, has to be conditional. The actual fix: two
+separate query bodies inside `getGlobalJourney()`, branching on
+`flagEnabled('eventsEnabled')` — when off, the function runs byte-for-byte
+the same query this table already ran before this batch; when on, it runs
+the new query with the `live_events` join. This is the same principle
+every earlier batch's new tables already followed (only ever reached
+through a flag-gated route), just the first time it had to be applied
+*inside* a pre-existing shared query function instead of a brand-new one.
+Caught by running `npm run build` against the real dev database as part
+of this batch's own verification sweep — not something a typecheck, lint,
+or unit test would have surfaced, since the query is syntactically valid
+TypeScript either way.
+
+### Application code
+- `lib/events/eligibility.ts` — `resolveEventCtaState(event, now)`, a pure
+  function (`unpublished | canceled | postponed | completed |
+  ticketing_disabled | not_yet_on_sale | on_sale | sales_closed`), tested
+  directly in `tests/events-eligibility.test.ts` (12 cases: every
+  lifecycle-status short-circuit, both sales-window boundaries, the
+  ticketing-disabled path, and confirming lifecycle status is checked
+  before the sales window so a canceled event never reads as on_sale even
+  with an open sales window). **Deliberately no `sold_out` state** — no
+  order/reservation/ticket table exists yet (Batch G/H), so this batch
+  cannot know how many tickets have actually been claimed; sold-out
+  detection belongs here as an additional input once issuance exists, not
+  bolted on elsewhere.
+- `lib/events/queries.ts` — public reads (`listUpcomingEvents`,
+  `listPastEvents`, `getPublicEvent`, each attaching active ticket types
+  via a single `inArray`-scoped query, not one query per event) and admin
+  reads (`listAdminEvents`, `getAdminEvent`). `formatEventDateTime()`
+  renders in the **event's own venue timezone** (`Intl.DateTimeFormat`
+  with the event's stored IANA zone), not the site's global
+  `displayTimeZone` setting — a visitor reading "8:00 PM" for a Nashville
+  show should see Nashville's 8:00 PM regardless of their own browser
+  clock; falls back to a zone-less render if an admin-entered timezone
+  string isn't valid, rather than throwing on a public page.
+- `lib/events/admin-actions.ts` — `createEvent`/`updateEvent`
+  (`content_admin`, matching the launch role table's "content_admin: ...
+  event content ..." entry) and `createTicketType`/`updateTicketType`/
+  `deleteTicketType` (same role). Ticket-type delete is a hard delete for
+  now — no order/ticket table references `ticket_types` yet, so nothing
+  can dangle; that becomes a soft-delete-only guard once Batch G/H add a
+  real reference.
+- `app/events/page.tsx`, `app/events/[slug]/page.tsx` —
+  `flagEnabled('eventsEnabled')`-gated via `notFound()`. List page splits
+  upcoming (soonest first) from past (most recent first) as two separate
+  queries/sections, not one mixed feed. Detail page shows the ticket-type
+  list as **prices only, no purchase button or link** — Batch F explicitly
+  excludes payments, and rather than a placeholder "buy" button that goes
+  nowhere, the page states plainly that online purchase is coming soon.
+- `components/events/EventCard.tsx` for the list grid.
+- `app/admin/(dash)/events/page.tsx` (list), `.../events/new/page.tsx`
+  (create), `.../events/[id]/page.tsx` (edit + ticket-type management).
+  `components/admin/EventForm.tsx`, `components/admin/
+  TicketTypeManager.tsx` (per-row edit/delete forms + an add-new form,
+  same `useActionState` + hidden-field pattern as `FeedModerationPanel`/
+  `InviteRow`). Nav entry added to `app/admin/(dash)/layout.tsx`.
+- **Journey integration**: `lib/journey/queries.ts`'s `JourneyEntry` type
+  gained `eventSlug`/`eventTitle` (null unless the referenced event is
+  published — same double-gate discipline as the feed, computed in the
+  query rather than trusted from a join that could return a draft event's
+  slug). `components/home/JourneySpotlight.tsx` and `app/journey/page.tsx`
+  both extend their existing `entry.songSlug ? <Link>… : title` ternary
+  with an `entry.eventSlug ? <Link>…` branch in between, exactly the
+  extension point the architecture plan called out by file name.
+- Copy: `lib/copy/defaults.ts` (`events.*`, including one label per CTA
+  state) and `lib/copy/admin.ts` (`admin.nav.events`, `admin.events.*`
+  including `admin.events.ticketTypes.*`).
+- **No primary nav entry** — matches the plan's own recommended decision
+  (#4 in the decision table): events are primarily discoverable via
+  Journey; `/events` exists as a real route but isn't a 7th nav tab.
+
+### Verification
+`npm run typecheck && npm run lint && npm run build` — all clean after the
+`getGlobalJourney()` fix above; lint scoped to this batch's files shows
+zero errors/warnings, full-repo lint matches the pre-existing baseline.
+`npm test` — 197 passing (185 baseline + 12 new
+`tests/events-eligibility.test.ts` cases), same 1 pre-existing failing
+suite (unrelated, untouched). `npm run build` — succeeds against the real
+dev database, `/events` and `/events/[slug]` present in the route
+manifest. **Live-checked in the dev server** (this batch specifically
+needed this, since it touches two already-shipped, always-on pages, not
+just new flag-gated ones): homepage renders unchanged with no console
+errors; `/journey` renders all real journey entries correctly with the
+flag off (confirms the `getGlobalJourney()` fallback path works, not just
+compiles); `/events` correctly 404s with `eventsEnabled` off;
+`/admin/events` correctly redirects to `/admin/login` unauthenticated.
+**Not verified live**: the populated state (a real event with ticket
+types rendering on `/events`/`/events/[slug]`, and a journey entry linking
+to it) — no admin credentials, no live event data. Manual follow-up for
+the user: create an event via `/admin/events/new`, add a ticket type,
+publish it, set `eventsEnabled` to `true` on `/admin/flags`, and confirm
+`/events` and `/events/[slug]` render correctly — including the
+not-yet-on-sale / on-sale / sales-closed / canceled / postponed states by
+adjusting the event's sales window and status fields.
 
 ## Batch G — Shared commerce and ticket checkout
 Status: not started.

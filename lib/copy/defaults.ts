@@ -506,6 +506,28 @@ const copyDefaults = {
   'submit.error_rate_limited': 'Too many attempts. Please wait a few minutes and try again.',
   'submit.error_generic': 'Something went wrong. Please try again.',
 
+  // ---- /events (live events, no ticket checkout yet) --------------------------
+  'events.title': 'EVENTS',
+  'events.eyebrow': 'LIVE',
+  'events.intro': 'Where to find MJ COBE in person.',
+  'events.empty': 'No events on the calendar right now. Check back soon.',
+  'events.upcoming_heading': 'UPCOMING',
+  'events.past_heading': 'PAST EVENTS',
+  'events.view_event': 'VIEW EVENT',
+  'events.back_to_events': 'BACK TO EVENTS',
+  'events.not_found': 'That event doesn’t exist or isn’t public.',
+  'events.venue': 'VENUE',
+  'events.tickets_heading': 'TICKETS',
+  'events.cta.unpublished': 'DETAILS COMING SOON',
+  'events.cta.canceled': 'EVENT CANCELED',
+  'events.cta.postponed': 'EVENT POSTPONED',
+  'events.cta.completed': 'EVENT HAS PASSED',
+  'events.cta.ticketing_disabled': 'RSVP DETAILS COMING SOON',
+  'events.cta.not_yet_on_sale': 'TICKETS NOT YET ON SALE',
+  'events.cta.on_sale': 'TICKETS ON SALE',
+  'events.cta.sales_closed': 'TICKET SALES CLOSED',
+  'events.tickets_purchase_not_yet_available': 'Online ticket purchase is coming soon — check back here for the link.',
+
   'home.feed_heading': 'FROM OUR PARTNERS',
   'home.feed_cta': 'VIEW THE FEED',
 

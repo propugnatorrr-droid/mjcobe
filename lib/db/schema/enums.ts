@@ -74,3 +74,7 @@ export const blocklistKind = pgEnum('blocklist_kind', [
 ]);
 
 export const invoiceStatus = pgEnum('invoice_status', ['draft', 'issued', 'paid', 'void']);
+
+export const eventStatus = pgEnum('event_status', [
+  'scheduled', 'postponed', 'canceled', 'completed',
+]);
