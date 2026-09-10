@@ -71,6 +71,10 @@ export type OutbidPayload = {
   leadingAmountCents: number;
   minimumToReclaimCents:
     number;
+  /** The recipient's own displaced amount — used to open with genuine
+   * thanks for what they actually gave, not just the news that someone
+   * passed them. */
+  displacedAmountCents: number;
 };
 
 function escapeHtml(
@@ -616,7 +620,7 @@ function outbidEmail(
       : `${siteUrl()}/back?song=${encodeURIComponent(payload.songSlug)}`;
 
   const subject =
-    `The lead changed — ${payload.songTitle}`;
+    `Thank you for backing ${payload.songTitle}`;
 
   const reclaim =
     money(
@@ -630,11 +634,17 @@ function outbidEmail(
         .leadingAmountCents,
     );
 
+  const given =
+    money(
+      payload
+        .displacedAmountCents,
+    );
+
   const text = [
-    'THE LEAD CHANGED',
+    'THANK YOU',
     '',
-    `Another supporter now leads ${payload.songTitle} at ${leading}.`,
-    `Add ${reclaim} or more to reclaim first place.`,
+    `Your support of ${given} for ${payload.songTitle} is part of its permanent record — that doesn't change.`,
+    `Another supporter has since taken the #1 spot at ${leading}. Add ${reclaim} or more if you'd like to reclaim it — no pressure either way.`,
     '',
     destination,
     '',
@@ -651,26 +661,26 @@ function outbidEmail(
             <tr>
               <td style="padding:36px 0">
                 <div style="font-size:10px;letter-spacing:3px;color:#d6b979">
-                  LEADERBOARD UPDATE
+                  THANK YOU
                 </div>
 
                 <h1 style="margin:18px 0;font-family:Georgia,Times,serif;font-size:38px;font-weight:400">
-                  The lead changed.
+                  Your support is part of the record.
                 </h1>
 
                 <p style="font-size:16px;line-height:1.7;color:#c8c0b2">
-                  Another supporter now leads
+                  Your ${escapeHtml(given)} for
                   <strong>${escapeHtml(payload.songTitle)}</strong>
-                  at ${escapeHtml(leading)}.
+                  is on the permanent record — that doesn't change.
                 </p>
 
                 <p style="font-size:16px;line-height:1.7;color:#c8c0b2">
-                  Add ${escapeHtml(reclaim)} or more to reclaim first place.
+                  Another supporter has since taken the #1 spot at ${escapeHtml(leading)}. Add ${escapeHtml(reclaim)} or more if you'd like to reclaim it — no pressure either way.
                 </p>
 
                 <p style="margin-top:30px">
                   <a href="${escapeHtml(destination)}" style="display:inline-block;border-bottom:1px solid #d6b979;padding:8px 0;color:#f5f0e7;text-decoration:none;font-size:11px;font-weight:bold;letter-spacing:2px">
-                    RETURN TO THE RECORD →
+                    VIEW THE RECORD →
                   </a>
                 </p>
               </td>
