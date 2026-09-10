@@ -161,6 +161,13 @@ const copyDefaults = {
   'checkout.field.message': 'MESSAGE',
   'checkout.field.optional': 'OPTIONAL',
 
+  'checkout.allocation_note':
+    'Campaign support helps fund marketing, visual production, content, promotion and the continued development of MJ COBE.',
+  'checkout.support_note':
+    'Questions about your contribution?',
+  'checkout.support_link':
+    'CONTACT SUPPORT',
+
   'checkout.consent.fan':
     'Contributions are voluntary support for MJ COBE\u2019s creative and promotional campaigns and do not provide ownership, equity, royalties, securities, repayment rights or financial returns.',
   'checkout.consent.fan_checkbox':

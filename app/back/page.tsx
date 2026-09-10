@@ -248,6 +248,9 @@ export default async function BackPage({
     paymentSelection,
     paymentAmount,
     viewSong,
+    allocationNote,
+    supportNote,
+    supportLink,
   ] = await Promise.all([
 
 
@@ -296,6 +299,9 @@ export default async function BackPage({
     text('checkout.payment.selection'),
     text('checkout.payment.amount'),
     text('checkout.view_song'),
+    text('checkout.allocation_note'),
+    text('checkout.support_note'),
+    text('checkout.support_link'),
   ]);
 
 
@@ -490,6 +496,9 @@ className={[
               paymentRecord,
               paymentSelection,
               paymentAmount,
+              allocationNote,
+              supportNote,
+              supportLink,
             }}
 
             sponsorHref={
