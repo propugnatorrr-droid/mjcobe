@@ -107,6 +107,39 @@ export async function queueOutbidNotification(
     return;
   }
 
+  // Lifetime cap per (campaign, scope, recipient): being displaced once is
+  // useful news; being re-notified every time someone else outbids you
+  // turns a genuine act of support into a repeating "you lost" pressure
+  // loop. Three notifications gives a real signal without becoming that —
+  // after that, the leaderboard itself is always visible; a fan who wants
+  // to know can just look. The existing per-supporter competitiveAlerts
+  // opt-out above already covers anyone who wants zero of these.
+  const dedupePrefix = [
+    'outbid',
+    input.campaignId,
+    input.supportType,
+    input.previousLeaderId,
+  ].join(':');
+
+  const [lifetimeSent] =
+    await db
+      .select({
+        count: sql<number>`count(*)::int`,
+      })
+      .from(s.notifications)
+      .where(
+        and(
+          eq(s.notifications.kind, 'outbid'),
+          sql`${s.notifications.dedupeKey} LIKE ${dedupePrefix + ':%'}`,
+        ),
+      );
+
+  const OUTBID_LIFETIME_CAP = 3;
+
+  if (Number(lifetimeSent?.count ?? 0) >= OUTBID_LIFETIME_CAP) {
+    return;
+  }
+
   const [campaign] =
     await db
       .select({
@@ -335,6 +368,8 @@ export async function queueOutbidNotification(
             displacedAmount,
             incrementCents,
           ),
+        displacedAmountCents:
+          displacedAmount,
       },
     })
     .onConflictDoNothing();

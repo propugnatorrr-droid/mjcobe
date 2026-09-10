@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import {
   Building2,
@@ -70,7 +71,10 @@ export type FanFormLabels = Record<
   | 'paymentSummary'
   | 'paymentRecord'
   | 'paymentSelection'
-  | 'paymentAmount',
+  | 'paymentAmount'
+  | 'allocationNote'
+  | 'supportNote'
+  | 'supportLink',
   string
 >;
 
@@ -496,6 +500,10 @@ className={[
           title={labels.payment}
           stepLabel={labels.stepLabel}
         >
+          <p className="mb-3 max-w-[62ch] text-sm leading-7 text-[var(--text-dim)]">
+            {labels.allocationNote}
+          </p>
+
           <p className="mb-6 max-w-[62ch] text-sm leading-7 text-[var(--text-dim)]">
             {labels.consentBody}
           </p>
@@ -513,6 +521,16 @@ className={[
             workingLabel={labels.working}
             error={state.error}
           />
+
+          <p className="mt-5 text-sm leading-6 text-[var(--text-dim)]">
+            {labels.supportNote}{' '}
+            <Link
+              href="/legal/contact"
+              className="underline decoration-[var(--line-strong)] underline-offset-4 transition-colors hover:text-[var(--champagne)]"
+            >
+              {labels.supportLink}
+            </Link>
+          </p>
         </CheckoutStep>
       </div>
 
