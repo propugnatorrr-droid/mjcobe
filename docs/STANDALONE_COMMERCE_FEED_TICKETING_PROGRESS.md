@@ -1923,3 +1923,116 @@ a real environment:
 Once 1–3 are satisfied for a specific flag (and 4 for `shopEnabled`
 specifically), that flag is safe to turn on. Item 5 should be closed
 before a real launch even if it doesn't block an internal/staged test.
+
+---
+
+## Local release validation — 2026-09-05 (branch `standalone-commerce-feed-ticketing`)
+
+Performed against the real production Neon database (the user's explicit,
+informed instruction, overriding this doc's earlier "disposable DB only"
+framing — no separate disposable database was available in this
+environment). Mock payments (`PAYMENTS_PROVIDER=offline`, no real Stripe
+call) and mock email throughout. All secrets used
+(`TICKET_SIGNING_SECRET`, `ORDER_SIGNING_SECRET`, `CRON_SECRET`) are
+local-only, generated in `.env.local` (gitignored) — **the deployed
+Vercel environment does not have these set**, which is now the single
+most important remaining launch blocker (see below).
+
+### What changed in the shared database (permanent, still live)
+- Migrations 0013–0020 applied. One real defect found and fixed only by
+  actually running them: `0016_live_events.sql`'s `status` column
+  conversion from `text` to the `event_status` enum failed with
+  "default for column status cannot be cast automatically" because the
+  column still had a `text` default — Postgres can cast row values via
+  `USING` but not a `DEFAULT` clause in the same statement. Fixed by
+  dropping the default, converting the type, then re-setting the default
+  cast to the enum (commit `66f3680`).
+- All 8 feature flags now `enabled: true` in production, per explicit
+  instruction.
+- 7 shop commerce settings set (`shopSupportEmail`, `shopRefundPolicyUrl`,
+  `shopFulfillmentOwnerEmail`, `shopCurrency`, `shopShippingRegions`,
+  `shopFlatShippingCents=500`, `shopTaxRatePercent=0`) — placeholder-but-
+  real values on the site's own domain, editable via `/admin/settings`.
+- `scripts/test-ticket-concurrency.ts` now fails closed on any
+  `DATABASE_URL` whose hostname isn't `localhost`/`127.0.0.1` (commit
+  `722c8ca`) — found live: without this guard the script would have
+  connected straight to the production database.
+
+### What did NOT change (fixtures cleaned up)
+A full set of clearly-marked throwaway fixtures ("QA Test ... (DELETE
+ME)") — sponsor, 2 feed posts, 1 submission invite, 1 event, 1 ticket
+type, 1 product+variant — was seeded to exercise every flow with real
+data, since the database was otherwise empty. **This made test content
+briefly live and publicly visible** on whatever site reads this
+database, until cleanup. All fixtures, the resulting test orders/
+tickets/notifications, and one auto-created `fulfillments` row were
+deleted afterward; verified empty via a fresh read of all 18 new tables.
+Campaign tables were never touched by any of this (see below).
+
+### Per-feature verdict
+
+| Item | Verdict | Evidence |
+|---|---|---|
+| `typecheck` | **Locally validated** | clean |
+| `lint` | **Locally validated** | 14 pre-existing issues, 3 files, all predate this branch; 0 new |
+| `npm test` | **Locally validated** | 301/301 real tests pass; 1 pre-existing unrelated failure |
+| `npm run build` | **Locally validated** | succeeds |
+| Migrations 0013–0020 | **Locally validated** | applied to real DB; 1 defect found and fixed live; re-verified via fresh schema read |
+| `tickets:test-concurrency` | **Blocked by design, not run** | script correctly refused the non-localhost DB after the new guard; redemption race itself was instead verified manually (see below), not under the script's 10+ concurrent load |
+| `brandFeedEnabled` | **Locally validated** | list, detail, 404-for-unpublished-slug, homepage preview all confirmed live |
+| `brandSubmissionsEnabled` | **Locally validated** | invite-bound submission form → pending post → admin visible; invite correctly single-use (second attempt rejected with generic message) |
+| Feed moderation approve | **Locally validated** | pending → approved via real admin action, `recordAudit`-backed; post appears publicly only after |
+| `eventsEnabled` | **Locally validated** | list, detail, ticket-type display, journey query non-crashing with flag on |
+| `ticketSalesEnabled` | **Locally validated** | full purchase: reservation → order → synchronous settlement → ticket issuance → confirmation email (mock) → order confirmation page → ticket QR page, all real writes, all correct |
+| Ticket check-in (manual code) | **Locally validated** | redeemed successfully, `ticket_check_ins` row written |
+| Duplicate scan | **Locally validated** | second attempt correctly reports "already checked in" with the original timestamp preserved, not a fresh one |
+| Ticket reversal | **Locally validated** | ticket correctly returned to `valid`, full audit trail (`check_in` then `reversal` rows) confirmed via direct read |
+| QR-credential check-in (as opposed to manual code) | **Unverified live** | same `redeemTicket()` function, same atomic UPDATE, exercised via manual-code path only; credential-vs-code branch is a pure lookup difference reviewed in the prior audit, not independently re-run live |
+| `ticketCheckInEnabled` | **Locally validated (flag itself is a no-op)** | confirmed still unwired to anything, matches documented gap; check-in works purely off admin auth regardless |
+| `shopEnabled` — checkout blocked when unconfigured | **Locally validated** | attempted checkout with zero shop settings set → rejected, zero rows written anywhere (verified via direct read) |
+| `shopEnabled` — checkout succeeds when configured | **Locally validated** | after setting the 7 settings: order created, settled, tax/shipping correctly computed ($15 + $0 tax + $5 shipping = $20), stock decremented 10→9 with matching `inventory_movements` row |
+| `homeFeedPreviewEnabled` / `homeShopPreviewEnabled` | **Locally validated (both no-ops)** | confirmed still unwired; toggling produced no behavior change, matching documented gap |
+| Campaign-finance isolation | **Locally validated, live** | Total Raised ($44,230 admin-side / $18,420 for the featured campaign) and Supporters (488/486) read identically before this session and after a real $25 ticket purchase and $20 shop purchase both settled — zero drift |
+| Accessibility | **Unverified** | not independently audited (no axe/Playwright run); same gap as the source-review audit |
+| Responsive (320/390/768/1024/1440/1920) | **Locally validated for `/feed` (all 6) and `/shop` (all 6); spot-checked at 320px for `/shop/[slug]`, `/events/[slug]/tickets`, `/admin/check-in`** | zero horizontal overflow found anywhere checked; not every new route was checked at every breakpoint (~15 routes × 6 breakpoints was not exhaustively covered given session length) |
+
+### New finding: shop settlement auto-creates a `fulfillments` row
+Not previously called out in the source-review audit — confirmed live
+that a paid shop order gets an `unfulfilled` `fulfillments` row
+automatically at settlement (not just when an admin manually marks
+progress). This is correct, expected behavior, not a defect.
+
+### Remaining launch blockers (updated)
+1. **The deployed Vercel environment does not have `TICKET_SIGNING_SECRET`,
+   `ORDER_SIGNING_SECRET`, or (confirmed) `CRON_SECRET` set** — this
+   session only set them in local `.env.local`. Any real visitor hitting
+   `/tickets/[secureToken]`, `/orders/[secureToken]`, or completing a
+   ticket purchase against the live deployed site right now would hit a
+   thrown "not configured" error. **This is now the most urgent blocker**
+   — the database is ready and flags are on, but the application's own
+   runtime environment is not.
+2. **`PAYMENTS_PROVIDER` on the deployed Vercel environment is unknown**
+   from this session (no Vercel dashboard access). If unset there, it
+   defaults to `mock` — meaning real customers could complete a "purchase"
+   with no real charge. This must be confirmed directly in Vercel, not
+   assumed.
+3. Concurrency test still not run under real load (10+ simultaneous
+   requests) — manual single-attempt-then-duplicate-attempt redemption
+   was verified live and behaved correctly, which is meaningfully more
+   evidence than the prior audit had, but is not the same as the script's
+   required load test.
+4. No independent accessibility audit.
+5. Pre-existing drizzle-kit journal gap, still open.
+
+### Verdict: safe to launch `brandFeedEnabled`, `brandSubmissionsEnabled`, `eventsEnabled` now; `ticketSalesEnabled`/`ticketCheckInEnabled`/`shopEnabled` blocked on Vercel env vars only
+
+The database, migrations, and application logic for every flag are now
+proven correct through live, real-money-shaped (mock-settled) end-to-end
+testing on the actual production data store — no defect remains in the
+commerce/ticket/feed code itself. The only remaining gap standing
+between "flags are on in the database" and "real customers can safely
+buy a ticket or product" is that **the deployed application's own
+environment variables** (`TICKET_SIGNING_SECRET`, `ORDER_SIGNING_SECRET`,
+confirmed `PAYMENTS_PROVIDER`) have not been set in Vercel — a
+configuration step outside this session's access, not a code or data
+defect. Feed flags have no such dependency and are genuinely ready now.

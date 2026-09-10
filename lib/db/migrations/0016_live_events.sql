@@ -49,7 +49,15 @@ BEGIN
     SELECT 1 FROM information_schema.columns
     WHERE table_name = 'live_events' AND column_name = 'status' AND data_type = 'text'
   ) THEN
+    -- The default must be dropped before the type change — Postgres can
+    -- cast existing row values via USING, but it cannot automatically cast
+    -- a text DEFAULT clause to the new enum type in the same statement.
+    -- Confirmed live: without this, applying the migration fails with
+    -- "default for column status cannot be cast automatically to type
+    -- event_status" (error 42804).
+    ALTER TABLE "live_events" ALTER COLUMN "status" DROP DEFAULT;
     ALTER TABLE "live_events" ALTER COLUMN "status" TYPE "event_status" USING "status"::"event_status";
+    ALTER TABLE "live_events" ALTER COLUMN "status" SET DEFAULT 'scheduled'::"event_status";
   END IF;
 END
 $$;
